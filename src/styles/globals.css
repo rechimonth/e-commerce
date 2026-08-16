@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: theme('colors.neutral.100');
+}
+::-webkit-scrollbar-thumb {
+  background: theme('colors.neutral.300');
+  border-radius: theme('borderRadius.DEFAULT');
+}
+::-webkit-scrollbar-thumb:hover {
+  background: theme('colors.neutral.400');
+}

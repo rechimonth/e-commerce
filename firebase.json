@@ -1,0 +1,11 @@
+{
+  "emulators": {
+    "auth": 9099,
+    "firestore": 8080,
+    "ui": 4400,
+    "singleProjectMode": true
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
