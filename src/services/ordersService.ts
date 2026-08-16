@@ -1,13 +1,8 @@
-/**
- * OrdersService — capa de servicios para órdenes.
- *
- * En producción, consulta Firestore para órdenes del usuario.
- * Envoltura todas las llamadas en firebaseTryCatch para consistencia de errores.
- */
-import type { Order, OrderDTO, OrderStatus } from '@/types/order';
+ï»¿import type { Order, OrderDTO, OrderStatus } from '@/types/order';
 import { firebaseTryCatch } from '@/infrastructure/firebase/config';
 import { FirebaseInfraError } from '@/infrastructure/firebase/config';
 import {
+  createOrder as firestoreCreateOrder,
   getAllOrders as firestoreGetAllOrders,
   updateOrderStatus as firestoreUpdateOrderStatus,
   getOrder as firestoreGetOrder,
@@ -54,6 +49,13 @@ function toOrder(dto: OrderDTO): Order {
 }
 
 export const ordersService = {
+  async createOrder(input: Omit<OrderDTO, 'id' | 'status' | 'statusHistory'>): Promise<Order> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreCreateOrder(input);
+      return toOrder(dto);
+    });
+  },
+
   async fetchUserOrders(_userId: string): Promise<Order[]> {
     return firebaseTryCatch(async () => {
       return [];
