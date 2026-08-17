@@ -1,8 +1,9 @@
-﻿import type { Order, OrderDTO, OrderStatus } from '@/types/order';
+import type { Order, OrderDTO, OrderStatus } from '@/types/order';
 import { firebaseTryCatch } from '@/infrastructure/firebase/config';
 import { FirebaseInfraError } from '@/infrastructure/firebase/config';
 import {
   createOrder as firestoreCreateOrder,
+  getUserOrders as firestoreGetUserOrders,
   getAllOrders as firestoreGetAllOrders,
   updateOrderStatus as firestoreUpdateOrderStatus,
   getOrder as firestoreGetOrder,
@@ -56,9 +57,10 @@ export const ordersService = {
     });
   },
 
-  async fetchUserOrders(_userId: string): Promise<Order[]> {
+  async fetchUserOrders(userId: string): Promise<Order[]> {
     return firebaseTryCatch(async () => {
-      return [];
+      const dtos = await firestoreGetUserOrders(userId);
+      return dtos.map(toOrder);
     });
   },
 
