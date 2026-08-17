@@ -1,5 +1,5 @@
 /**
- * Header � barra de navegaci�n superior con usuario, carrito y navegaci�n.
+ * Header — barra de navegación superior con usuario, carrito y navegación.
  *
  * Separado de AuthContext: usa useAuth() para leer el estado.
  * Solo mustramos links de admin cuando roleState === 'admin'.
@@ -19,7 +19,7 @@ export function Header() {
 
   const navLinks: NavbarLink[] = [
     { label: 'Inicio', href: ROUTES.HOME },
-    { label: 'Cat�logo', href: ROUTES.CATALOG },
+    { label: 'Catálogo', href: ROUTES.CATALOG },
   ];
 
   const isAuthenticated = session !== null && roleState !== 'unauthenticated';
@@ -71,7 +71,7 @@ export function Header() {
           to={ROUTES.LOGIN}
           className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
         >
-          Iniciar sesi�n
+          Iniciar sesión
         </Link>
       )}
     </div>

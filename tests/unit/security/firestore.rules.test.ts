@@ -278,6 +278,11 @@ MaybeDescribe('Firestore Security Rules', () => {
       const db = adminEnv().firestore();
       await assertSucceeds(db.collection('orders').limit(10).get());
     });
+    it('customer can list only their own orders with a userId query', async () => {
+      const db = customer1Env().firestore();
+      await assertSucceeds(db.collection('orders').where('userId', '==', 'customer-1').limit(10).get());
+    });
+
 
     it('customer cannot change order status', async () => {
       const db = customer1Env().firestore();

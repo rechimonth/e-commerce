@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +25,7 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 export function AdminOrdersPage() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [status, setStatus] = useState<AsyncStatus>('idle');
   const [error, setError] = useState<ServiceError | null>(null);
@@ -57,7 +59,8 @@ export function AdminOrdersPage() {
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingOrderId(orderId);
     try {
-      const updated = await ordersService.updateOrderStatus(orderId, newStatus, 'admin');
+      if (!user) throw new Error('Usuario administrador no autenticado');
+      const updated = await ordersService.updateOrderStatus(orderId, newStatus, user.uid);
       if (updated) {
         setOrders((prev) =>
           prev ? prev.map((o) => (o.id === orderId ? updated : o)) : prev,
@@ -123,7 +126,7 @@ export function AdminOrdersPage() {
 
         <div className="w-full max-w-md">
           <Input
-            placeholder="Buscar por ID o usuario......"
+            placeholder="Buscar por ID o usuario..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

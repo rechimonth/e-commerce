@@ -58,7 +58,7 @@ export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats 
             <path d="m3.3 7 8.7 5 8.7-5" />
             <path d="M12 22V12" />
           </svg>
-        } subtitle="Total en cat�logo" />
+        } subtitle="Total en catálogo" />
         <StatCard label="Ordenes pendientes" value={pendingCount} icon={
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-current">
             <circle cx="12" cy="12" r="10" />
@@ -78,11 +78,11 @@ export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats 
             <path d="M20 15h-6.5a2.5 2.5 0 0 1 0-5H20" />
             <path d="M16 15V6" />
           </svg>
-        } subtitle="�ltimos 30 dias" />
+        } subtitle="últimos 30 dias" />
       </div>
 
       <Card className="p-6">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Estados de �rdenes</h2>
+        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Estados de órdenes</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatusCard
             label="Pendiente"
@@ -108,7 +108,7 @@ export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats 
       </Card>
 
       <Card className="p-6">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Acciones r�pidas</h2>
+        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Acciones rápidas</h2>
         <div className="flex flex-wrap gap-3">
           <Link to="/admin/products">
             <Button variant="solid" size="sm">
@@ -117,7 +117,7 @@ export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats 
           </Link>
           <Link to="/admin/orders">
             <Button variant="outline" size="sm">
-              Ver �rdenes
+              Ver órdenes
             </Button>
           </Link>
         </div>

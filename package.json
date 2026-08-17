@@ -2,7 +2,7 @@
   "name": "e-commerce",
   "version": "0.1.0",
   "private": true,
-  "description": "AI Driven E-Commerce — Proyecto Integrador 5",
+  "description": "AI Driven E-Commerce \u2014 Proyecto Integrador 5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:rules": "RUN_RULES_TESTS=true vitest run tests/unit/security"
+    "test:rules": "RUN_RULES_TESTS=true vitest run tests/unit/security",
+    "typecheck:api": "tsc --noEmit -p tsconfig.api.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1111.0",
@@ -50,4 +51,3 @@
     "vitest": "^2.1.9"
   }
 }
-

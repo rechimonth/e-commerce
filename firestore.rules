@@ -60,7 +60,10 @@ service cloud.firestore {
         && request.resource.data.items[0].priceCents is int
         && request.resource.data.items[0].priceCents >= 0
         && request.resource.data.items[0].quantity is int
-        && request.resource.data.items[0].quantity >= 1;
+        && request.resource.data.items[0].quantity >= 1
+        && request.resource.data.items[0].productId is string
+        && request.resource.data.items[0].name is string
+        && request.resource.data.items[0].imageUrl is string;
     }
 
     function orderAllowedFields() {
@@ -172,16 +175,21 @@ service cloud.firestore {
       // Read: admin reads any; customer reads own orders only.
       allow get: if isAdmin() || isOrderOwner();
 
-      // List: admin only — prevents customers enumerating all orders.
-      allow list: if isAdmin();
+      // List: admin sees all; a customer may run a query only when every
+      // returned document belongs to that customer. Firestore evaluates the
+      // rule against each candidate document, so an unrestricted query is denied.
+      allow list: if isAdmin() || isOrderOwner();
 
       // Create: authenticated user, order must be for themselves.
       allow create: if isSignedIn()
         && orderAllowedFields()
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id == orderId
         && request.resource.data.status == 'pending'
         && pricesValid()
         && itemsValid()
+        && request.resource.data.statusHistory is list
+        && request.resource.data.statusHistory.size() == 1
         && request.resource.data.statusHistory[0].from == 'pending'
         && request.resource.data.statusHistory[0].to == 'pending'
         && request.resource.data.statusHistory[0].by == request.auth.uid;

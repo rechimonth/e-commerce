@@ -86,21 +86,27 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
     const auth = getFirebaseAuth();
     const result = await signInWithPopup(auth, provider);
 
-    const profile: UserProfileDTO = {
-      uid: result.user.uid,
-      email: result.user.email,
-      displayName: result.user.displayName ?? null,
-      photoURL: result.user.photoURL ?? null,
-      role: 'customer' as UserRole,
-      createdAt: Date.now(),
-      lastLoginAt: Date.now(),
-      preferences: {
-        currency: 'USD',
-        locale: 'es-MX',
-        notifications: true,
-      },
-    };
-    await createUserProfile(profile);
+    const existingProfile = await getUserProfileFromDb(result.user.uid, getFirebaseDb());
+    if (existingProfile) {
+      // El perfil existente es la fuente de verdad del rol. No se reescribe
+      // desde el cliente durante un login para evitar degradar admin → customer.
+    } else {
+      const profile: UserProfileDTO = {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName ?? null,
+        photoURL: result.user.photoURL ?? null,
+        role: 'customer',
+        createdAt: Date.now(),
+        lastLoginAt: Date.now(),
+        preferences: {
+          currency: 'USD',
+          locale: 'es-MX',
+          notifications: true,
+        },
+      };
+      await createUserProfile(profile);
+    }
 
     return result.user;
   });

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge';
@@ -13,6 +14,7 @@ import type { AsyncStatus } from '@/types/ui';
 
 export function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [status, setStatus] = useState<AsyncStatus>('idle');
@@ -53,7 +55,8 @@ export function AdminOrderDetailPage() {
     setIsUpdating(true);
     setUpdateError(null);
     try {
-      const updated = await ordersService.updateOrderStatus(order.id, newStatus, 'admin');
+      if (!user) throw new Error('Usuario administrador no autenticado');
+      const updated = await ordersService.updateOrderStatus(order.id, newStatus, user.uid);
       if (updated) {
         setOrder(updated);
       }

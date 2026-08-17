@@ -18,7 +18,7 @@ export function HomePage() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link to={ROUTES.CATALOG}>
               <Button variant="solid" size="lg">
-                Ver cat�logo
+                Ver catálogo
               </Button>
             </Link>
             <Link to={ROUTES.CART}>

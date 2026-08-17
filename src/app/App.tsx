@@ -1,10 +1,11 @@
-﻿import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ROUTES } from '@/constants/routes';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import { CartProvider } from '@/store/cart/CartProvider';
 import { AdminRoute } from '@/components/auth/AdminRoute';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -16,6 +17,8 @@ const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 
 const AdminDashboardPage = lazy(() => import('@/pages/admin/DashboardPage'));
 const AdminProductsPage = lazy(() => import('@/pages/admin/ProductsPage'));
@@ -33,9 +36,20 @@ function App() {
             <Route path={ROUTES.CATALOG} element={<CatalogPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path={ROUTES.CART} element={<CartPage />} />
-            <Route path={ROUTES.CHECKOUT} element={<CheckoutPage />} />
-            <Route path={ROUTES.ORDERS} element={<OrdersPage />} />
-            <Route path="/orders/:id" element={<OrderDetailPage />} />
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+            <Route
+              path={ROUTES.CHECKOUT}
+              element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>}
+            />
+            <Route
+              path={ROUTES.ORDERS}
+              element={<ProtectedRoute><OrdersPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/orders/:id"
+              element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>}
+            />
             <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
             <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 

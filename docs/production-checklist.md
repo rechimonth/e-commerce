@@ -135,8 +135,8 @@ VITE_FIREBASE_PROJECT_ID=***REDACTED***
 VITE_FIREBASE_STORAGE_BUCKET=***REDACTED***
 VITE_FIREBASE_MESSAGING_SENDER_ID=***REDACTED***
 VITE_FIREBASE_APP_ID=***REDACTED***
-VITE_AWS_REGION=***REDACTED***
-VITE_AWS_S3_BUCKET=***REDACTED***
+AWS_REGION=***REDACTED***
+AWS_S3_BUCKET=***REDACTED***
 ```
 
 **Verificación**:
@@ -432,3 +432,7 @@ npm run test
 ---
 
 *Generado por Kilo — Production Readiness Review — 15/8/2026*
+
+## Server-only Firebase Admin
+
+Configurar en Vercel: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`. Nunca usar prefijo `VITE_` para secretos server-side.

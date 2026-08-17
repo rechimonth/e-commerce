@@ -1,226 +1,120 @@
-﻿// @ts-nocheck
 /**
- * Vercel Serverless Function — UPLOAD seguro de imágenes a AWS S3.
+ * Vercel Serverless Function: genera presigned PUT URLs para imágenes de productos.
  *
- * Flujo:
- * 1. Cliente envía fileName + fileType + token Firebase.
- * 2. Servidor valida token y rol admin.
- * 3. Servidor valida extensión y content type.
- * 4. Servidor genera key segura y presigned PUT URL.
- * 5. Cliente sube el archivo directamente a S3.
- * 6. Cliente guarda la URL en el producto.
- *
- * AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_S3_BUCKET / AWS_REGION
- * NUNCA se exponen al cliente.
+ * El navegador nunca recibe credenciales AWS. Primero se valida el Firebase ID token
+ * y el rol admin mediante firebase-admin; recién después se firma la operación S3.
  */
-
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// --------------------------------------------------------------
-// Config
-// --------------------------------------------------------------
-
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
+const ALLOWED_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const PRESIGNED_URL_EXPIRY_SECONDS = 300;
 
-const ALLOWED_CONTENT_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-]);
+function getFirebaseAdminApp() {
+  const apps = getApps();
+  if (apps.length > 0) return apps[0]!;
 
-const PRESIGNED_URL_EXPIRY_SECONDS = 300; // 5 minutos
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error('Firebase Admin environment is not configured');
+  }
 
-// --------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------
+  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+}
+
+async function verifyAdmin(idToken: string): Promise<{ uid: string }> {
+  const app = getFirebaseAdminApp();
+  const decoded = await getAuth(app).verifyIdToken(idToken);
+  const profile = await getFirestore(app).collection('users').doc(decoded.uid).get();
+  if (!profile.exists || profile.data()?.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+  return { uid: decoded.uid };
+}
 
 function getExtension(fileName: string): string {
-  const parts = fileName.split('.');
-  if (parts.length < 2) return '';
-  return parts[parts.length - 1].toLowerCase();
+  const match = /\.([a-zA-Z0-9]+)$/.exec(fileName);
+  return match?.[1]?.toLowerCase() ?? '';
 }
 
-function isAllowedExtension(fileName: string): boolean {
-  const ext = getExtension(fileName);
-  return ext.length > 0 && ALLOWED_EXTENSIONS.has(ext);
+function isAllowedContentType(value: string): boolean {
+  return ALLOWED_CONTENT_TYPES.has(value.split(';')[0]?.trim().toLowerCase() ?? '');
 }
 
-function isAllowedContentType(contentType: string): boolean {
-  if (!contentType) return false;
-  const base = contentType.split(';')[0].trim().toLowerCase();
-  return ALLOWED_CONTENT_TYPES.has(base);
+function jsonError(res: VercelResponse, status: number, error: string) {
+  return res.status(status).json({ success: false, error });
 }
 
-function jsonError(res: VercelResponse, statusCode: number, error: string) {
-  return res.status(statusCode).json({ success: false, error });
-}
-
-function setCorsHeaders(res: VercelResponse) {
-  const allowedOrigin = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : process.env.NODE_ENV === 'production' 
-      ? 'https://your-domain.com' 
-      : '*';
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+function setCorsHeaders(req: VercelRequest, res: VercelResponse) {
+  const origin = req.headers.origin;
+  const configured = (process.env.ALLOWED_ORIGINS ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+  const vercelOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
+  const allowed = origin && (configured.includes(origin) || origin === vercelOrigin);
+  if (allowed) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
-async function verifyFirebaseToken(idToken: string): Promise<{ uid: string; role: string }> {
-  // TODO: Replace with real firebase-admin verification in production.
-  if (!idToken || idToken.length < 10) {
-    throw new Error('Invalid Firebase ID token');
-  }
-
-  // Simulated token payload
-  const decodedToken = { uid: 'admin-verified', role: 'admin' };
-
-  if (decodedToken.role !== 'admin') {
-    throw new Error('Forbidden: admin role required');
-  }
-
-  return decodedToken;
-}
-
-// --------------------------------------------------------------
-// Handler
-// --------------------------------------------------------------
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res);
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return jsonError(res, 405, 'Method not allowed');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  if (req.method !== 'POST') {
-    return jsonError(res, 405, 'Method not allowed');
-  }
-
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return jsonError(res, 401, 'Missing or invalid authorization header');
-  }
-
-  const idToken = authHeader.slice(7).trim();
-  if (!idToken) {
-    return jsonError(res, 401, 'Missing Firebase ID token');
-  }
-
-  let decodedToken: { uid: string; role: string };
+  const authHeader = req.headers.authorization ?? '';
+  if (!authHeader.startsWith('Bearer ')) return jsonError(res, 401, 'Missing or invalid authorization header');
+  const token = authHeader.slice(7).trim();
+  if (!token) return jsonError(res, 401, 'Missing Firebase ID token');
 
   try {
-    decodedToken = await verifyFirebaseToken(idToken);
+    await verifyAdmin(token);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    if (message.includes('admin role required')) {
-      return jsonError(res, 403, message);
-    }
-    return jsonError(res, 401, message);
+    if (error instanceof Error && error.message === 'FORBIDDEN') return jsonError(res, 403, 'Admin role required');
+    console.error('Firebase token verification failed');
+    return jsonError(res, 401, 'Invalid Firebase ID token');
   }
 
   const body = req.body;
-  if (!body || typeof body !== 'object') {
-    return jsonError(res, 400, 'Invalid request body');
-  }
-
-  const { fileName, fileType, prefix = 'products' } = body;
-
-  if (!fileName || typeof fileName !== 'string') {
-    return jsonError(res, 400, 'fileName is required and must be a string');
-  }
-
-  if (!fileType || typeof fileType !== 'string') {
-    return jsonError(res, 400, 'fileType is required and must be a string');
-  }
-
-  if (typeof body.fileSize === 'number' && body.fileSize > MAX_FILE_SIZE_BYTES) {
-    return jsonError(
-      res,
-      400,
-      `File too large. Max size is ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB`,
-    );
-  }
-
-  if (!isAllowedExtension(fileName)) {
-    return jsonError(
-      res,
-      400,
-      `Invalid file extension. Allowed: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`,
-    );
-  }
-
-  if (!isAllowedContentType(fileType)) {
-    return jsonError(
-      res,
-      400,
-      `Invalid content type. Allowed: ${Array.from(ALLOWED_CONTENT_TYPES).join(', ')}`,
-    );
-  }
-
-  const safePrefix = String(prefix).replace(/[^a-zA-Z0-9-_/]/g, '');
-  if (!safePrefix || safePrefix.length > 64) {
-    return jsonError(res, 400, 'Invalid prefix');
-  }
-
-  const bucket = process.env.AWS_S3_BUCKET;
-  const region = process.env.AWS_REGION;
-
-  if (!bucket || !region) {
-    return jsonError(res, 500, 'AWS environment not configured');
-  }
-
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-
-  if (!accessKeyId || !secretAccessKey) {
-    return jsonError(res, 500, 'AWS credentials not configured');
+  if (!body || typeof body !== 'object') return jsonError(res, 400, 'Invalid request body');
+  const { fileName, fileType, fileSize, prefix = 'products' } = body as Record<string, unknown>;
+  if (typeof fileName !== 'string' || !fileName.trim()) return jsonError(res, 400, 'fileName is required and must be a string');
+  if (typeof fileType !== 'string' || !fileType.trim()) return jsonError(res, 400, 'fileType is required and must be a string');
+  if (typeof fileSize !== 'number' || !Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_FILE_SIZE_BYTES) {
+    return jsonError(res, 400, 'Invalid file size. Maximum is 5 MB');
   }
 
   const extension = getExtension(fileName);
-  const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-  const key = `${safePrefix}/${uniqueId}.${extension}`;
+  if (!ALLOWED_EXTENSIONS.has(extension)) return jsonError(res, 400, 'Invalid file extension');
+  if (!isAllowedContentType(fileType)) return jsonError(res, 400, 'Invalid content type');
+
+  const safePrefix = typeof prefix === 'string' ? prefix.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) : 'products';
+  if (!safePrefix) return jsonError(res, 400, 'Invalid prefix');
+
+  const bucket = process.env.AWS_S3_BUCKET;
+  const region = process.env.AWS_REGION;
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  if (!bucket || !region || !accessKeyId || !secretAccessKey) return jsonError(res, 500, 'AWS environment is not configured');
+
+  const key = `${safePrefix}/${crypto.randomUUID()}.${extension}`;
 
   try {
-    const s3 = new S3Client({
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
-
-    const command = new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      ContentType: fileType,
-      ACL: 'private',
-    });
-
-    const uploadUrl = await getSignedUrl(s3, command, {
-      expiresIn: PRESIGNED_URL_EXPIRY_SECONDS,
-    });
-
-    const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        uploadUrl,
-        key,
-        publicUrl,
-        expiresIn: PRESIGNED_URL_EXPIRY_SECONDS,
-      },
-    });
+    const s3 = new S3Client({ region, credentials: { accessKeyId, secretAccessKey } });
+    const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: fileType.split(';')[0]?.trim().toLowerCase() });
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: PRESIGNED_URL_EXPIRY_SECONDS });
+    const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+    return res.status(200).json({ success: true, data: { uploadUrl, key, publicUrl, expiresIn: PRESIGNED_URL_EXPIRY_SECONDS } });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('S3 presigned URL generation failed:', message);
+    console.error('S3 presigned URL generation failed:', error instanceof Error ? error.message : 'unknown');
     return jsonError(res, 500, 'Failed to generate upload URL');
   }
 }

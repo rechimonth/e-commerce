@@ -76,19 +76,23 @@ export function CheckoutPage() {
       lastUpdated: new Date(),
     };
 
-    await processCheckout(
-      {
-        shippingAddress,
-        billingAddress: billingSameAsShipping ? shippingAddress : billingAddress,
-        paymentMethod: paymentMethod as 'card' | 'paypal' | 'cash',
-        notes,
-      },
-      cartState,
-      user.uid,
-    );
-
-    clearCart();
-    navigate(ROUTES.ORDERS);
+    try {
+      const createdOrder = await processCheckout(
+        {
+          shippingAddress,
+          billingAddress: billingSameAsShipping ? shippingAddress : billingAddress,
+          paymentMethod: paymentMethod as 'card' | 'paypal' | 'cash',
+          notes,
+        },
+        cartState,
+        user.uid,
+      );
+      if (!createdOrder) return;
+      clearCart();
+      navigate(ROUTES.ORDERS);
+    } catch {
+      // useCheckout conserva el error visible y el carrito intacto.
+    }
   };
 
   return (

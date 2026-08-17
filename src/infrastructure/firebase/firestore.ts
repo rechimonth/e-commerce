@@ -14,6 +14,7 @@ import {
   updateDoc,
   deleteDoc,
   addDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -174,8 +175,12 @@ export async function createOrder(
       timestamp: now,
     };
 
-    const docRef = await addDoc(collection(db, 'orders'), {
+    const docRef = doc(collection(db, 'orders'));
+    const items = order.items.map((item) => ({ ...item, orderId: docRef.id }));
+    await setDoc(docRef, {
       ...order,
+      items,
+      id: docRef.id,
       status: 'pending',
       statusHistory: [initialTransition],
       createdAt: now,

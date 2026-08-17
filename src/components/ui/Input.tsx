@@ -8,7 +8,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({ label, error, helperText, icon, className = '', id, ...rest }: InputProps) {
-  const generatedId = useId(); const inputId = id ?? generatedId;;
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
   const helperId = `${inputId}-helper`;
 

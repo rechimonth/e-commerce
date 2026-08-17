@@ -1,10 +1,15 @@
+/**
+ * OrdersService — capa de servicios para órdenes.
+ *
+ * En producción, consulta Firestore para órdenes del usuario.
+ * Envoltura todas las llamadas en firebaseTryCatch para consistencia de errores.
+ */
 import type { Order, OrderDTO, OrderStatus } from '@/types/order';
 import { firebaseTryCatch } from '@/infrastructure/firebase/config';
 import { FirebaseInfraError } from '@/infrastructure/firebase/config';
 import {
-  createOrder as firestoreCreateOrder,
-  getUserOrders as firestoreGetUserOrders,
   getAllOrders as firestoreGetAllOrders,
+  getUserOrders as firestoreGetUserOrders,
   updateOrderStatus as firestoreUpdateOrderStatus,
   getOrder as firestoreGetOrder,
 } from '@/infrastructure/firebase/firestore';
@@ -50,15 +55,9 @@ function toOrder(dto: OrderDTO): Order {
 }
 
 export const ordersService = {
-  async createOrder(input: Omit<OrderDTO, 'id' | 'status' | 'statusHistory'>): Promise<Order> {
-    return firebaseTryCatch(async () => {
-      const dto = await firestoreCreateOrder(input);
-      return toOrder(dto);
-    });
-  },
-
   async fetchUserOrders(userId: string): Promise<Order[]> {
     return firebaseTryCatch(async () => {
+      if (!userId) throw new FirebaseInfraError('UNAUTHORIZED', 'Usuario no autenticado');
       const dtos = await firestoreGetUserOrders(userId);
       return dtos.map(toOrder);
     });
@@ -76,7 +75,7 @@ export const ordersService = {
     return firebaseTryCatch(async () => {
       throw new FirebaseInfraError(
         'INTERNAL_ERROR',
-        'La cancelacion de ordenes no esta implementada en esta fase',
+        'La cancelación de ordenes no esta implementada en esta fase',
       );
     });
   },

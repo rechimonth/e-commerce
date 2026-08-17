@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -31,6 +32,7 @@ interface AdminProductFormPageProps {
 
 export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const id = productId ?? params?.id;
   const isEditMode = !!id;
@@ -119,7 +121,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
           imageKey: form.imageKey,
           stock: parseInt(form.stock, 10),
           isActive: form.isActive,
-          createdBy: 'admin',
+          createdBy: user?.uid ?? '',
           rating: 0,
           reviewCount: 0,
         });
@@ -177,7 +179,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
       {success && (
         <Alert
           variant="success"
-          title="Exito"
+          title="Éxito"
           message={isEditMode ? 'Producto actualizado' : 'Producto creado'}
         />
       )}
@@ -185,7 +187,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold text-neutral-900">
-            Informacion del producto
+            Información del producto
           </h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="md:col-span-2">
@@ -200,7 +202,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
 
             <div className="md:col-span-2">
               <Textarea
-                label="Descripcion"
+                label="Descripción"
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 rows={4}
@@ -219,7 +221,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
             />
 
             <Select
-              label="Categoria"
+              label="Categoría"
               options={PRODUCT_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
               value={form.category}
               onChange={(e) =>

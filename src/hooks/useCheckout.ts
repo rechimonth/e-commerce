@@ -15,7 +15,7 @@ export interface UseCheckoutResult {
     data: CheckoutData,
     cartState: CartState,
     userId: string,
-  ) => Promise<void>;
+  ) => Promise<Order | null>;
 }
 
 export function useCheckout(): UseCheckoutResult {
@@ -32,6 +32,7 @@ export function useCheckout(): UseCheckoutResult {
         const result = await checkoutService.processCheckout(data, cartState, userId);
         setOrder(result);
         setStatus('success');
+        return result;
       } catch (e) {
         const serviceError: ServiceError = {
           code: 'INTERNAL_ERROR',
@@ -40,6 +41,7 @@ export function useCheckout(): UseCheckoutResult {
         };
         setError(serviceError);
         setStatus('error');
+        return null;
       }
     },
     [],

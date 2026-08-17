@@ -1,4 +1,4 @@
-﻿import { type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { cloneElement, isValidElement, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import type { ButtonVariant, ButtonSize } from '@/types/ui';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -41,13 +41,16 @@ export function Button({
     `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim();
 
   if (asChild) {
-    return (
-      <span className={classes} {...(disabled && { 'aria-disabled': true })}>
-        {leftIcon && <span className="mr-2 flex-shrink-0">{leftIcon}</span>}
-        {children}
-        {rightIcon && <span className="ml-2 flex-shrink-0">{rightIcon}</span>}
-      </span>
-    );
+    if (!isValidElement(children)) {
+      throw new Error('Button asChild requiere un único elemento React hijo.');
+    }
+
+    const childProps = children.props as { className?: string; [key: string]: unknown };
+    return cloneElement(children, {
+      ...rest,
+      className: `${classes} ${childProps.className ?? ''}`.trim(),
+      ...(disabled ? { 'aria-disabled': true } : {}),
+    } as never);
   }
 
   return (

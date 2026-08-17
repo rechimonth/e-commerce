@@ -26,6 +26,26 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: vi.fn(),
 }));
 
+vi.mock('firebase-admin/app', () => ({
+  getApps: vi.fn(() => [{ name: 'test-app' }]),
+  initializeApp: vi.fn(),
+  cert: vi.fn(),
+}));
+
+vi.mock('firebase-admin/auth', () => ({
+  getAuth: vi.fn(() => ({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'admin-1' }) })),
+}));
+
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore: vi.fn(() => ({
+    collection: vi.fn(() => ({
+      doc: vi.fn(() => ({
+        get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ role: 'admin' }) }),
+      })),
+    })),
+  })),
+}));
+
 // --------------------------------------------------------------
 // Helpers de test
 // --------------------------------------------------------------
@@ -174,7 +194,7 @@ describe('POST /api/upload', () => {
     const payload = res.jsonPayload as { success: boolean; data: { uploadUrl: string; key: string; publicUrl: string } };
     expect(payload.success).toBe(true);
     expect(payload.data.uploadUrl).toBe('https://signed-url');
-    expect(payload.data.key).toMatch(/^products\/\d+-[a-z0-9]+\.jpg$/);
+    expect(payload.data.key).toMatch(/^products\/[0-9a-f-]+\.jpg$/);
     expect(payload.data.publicUrl).toContain('test-bucket');
   });
 });

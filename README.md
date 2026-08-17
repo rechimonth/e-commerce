@@ -1,80 +1,160 @@
-﻿# E-Commerce
+# AI Driven E-Commerce — Proyecto Integrador 5
 
-Aplicación de e-commerce impulsada por IA. Proyecto Integrador 5.
+SPA de e-commerce desarrollada con React 18, TypeScript, Vite, Firebase, AWS S3 y Vercel Serverless Functions. El proyecto implementa dos experiencias: **customer** para comprar y **admin** para gestionar productos y órdenes.
 
-## Tech Stack
+## Requisitos cubiertos
 
-- React 18 + TypeScript (strict)
-- Vite (build tool)
-- React Router v6
-- TailwindCSS
-- ESLint + Prettier
-- Vitest + React Testing Library
+- Registro y login con email/password y Google.
+- Persistencia de sesión con Firebase Auth.
+- Roles `customer` y `admin` almacenados en Firestore.
+- Catálogo desde Firestore, filtro por categoría y búsqueda con debounce.
+- Carrito con Context API + useReducer y persistencia local.
+- Checkout con pago **simulado** y creación real de la orden en Firestore.
+- Historial y detalle de órdenes por usuario.
+- Panel admin protegido por rol.
+- CRUD de productos.
+- Upload de imágenes mediante presigned URLs generadas por Vercel.
+- Gestión de estados de órdenes.
+- Tests unitarios/integración y mocks de Firebase/AWS.
+
+> Los extras de Analytics, paginación avanzada y Reviews/Ratings no forman parte de esta entrega porque son opcionales en la consigna.
+
+## Arquitectura
+
+```text
+src/
+├── types/            # contratos de dominio
+├── infrastructure/   # Firebase SDK y DTOs
+├── services/         # lógica de aplicación/adaptación
+├── contexts/         # estado global de autenticación
+├── store/cart/       # Context + useReducer del carrito
+├── hooks/            # interfaz de consumo de estado y lógica reutilizable
+├── components/       # UI reutilizable
+└── pages/            # pantallas por ruta
+
+api/                  # Vercel Serverless Functions
+firestore.rules       # seguridad de Firestore
+firestore.indexes.json # índices requeridos
+```
+
+La organización sigue el enfoque por capas estudiado: `types → services/infrastructure → state/hooks → UI/pages`.
+
+## Flujo de checkout
+
+```text
+Customer
+  ↓
+Carrito
+  ↓
+Checkout
+  ↓
+Pago simulado
+  ↓
+createOrder()
+  ↓
+Firestore /orders/{id}
+  ↓
+clearCart()
+  ↓
+Historial de órdenes
+```
+
+Si Firestore falla, el carrito **no se limpia** y el usuario permanece en checkout con un mensaje de error.
+
+## Flujo de upload S3
+
+```text
+Browser
+  ↓ Bearer Firebase ID token
+Vercel Function /api/upload
+  ↓ verifyIdToken + role admin
+Firebase Admin / Firestore
+  ↓
+AWS S3 presigned PUT URL
+  ↓
+Browser → S3
+```
+
+Las credenciales AWS son exclusivamente server-side. No deben comenzar con `VITE_` y nunca deben aparecer en el bundle del frontend.
+
+### Configuración S3
+
+El bucket debe permitir la operación PUT mediante la presigned URL. Para mostrar las imágenes con la URL estable que guarda el modelo `Product`, configurar una bucket policy de lectura únicamente para el prefijo de imágenes de productos, o sustituir el modelo por una estrategia de URLs de lectura presigned. No se utiliza `ACL: public-read`.
+
+CORS debe permitir únicamente los orígenes de desarrollo y producción necesarios y los métodos `PUT`, `GET` y `HEAD`.
+
+## Variables de entorno
+
+### Frontend
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+### Server-only
+
+```env
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+AWS_REGION=us-east-1
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+Nunca subir `.env`. Usar `.env.example` sin valores reales.
 
 ## Instalación
 
 ```bash
-npm install
+npm ci
+npm run dev
 ```
 
-## Scripts
+## Validaciones locales
 
-| Script           | Descripción                             |
-| ---------------- | --------------------------------------- |
-| `npm run dev`    | Inicia el servidor de desarrollo        |
-| `npm run build`  | Build de producción (incluye typecheck) |
-| `npm run lint`   | Ejecuta ESLint                          |
-| `npm run format` | Formatea con Prettier                   |
-| `npm run test`   | Ejecuta tests unitarios                 |
+```bash
+npm run lint
+npm run build
+npm run typecheck:api
+npm run test
+```
 
-## Variables de entorno
+Para las reglas de Firestore se requiere Firebase Emulator configurado.
 
-Copia `.env.example` a `.env` y completa los valores.
+## Firebase
 
-## AI Development Journal
+1. Crear proyecto Firebase.
+2. Activar Authentication con Email/Password y Google.
+3. Crear Firestore.
+4. Publicar `firestore.rules`.
+5. Publicar `firestore.indexes.json`.
 
-### Cómo se usó IA en este proyecto
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
 
-La IA se utilizó como asistente de desarrollo en las siguientes áreas, siempre bajo criterio y validación humana:
+## Vercel
 
-| Área | Evidencia |
-|------|-----------|
-| Planificación | `.kilo/plans/fix-test-suite.md` |
-| Validación de decisiones técnicas | Eliminación de mocks globales Firebase, adopción de `useId()` |
-| Code review | Reemplazo de emojis por SVG, estabilización de IDs |
-| Generación de tests | Fixtures, mocks, `renderWithProviders`, suite de seguridad |
-| Resolución de problemas | Fix de `border-center-1`, inline styles en Skeleton, CORS en upload |
+Configurar las variables frontend y server-only en Project Settings → Environment Variables. Las credenciales privadas nunca se colocan en variables `VITE_*`.
 
-### Intervenciones documentadas
+El despliegue público y su URL deben agregarse aquí una vez realizada la publicación final; no se inventa una URL antes de tener un deploy verificable.
 
-1. **Planificación de test suite** (14/8/2026)
-   - **Problema**: Mocks globales de Firebase rompían tests de infraestructura.
-   - **Acción**: Se generó un plan paso a paso en `.kilo/plans/fix-test-suite.md`.
-   - **Resultado**: Suite de tests ejecutable con aislamiento correcto.
+## Testing
 
-2. **Eliminación de emojis de UI** (15/8/2026)
-   - **Problema**: Inconsistencia visual y accesibilidad.
-   - **Acción**: Reemplazo por iconos SVG inline (Lucide style).
-   - **Resultado**: Navegación admin, dashboard y badges con iconografía consistente.
+La suite utiliza Vitest y React Testing Library. Firebase y AWS se mockean para evitar dependencias externas en los tests unitarios. Los flujos críticos incluyen carrito, hooks, rutas, checkout, órdenes, admin y upload.
 
-3. **IDs estables con `useId()`** (15/8/2026)
-   - **Problema**: `Math.random()` generaba IDs diferentes entre renders.
-   - **Acción**: Cambio a `useId()` en `Input`, `Select`, `Textarea`, `Checkbox`.
-   - **Resultado**: Accesibilidad mejorada; tests de formulario estables.
+## Bitácora de IA
 
-4. **Mejora visual de componentes** (15/8/2026)
-   - **Problema**: Estilos "académicos" con sombras débiles y transiciones ausentes.
-   - **Acción**: Pulso de `Button`, `Card`, `Badge`, `Alert`, `Input`.
-   - **Resultado**: Jerarquía visual, hover states y focus rings consistentes.
+La bitácora original se conserva en `docs/ai-notes.md`. Debe mantenerse con al menos cinco entradas reales que documenten prompt, aprendizaje y decisión tomada, tal como exige el Proyecto 5.
 
-5. **Renombre del proyecto** (15/8/2026)
-   - **Problema**: Nombre `e-commerce-ai` inconsistente con el branding.
-   - **Acción**: Cambio a `e-commerce` en `package.json` y `README.md`.
-   - **Resultado**: Proyecto alineado con nombre corto.
+## Defensa
 
-### Limitaciones
-
-- No hay repositorio Git inicializado, por lo que no existen commits que verifiquen interacciones anteriores.
-- Esta bitácora documenta exclusivamente lo que tiene respaldo en archivos verificables.
-
-Para el detalle completo, ver [`docs/ai-notes.md`](docs/ai-notes.md).
+La demo debe mostrar dos recorridos: customer (auth → catálogo → carrito → checkout → orden) y admin (auth → CRUD → upload → órdenes → cambio de estado).

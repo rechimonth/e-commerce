@@ -1,4 +1,4 @@
-﻿import { type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import Button from './Button';
 import type { EmptyStateConfig } from '@/types/ui';
 
