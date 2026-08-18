@@ -2,7 +2,7 @@
   "name": "e-commerce",
   "version": "0.1.0",
   "private": true,
-  "description": "AI Driven E-Commerce \u2014 Proyecto Integrador 5",
+  "description": "AI Driven E-Commerce — Proyecto Integrador 5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,8 +19,8 @@
     "typecheck:api": "tsc --noEmit -p tsconfig.api.json"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1111.0",
-    "@aws-sdk/s3-request-presigner": "^3.1111.0",
+    "@aws-sdk/client-s3": "^3.1112.0",
+    "@aws-sdk/s3-request-presigner": "^3.1112.0",
     "firebase": "^12.17.1",
     "firebase-admin": "^14.2.0",
     "react": "^18.3.1",
@@ -35,7 +35,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.14",
     "@types/react-dom": "^18.3.0",
-    "@vercel/node": "^5.10.0",
+    "@vercel/node": "^5.10.1",
     "@vitejs/plugin-react-swc": "^4.3.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.18.0",
