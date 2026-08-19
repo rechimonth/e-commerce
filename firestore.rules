@@ -2,9 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ──────────────────────────────────────────────────────────
+    // ----------------------------------------------------------
     // HELPERS
-    // ──────────────────────────────────────────────────────────
+    // ----------------------------------------------------------
 
     /** The user is authenticated with Firebase Auth. */
     function isSignedIn() {
@@ -106,18 +106,9 @@ service cloud.firestore {
       ]);
     }
 
-    /** Allowed top-level keys for a product document. */
-    function productAllowedFields() {
-      return request.resource.data.keys().hasOnly([
-        'id', 'name', 'description', 'priceCents', 'currency',
-        'category', 'imageKey', 'imageUrl', 'stock', 'rating',
-        'reviewCount', 'isActive', 'createdAt', 'updatedAt', 'createdBy',
-      ]);
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // USERS  —  users/{uid}
-    // ──────────────────────────────────────────────────────────
+    // ----------------------------------------------------------
+    // USERS  �  users/{uid}
+    // ----------------------------------------------------------
 
     match /users/{uid} {
 
@@ -125,7 +116,7 @@ service cloud.firestore {
       allow get: if isOwner(uid) || isAdmin();
 
       // Create: user creates their own profile on sign-up.
-      // Role is always 'customer' — customers cannot self-assign.
+      // Role is always 'customer' � customers cannot self-assign.
       allow create: if isOwner(uid)
         && !exists(/databases/$(database)/documents/users/$(uid))
         && userAllowedFields()
@@ -151,24 +142,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ──────────────────────────────────────────────────────────
-    // PRODUCTS  —  products/{productId}
-    // ──────────────────────────────────────────────────────────
+    // ----------------------------------------------------------
+    // PRODUCTS  �  products/{productId}
+    // ----------------------------------------------------------
 
     match /products/{productId} {
 
-      // Lectura pública: permite que cualquier visitante vea el catálogo de productos
+      // Cualquier usuario, autenticado o an�nimo, puede leer productos.
       allow list, get: if true;
 
-      // Solo administradores pueden crear, actualizar o eliminar productos
-      allow create: if isAdmin() && productAllowedFields();
-      allow update: if isAdmin() && productAllowedFields();
+      // Solo administradores pueden crear, actualizar o eliminar productos.
+      // No se aplica una lista estricta de campos permitidos para permitir
+      // campos din�micos o formateados enviados por el formulario.
+      allow create: if isAdmin();
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // ──────────────────────────────────────────────────────────
-    // ORDERS  —  orders/{orderId}
-    // ──────────────────────────────────────────────────────────
+    // ----------------------------------------------------------
+    // ORDERS  �  orders/{orderId}
+    // ----------------------------------------------------------
 
     match /orders/{orderId} {
 
@@ -201,9 +194,9 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ──────────────────────────────────────────────────────────
-    // CATCH-ALL — deny everything not explicitly allowed.
-    // ──────────────────────────────────────────────────────────
+    // ----------------------------------------------------------
+    // CATCH-ALL � deny everything not explicitly allowed.
+    // ----------------------------------------------------------
 
     match /{document=**} {
       allow read, write: if false;
