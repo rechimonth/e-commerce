@@ -24,7 +24,8 @@ service cloud.firestore {
 
     /** Admin = signed-in user whose profile role is 'admin'. */
     function isAdmin() {
-      return getUserRole() is string && getUserRole() == 'admin';
+      const role = getUserRole();
+      return role is string && role == 'admin';
     }
 
     /** The request is for the user's own document (path param == auth.uid). */
@@ -203,3 +204,4 @@ service cloud.firestore {
     }
   }
 }
+
