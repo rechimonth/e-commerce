@@ -16,6 +16,7 @@ import type { Product, ProductCategory } from '@/types/domain';
 import type { PaginatedResult } from '@/types/api';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
+import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 
 interface AdminProductsPageState {
   products: Product[] | null;
@@ -290,10 +291,10 @@ export function AdminProductsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <img
-                          src={product.image.url}
+                          src={resolveProductImage(product)}
                           alt={product.image.alt}
                           className="h-10 w-10 rounded object-cover"
-                        />
+                         onError={handleProductImageError} />
                         <span className="text-sm font-medium text-neutral-900">
                           {product.name}
                         </span>

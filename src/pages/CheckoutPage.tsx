@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Price } from '@/components/ui/Price';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useCart } from '@/hooks/useCart';
+import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
@@ -261,10 +262,10 @@ export function CheckoutPage() {
                   {items.map((item) => (
                     <div key={item.productId} className="flex items-center gap-3">
                       <img
-                        src={item.image.url}
+                        src={resolveProductImage(item)}
                         alt={item.image.alt}
                         className="h-12 w-12 rounded object-cover"
-                      />
+                       onError={handleProductImageError} />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{item.name}</p>
                         <p className="text-xs text-neutral-500">x{item.quantity}</p>

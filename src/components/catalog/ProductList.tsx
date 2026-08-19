@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { ProductCard, LoadingState, EmptyState } from '@/components/ui';
 import type { Product } from '@/types/domain';
+import { resolveProductImage } from '@/utils/productImage';
 
 export interface ProductListProps {
   readonly products: readonly Product[];
@@ -42,7 +43,7 @@ export function ProductList({
           name={product.name}
           priceCents={product.price.amount}
           currency={product.price.currency}
-          imageUrl={product.image.url}
+          src={resolveProductImage(product)}
           imageAlt={product.image.alt}
           category={product.category}
           stock={product.stock}

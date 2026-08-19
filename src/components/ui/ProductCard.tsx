@@ -1,13 +1,14 @@
 ﻿import { type ReactNode } from 'react';
 import Button from './Button';
 import type { ProductCardVariant } from '@/types/ui';
+import { handleProductImageError } from '@/utils/productImage';
 
 export interface ProductCardProps {
   readonly id: string;
   readonly name: string;
   readonly priceCents: number;
   readonly currency: string;
-  readonly imageUrl: string;
+  readonly src: string;
   readonly imageAlt?: string;
   readonly category?: string;
   readonly rating?: number;
@@ -34,7 +35,7 @@ export function ProductCard({
   name,
   priceCents,
   currency,
-  imageUrl,
+  src,
   imageAlt,
   category,
   rating,
@@ -69,9 +70,10 @@ export function ProductCard({
     >
       <div className={`relative ${imageWrapperClasses} overflow-hidden rounded-t-md shadow-sm`}>
         <img
-          src={imageUrl}
+          src={src}
           alt={imageAlt ?? name}
           className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          onError={handleProductImageError}
         />
         {badge && <div className="absolute top-2 right-2 z-10">{badge}</div>}
         {stock === 0 && (

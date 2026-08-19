@@ -6,6 +6,7 @@
  */
 import { Price, QuantitySelector, Button } from '@/components/ui';
 import type { CartItem } from '@/types/cart';
+import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 
 export interface CartItemRowProps {
   readonly item: CartItem;
@@ -20,9 +21,10 @@ export function CartItemRow({ item, onUpdateQuantity, onRemove }: CartItemRowPro
     <div className="flex items-center gap-4 py-4 sm:gap-6">
       <div className="flex-shrink-0">
         <img
-          src={item.image.url}
+          src={resolveProductImage(item)}
           alt={item.image.alt}
           className="h-16 w-16 rounded-md object-cover sm:h-20 sm:w-20"
+          onError={handleProductImageError}
         />
       </div>
 

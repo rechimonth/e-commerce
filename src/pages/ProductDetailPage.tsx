@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { QuantitySelector } from '@/components/ui/QuantitySelector';
 import { useProduct } from '@/hooks/useProduct';
+import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 import { useCart } from '@/hooks/useCart';
 
 export function ProductDetailPage() {
@@ -73,10 +74,10 @@ export function ProductDetailPage() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div className="aspect-square overflow-hidden rounded-lg bg-neutral-100">
               <img
-                src={product.image.url}
+                src={resolveProductImage(product)}
                 alt={product.image.alt}
                 className="h-full w-full object-cover"
-              />
+               onError={handleProductImageError} />
             </div>
 
             <div className="flex flex-col">

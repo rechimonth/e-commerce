@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { useOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/hooks/useAuth';
 import { ordersService } from '@/services/ordersService';
+import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 import { ROUTES } from '@/constants/routes';
 import type { Order } from '@/types/order';
 import { useState } from 'react';
@@ -84,10 +85,10 @@ export function OrdersPage() {
                   {order.items.slice(0, 3).map((item) => (
                     <div key={item.productId} className="flex min-w-[80px] flex-col items-center gap-2">
                       <img
-                        src={item.image.url}
+                        src={resolveProductImage(item)}
                         alt={item.image.alt}
                         className="h-16 w-16 rounded object-cover"
-                      />
+                       onError={handleProductImageError} />
                       <span className="text-xs text-neutral-600">{item.name}</span>
                     </div>
                   ))}

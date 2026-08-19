@@ -14,6 +14,7 @@ import type { Order } from '@/types/order';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
 import { useEffect, useState } from 'react';
+import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -146,10 +147,10 @@ export function OrderDetailPage() {
                   className="flex items-center gap-4 rounded-lg border border-neutral-200 p-4"
                 >
                   <img
-                    src={item.image.url}
+                    src={resolveProductImage(item)}
                     alt={item.image.alt}
                     className="h-16 w-16 rounded object-cover"
-                  />
+                   onError={handleProductImageError} />
                   <div className="flex-1">
                     <p className="font-medium text-neutral-900">{item.name}</p>
                     <p className="text-sm text-neutral-500">
