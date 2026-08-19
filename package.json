@@ -17,7 +17,8 @@
     "test:coverage": "vitest run --coverage",
     "test:rules": "RUN_RULES_TESTS=true vitest run tests/unit/security",
     "typecheck:api": "tsc --noEmit -p tsconfig.api.json",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "migrate:categories": "tsx scripts/migrateProductCategories.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1112.0",

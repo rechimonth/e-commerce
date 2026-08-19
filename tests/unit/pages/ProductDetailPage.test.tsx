@@ -35,7 +35,7 @@ const mockProduct: Product = {
   name: 'iPhone 15 Pro',
   description: 'Latest iPhone with A17 chip',
   price: { amount: 99999, currency: 'USD' },
-  category: 'electronics',
+  category: 'action-figures',
   image: { url: 'https://example.com/iphone.jpg', alt: 'iPhone 15 Pro', key: 'key1' },
   stock: 10,
   rating: 4.8,
@@ -90,7 +90,7 @@ describe('ProductDetailPage', () => {
     });
 
     expect(screen.getByText('Latest iPhone with A17 chip')).toBeInTheDocument();
-    expect(screen.getByText('electronics')).toBeInTheDocument();
+    expect(screen.getByText('action-figures')).toBeInTheDocument();
     expect(screen.getByText('Agregar al carrito')).toBeInTheDocument();
   });
 

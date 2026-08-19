@@ -70,8 +70,8 @@ describe('SearchInput', () => {
 
 describe('CategoryFilter', () => {
   const categories = [
-    { id: 'electronics' as const, label: 'Electrónicos', count: 12 },
-    { id: 'clothing' as const, label: 'Ropa', count: 5 },
+    { id: 'action-figures' as const, label: 'Electrónicos', count: 12 },
+    { id: 'video-games' as const, label: 'Ropa', count: 5 },
   ];
 
   it('renders all categories plus "all" button', () => {
@@ -85,7 +85,7 @@ describe('CategoryFilter', () => {
     const onSelect = vi.fn();
     render(<CategoryFilter categories={categories} selected="all" onSelect={onSelect} />);
     fireEvent.click(screen.getByText('Electrónicos'));
-    expect(onSelect).toHaveBeenCalledWith('electronics');
+    expect(onSelect).toHaveBeenCalledWith('action-figures');
   });
 
   it('shows counts when showCounts is true', () => {

@@ -33,7 +33,7 @@ const CATALOG: Record<CategoryId, string[]> = {
     "New Balance 327",
     "Asics Gel-Kayano",
   ],
-  video_games: [
+  "video-games": [
     "Elden Ring",
     "Zelda Tears of the Kingdom",
     "Super Mario Odyssey",
@@ -55,7 +55,7 @@ const CATALOG: Record<CategoryId, string[]> = {
     "Call of Duty MW3",
     "GTA V",
   ],
-  action_figures: [
+  "action-figures": [
     "Iron Man Mark XLIII",
     "Captain America Shield",
     "Spider-Man Miles Morales",
@@ -90,8 +90,8 @@ function randomStock(): number {
 function createDescription(name: string, categoryId: CategoryId): string {
   const categoryLabel = {
     shoes: "Zapatillas",
-    video_games: "Videojuegos",
-    action_figures: "Figuras de Acción",
+    "video-games": "Videojuegos",
+    "action-figures": "Figuras de Acción",
   }[categoryId];
 
   return `${name} pertenece a la categoría "${categoryLabel}". Fabricado con materiales de calidad que ofrecen comodidad, durabilidad y un diseño moderno para el uso diario.`;
@@ -122,7 +122,7 @@ async function seed(): Promise<void> {
     })),
   );
 
-  console.log(`🌱 Sembrando ${products.length} productos...\n`);
+  console.warn(`🌱 Sembrando ${products.length} productos...\n`);
 
   for (const product of products) {
     const ref = doc(collection(db, "products"));
@@ -131,10 +131,10 @@ async function seed(): Promise<void> {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    console.log(`✔ ${product.name}`);
+    console.warn(`✔ ${product.name}`);
   }
 
-  console.log(`\n✅ ${products.length} productos creados correctamente.`);
+  console.warn(`\n✅ ${products.length} productos creados correctamente.`);
   process.exit(0);
 }
 

@@ -15,11 +15,9 @@ export interface ProductFiltersProps {
 }
 
 const DEFAULT_CATEGORIES: readonly CategoryOption[] = [
-  { id: 'electronics', label: 'ElectrÃ³nicos' },
-  { id: 'clothing', label: 'Ropa' },
-  { id: 'books', label: 'Libros' },
-  { id: 'home', label: 'Hogar' },
-  { id: 'sports', label: 'Deportes' },
+  { id: 'action-figures', label: 'Figuras de Acción' },
+  { id: 'video-games', label: 'Videojuegos' },
+  { id: 'shoes', label: 'Zapatillas' },
 ];
 
 export function ProductFilters({

@@ -9,7 +9,7 @@
 import type { Money, CurrencyCode } from './pricing';
 import type { FirestoreTimestamp } from './dates';
 
-export const PRODUCT_CATEGORIES = ['electronics', 'clothing', 'books', 'home', 'sports'] as const;
+export const PRODUCT_CATEGORIES = ['action-figures', 'video-games', 'shoes'] as const;
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 

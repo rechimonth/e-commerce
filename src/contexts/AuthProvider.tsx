@@ -9,6 +9,7 @@ import {
   signOutUser,
   getUserProfile,
   observeAuthState,
+  getCurrentUserIdToken,
 } from '@/infrastructure/firebase/auth';
 import { toUserProfile } from '@/infrastructure/firebase/adapters';
 import { AuthContext } from '@/contexts/AuthContext';
@@ -124,10 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         code: (err.code as ServiceError['code']) ?? 'INTERNAL_ERROR',
         message: err.message ?? 'An error occurred',
       });
-      setUser(null);
-      setRoleState('unauthenticated');
     }
   }, [user?.uid]);
+
+  const getIdToken = useCallback(async () => {
+    return getCurrentUserIdToken();
+  }, []);
 
   useEffect(() => {
     try {
@@ -171,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut: handleSignOut,
         refreshUserProfile,
         clearError,
+        getIdToken,
       }}
     >
       {bootstrapError ? (

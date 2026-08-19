@@ -110,23 +110,27 @@ export const productsService = {
 
   async fetchProductsAdmin(params: FetchProductsParams = {}): Promise<ProductsResult> {
     return firebaseTryCatch(async () => {
-      const { search, category, limit = DEFAULT_LIMIT } = params;
+      const { search, category, limit = DEFAULT_LIMIT, cursor } = params;
 
-      const allProducts = await getProducts({ category, limit });
+      const allProducts = await getProducts({ category, limit: limit ? limit + 1 : undefined });
       const items = allProducts.map(toProduct);
 
       const filtered = search
         ? items.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
         : items;
 
+      const pageItems = cursor ? filtered : filtered.slice(0, limit);
+      const hasNext = filtered.length > limit;
+      const hasPrev = Boolean(cursor);
+
       return {
-        items: filtered,
+        items: pageItems,
         pagination: {
-          page: 1,
+          page: cursor ? 2 : 1,
           limit,
           total: filtered.length,
-          hasNext: filtered.length >= limit,
-          hasPrev: false,
+          hasNext,
+          hasPrev,
         },
       };
     });

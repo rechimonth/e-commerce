@@ -19,7 +19,7 @@ const mockProducts: ProductDTO[] = [
     description: 'Latest iPhone',
     priceCents: 99999,
     currency: 'USD',
-    category: 'electronics',
+    category: 'action-figures',
     imageKey: 'iphone-key',
     imageUrl: 'https://example.com/iphone.jpg',
     stock: 10,
@@ -36,7 +36,7 @@ const mockProducts: ProductDTO[] = [
     description: 'Android flagship',
     priceCents: 89999,
     currency: 'USD',
-    category: 'electronics',
+    category: 'action-figures',
     imageKey: 'samsung-key',
     imageUrl: 'https://example.com/samsung.jpg',
     stock: 5,
@@ -78,10 +78,10 @@ describe('productsService', () => {
     const { getProducts } = await import('@/infrastructure/firebase/firestore');
     (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
 
-    await productsService.fetchProducts({ category: 'electronics' });
+    await productsService.fetchProducts({ category: 'action-figures' });
 
     expect(getProducts).toHaveBeenCalledWith({
-      category: 'electronics',
+      category: 'action-figures',
       isActive: true,
       limit: 20,
     });

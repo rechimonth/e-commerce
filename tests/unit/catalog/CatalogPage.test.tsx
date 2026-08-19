@@ -36,7 +36,7 @@ const mockProducts: Product[] = [
     name: 'iPhone 15 Pro',
     description: 'Latest iPhone',
     price: { amount: 99999, currency: 'USD' },
-    category: 'electronics',
+    category: 'action-figures',
     image: { url: 'https://example.com/iphone.jpg', alt: 'iPhone', key: 'key1' },
     stock: 10,
     rating: 4.8,

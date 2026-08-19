@@ -11,11 +11,9 @@ import type { Product, ProductCategory } from '@/types/domain';
 import { PRODUCT_CATEGORIES } from '@/types/domain';
 
 const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  electronics: 'Electrónicos',
-  clothing: 'Ropa',
-  books: 'Libros',
-  home: 'Hogar',
-  sports: 'Deportes',
+  'action-figures': 'Figuras de Acción',
+  'video-games': 'Videojuegos',
+  'shoes': 'Zapatillas',
 };
 
 export function CatalogPage() {

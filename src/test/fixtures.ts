@@ -6,7 +6,7 @@ export const productFixture: Product = {
   name: 'Test Product',
   description: 'A test product description',
   price: money(1999),
-  category: 'electronics',
+  category: 'action-figures',
   image: {
     url: 'https://example.com/img.png',
     alt: 'Test Product',

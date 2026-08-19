@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ordersService } from '@/services/ordersService';
+import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
 import type { Order } from '@/types/order';
 import type { ServiceError } from '@/types/api';
@@ -16,10 +17,26 @@ import { useEffect, useState } from 'react';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [status, setStatus] = useState<AsyncStatus>('loading');
   const [error, setError] = useState<ServiceError | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    if (!order || !user) return;
+    setIsCancelling(true);
+    try {
+      await ordersService.cancelOrder(order.id, user.uid);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      // error will be reflected on next fetch
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -56,7 +73,7 @@ export function OrderDetailPage() {
 
     void fetchOrder();
     return () => abort.abort();
-  }, [id]);
+  }, [id, refreshKey]);
 
   const isLoading = status === 'loading' || status === 'idle';
 
@@ -77,11 +94,7 @@ export function OrderDetailPage() {
         {status === 'error' && error && (
           <ErrorState
             message={error.message}
-            onRetry={() => {
-              if (id) {
-                void ordersService.fetchOrder(id);
-              }
-            }}
+            onRetry={() => setRefreshKey((k) => k + 1)}
           />
         )}
 
@@ -98,21 +111,33 @@ export function OrderDetailPage() {
 
         {order && status === 'success' && (
           <div className="space-y-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-neutral-500">
-                  Pedido #{order.id}
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  {order.createdAt.toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-neutral-500">
+                    Pedido #{order.id}
+                  </p>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {order.createdAt.toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <OrderStatusBadge status={order.status} />
+                  {order.status === 'pending' && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={handleCancel}
+                      disabled={isCancelling}
+                    >
+                      {isCancelling ? 'Cancelando...' : 'Cancelar pedido'}
+                    </Button>
+                  )}
+                </div>
               </div>
-              <OrderStatusBadge status={order.status} />
-            </div>
 
             <div className="space-y-4">
               {order.items.map((item) => (
@@ -143,30 +168,30 @@ export function OrderDetailPage() {
 
             <div className="rounded-lg border border-neutral-200 p-6">
               <h2 className="mb-4 text-lg font-semibold text-neutral-900">Resumen financiero</h2>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Subtotal</span>
-                  <Price amount={order.pricing.subtotal} />
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Impuestos</span>
-                  <Price amount={order.pricing.tax} />
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Envío</span>
-                  <Price amount={order.pricing.shipping} />
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Descuento</span>
-                  <Price amount={order.pricing.discount} />
-                </div>
-                <div className="border-t border-neutral-200 pt-2">
-                  <div className="flex justify-between text-lg font-semibold">
-                    <span>Total</span>
-                    <Price amount={order.pricing.total} />
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-600">Subtotal</span>
+                    <Price amount={order.pricing.subtotal.amount} currency={order.pricing.subtotal.currency} />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-600">Impuestos</span>
+                    <Price amount={order.pricing.tax.amount} currency={order.pricing.tax.currency} />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-600">Envío</span>
+                    <Price amount={order.pricing.shipping.amount} currency={order.pricing.shipping.currency} />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-600">Descuento</span>
+                    <Price amount={order.pricing.discount.amount} currency={order.pricing.discount.currency} />
+                  </div>
+                  <div className="border-t border-neutral-200 pt-2">
+                    <div className="flex justify-between text-lg font-semibold">
+                      <span>Total</span>
+                      <Price amount={order.pricing.total.amount} currency={order.pricing.total.currency} />
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="mt-6 space-y-2">
                 <p className="text-sm">
@@ -192,13 +217,70 @@ export function OrderDetailPage() {
                   </p>
                 )}
               </div>
-            </div>
+              </div>
 
-            <Button variant="outline" asChild>
-              <Link to={ROUTES.ORDERS}>Volver a mis órdenes</Link>
-            </Button>
-          </div>
-        )}
+              {(order.trackingNumber || order.carrier || order.estimatedDelivery) && (
+                <div className="rounded-lg border border-neutral-200 p-6">
+                  <h2 className="mb-4 text-lg font-semibold text-neutral-900">Seguimiento de envío</h2>
+                  <div className="space-y-2">
+                    {order.trackingNumber && (
+                      <p className="text-sm">
+                        <span className="text-neutral-600">Número de seguimiento:</span>{' '}
+                        <span className="text-neutral-900">{order.trackingNumber}</span>
+                      </p>
+                    )}
+                    {order.carrier && (
+                      <p className="text-sm">
+                        <span className="text-neutral-600">Paquetería:</span>{' '}
+                        <span className="text-neutral-900">{order.carrier}</span>
+                      </p>
+                    )}
+                    {order.estimatedDelivery && (
+                      <p className="text-sm">
+                        <span className="text-neutral-600">Entrega estimada:</span>{' '}
+                        <span className="text-neutral-900">
+                          {order.estimatedDelivery.toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {order.attachments && order.attachments.length > 0 && (
+                <div className="rounded-lg border border-neutral-200 p-6">
+                  <h2 className="mb-4 text-lg font-semibold text-neutral-900">Archivos adjuntos</h2>
+                  <div className="space-y-2">
+                    {order.attachments.map((att) => (
+                      <a
+                        key={att.key}
+                        href={att.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-3 rounded-md border border-neutral-200 p-3 hover:bg-neutral-50"
+                      >
+                        <img src={att.url} alt={att.name} className="h-10 w-10 rounded object-cover" />
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900">{att.name}</p>
+                          <p className="text-xs text-neutral-500">
+                            {att.uploadedAt.toLocaleString('es-ES')}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button variant="outline" asChild>
+                <Link to={ROUTES.ORDERS}>Volver a mis órdenes</Link>
+              </Button>
+            </div>
+          )}
       </Container>
     </>
   );

@@ -8,7 +8,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -85,12 +85,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const body = req.body;
   if (!body || typeof body !== 'object') return jsonError(res, 400, 'Invalid request body');
-  const { fileName, fileType, fileSize, prefix = 'products' } = body as Record<string, unknown>;
+  const { fileName, fileType, fileSize, prefix = 'products', orderId } = body as Record<string, unknown>;
   if (typeof fileName !== 'string' || !fileName.trim()) return jsonError(res, 400, 'fileName is required and must be a string');
   if (typeof fileType !== 'string' || !fileType.trim()) return jsonError(res, 400, 'fileType is required and must be a string');
   if (typeof fileSize !== 'number' || !Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_FILE_SIZE_BYTES) {
     return jsonError(res, 400, 'Invalid file size. Maximum is 5 MB');
   }
+  if (orderId !== undefined && typeof orderId !== 'string') return jsonError(res, 400, 'orderId must be a string when provided');
 
   const extension = getExtension(fileName);
   if (!ALLOWED_EXTENSIONS.has(extension)) return jsonError(res, 400, 'Invalid file extension');
@@ -109,9 +110,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const s3 = new S3Client({ region, credentials: { accessKeyId, secretAccessKey } });
-    const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: fileType.split(';')[0]?.trim().toLowerCase() });
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: fileType.split(';')[0]?.trim().toLowerCase(),
+      ACL: 'public-read',
+    });
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: PRESIGNED_URL_EXPIRY_SECONDS });
     const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+
+    const app = getFirebaseAdminApp();
+    const firestore = getFirestore(app);
+    const uploadMeta = {
+      key,
+      url: publicUrl,
+      fileName,
+      fileType,
+      fileSize,
+      prefix: safePrefix,
+      orderId: orderId ?? null,
+      createdAt: serverTimestamp(),
+    };
+
+    await firestore.collection('uploads').doc(key).set(uploadMeta);
+
+    if (orderId) {
+      const orderRef = doc(firestore, 'orders', orderId);
+      const orderSnap = await getDoc(orderRef);
+      if (orderSnap.exists()) {
+        const currentAttachments = (orderSnap.data()?.attachments ?? []) as Array<{
+          key: string;
+          url: string;
+          name: string;
+          uploadedAt: unknown;
+        }>;
+        await updateDoc(orderRef, {
+          attachments: [
+            ...currentAttachments,
+            {
+              key,
+              url: publicUrl,
+              name: fileName,
+              uploadedAt: serverTimestamp(),
+            },
+          ],
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+
     return res.status(200).json({ success: true, data: { uploadUrl, key, publicUrl, expiresIn: PRESIGNED_URL_EXPIRY_SECONDS } });
   } catch (error) {
     console.error('S3 presigned URL generation failed:', error instanceof Error ? error.message : 'unknown');

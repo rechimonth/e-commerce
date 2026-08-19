@@ -211,6 +211,16 @@ export async function createUserProfile(profile: UserProfileDTO): Promise<void> 
 }
 
 /**
+ * Obtiene el ID token del usuario autenticado actual.
+ * Requiere que el usuario haya iniciado sesión.
+ */
+export async function getCurrentUserIdToken(): Promise<string> {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error('No authenticated user');
+  return user.getIdToken();
+}
+/**
  * Deriva UserRoleState del estado de autenticación actual.
  * Útil para el AuthContext durante el bootstrap de la sesión.
  */

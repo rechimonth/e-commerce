@@ -5,6 +5,7 @@
  * Envoltura todas las llamadas en firebaseTryCatch para consistencia de errores.
  */
 import type { Order, OrderDTO, OrderStatus } from '@/types/order';
+import { canTransition } from '@/types/order';
 import { firebaseTryCatch } from '@/infrastructure/firebase/config';
 import { FirebaseInfraError } from '@/infrastructure/firebase/config';
 import {
@@ -13,6 +14,9 @@ import {
   updateOrderStatus as firestoreUpdateOrderStatus,
   getOrder as firestoreGetOrder,
   createOrder as firestoreCreateOrder,
+  updateOrderTracking as firestoreUpdateOrderTracking,
+  addOrderAttachment as firestoreAddOrderAttachment,
+  removeOrderAttachment as firestoreRemoveOrderAttachment,
 } from '@/infrastructure/firebase/firestore';
 
 function toOrder(dto: OrderDTO): Order {
@@ -50,6 +54,15 @@ function toOrder(dto: OrderDTO): Order {
     billingAddress: dto.billingAddress,
     paymentMethod: dto.paymentMethod,
     notes: dto.notes,
+    trackingNumber: dto.trackingNumber,
+    carrier: dto.carrier,
+    estimatedDelivery: dto.estimatedDelivery ? new Date(dto.estimatedDelivery) : undefined,
+    attachments: dto.attachments?.map((att) => ({
+      key: att.key,
+      url: att.url,
+      name: att.name,
+      uploadedAt: new Date(att.uploadedAt),
+    })),
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt),
   };
@@ -72,12 +85,17 @@ export const ordersService = {
     });
   },
 
-  async cancelOrder(_orderId: string, _userId: string): Promise<Order> {
+  async cancelOrder(orderId: string, userId: string): Promise<Order> {
     return firebaseTryCatch(async () => {
-      throw new FirebaseInfraError(
-        'INTERNAL_ERROR',
-        'La cancelación de ordenes no esta implementada en esta fase',
-      );
+      const dto = await firestoreGetOrder(orderId);
+      if (!dto) throw new FirebaseInfraError('NOT_FOUND', 'Orden no encontrada');
+      if (dto.userId !== userId) throw new FirebaseInfraError('FORBIDDEN', 'No tienes permiso para cancelar esta orden');
+      if (!canTransition(dto.status, 'cancelled')) {
+        throw new FirebaseInfraError('VALIDATION_ERROR', 'Esta orden no se puede cancelar en su estado actual');
+      }
+      const updated = await firestoreUpdateOrderStatus(orderId, 'cancelled', userId);
+      if (!updated) throw new FirebaseInfraError('INTERNAL_ERROR', 'No se pudo cancelar la orden');
+      return toOrder(updated);
     });
   },
 
@@ -102,6 +120,46 @@ export const ordersService = {
   ): Promise<Order | null> {
     return firebaseTryCatch(async () => {
       const dto = await firestoreUpdateOrderStatus(orderId, status, adminUserId);
+      if (!dto) return null;
+      return toOrder(dto);
+    });
+  },
+
+  async updateTracking(
+    orderId: string,
+    trackingNumber: string,
+    carrier: string,
+    estimatedDelivery: Date,
+  ): Promise<Order | null> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreUpdateOrderTracking(
+        orderId,
+        trackingNumber,
+        carrier,
+        estimatedDelivery.getTime(),
+      );
+      if (!dto) return null;
+      return toOrder(dto);
+    });
+  },
+
+  async addAttachment(
+    orderId: string,
+    attachment: { key: string; url: string; name: string; uploadedAt: Date },
+  ): Promise<Order | null> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreAddOrderAttachment(orderId, {
+        ...attachment,
+        uploadedAt: attachment.uploadedAt.getTime(),
+      });
+      if (!dto) return null;
+      return toOrder(dto);
+    });
+  },
+
+  async removeAttachment(orderId: string, key: string): Promise<Order | null> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreRemoveOrderAttachment(orderId, key);
       if (!dto) return null;
       return toOrder(dto);
     });

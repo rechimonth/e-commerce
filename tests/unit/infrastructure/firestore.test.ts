@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => {
     description: 'A test product',
     priceCents: 9999,
     currency: 'USD',
-    category: 'electronics',
+    category: 'action-figures',
     imageKey: 'img-1',
     imageUrl: 'https://example.com/img.png',
     stock: 10,
@@ -163,7 +163,7 @@ describe('Firebase firestore', () => {
     expect(products[0]!.id).toBe('p1');
     expect(products[0]!.name).toBe('Test Product');
     expect(products[0]!.priceCents).toBe(9999);
-    expect(products[0]!.category).toBe('electronics');
+    expect(products[0]!.category).toBe('action-figures');
   });
 
   it('getProducts with category filter applies where clause', async () => {
@@ -172,9 +172,9 @@ describe('Firebase firestore', () => {
       mocks.makeQuerySnap([{ id: 'p1', data: mocks.mockProductData }]),
     );
 
-    await getProducts({ category: 'electronics' });
+    await getProducts({ category: 'action-figures' });
 
-    expect(mocks.firestoreStubs.where).toHaveBeenCalledWith('category', '==', 'electronics');
+    expect(mocks.firestoreStubs.where).toHaveBeenCalledWith('category', '==', 'action-figures');
   });
 
   it('getProducts with isActive filter applies where clause', async () => {
@@ -216,7 +216,7 @@ describe('Firebase firestore', () => {
       description: 'New',
       priceCents: 5000,
       currency: 'USD',
-      category: 'books',
+      category: 'shoes',
       imageKey: 'img-1',
       imageUrl: 'https://example.com/img.png',
       stock: 5,

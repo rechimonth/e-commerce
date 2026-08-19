@@ -140,7 +140,7 @@ function docToProduct(docSnap: QueryDocumentSnapshot<DocumentData>): ProductDTO 
     description: data.description ?? '',
     priceCents: data.priceCents ?? data.price_cents ?? 0,
     currency: (data.currency ?? 'USD') as ProductDTO['currency'],
-    category: data.category ?? 'electronics',
+    category: data.category ?? 'action-figures',
     imageKey: data.imageKey ?? data.image_key ?? '',
     imageUrl: data.imageUrl ?? data.image_url ?? '',
     stock: data.stock ?? 0,
@@ -168,13 +168,6 @@ export async function createOrder(
   return firebaseTryCatch(async () => {
     const db = getFirebaseDb();
     const now = serverTimestamp();
-    const initialTransition = {
-      from: 'pending' as OrderStatus,
-      to: 'pending' as OrderStatus,
-      by: order.userId,
-      timestamp: now,
-    };
-
     const docRef = doc(collection(db, 'orders'));
     const items = order.items.map((item) => ({ ...item, orderId: docRef.id }));
     await setDoc(docRef, {
@@ -182,7 +175,7 @@ export async function createOrder(
       items,
       id: docRef.id,
       status: 'pending',
-      statusHistory: [initialTransition],
+      statusHistory: [],
       createdAt: now,
       updatedAt: now,
     });
@@ -288,6 +281,86 @@ export async function updateOrderStatus(id: string, status: OrderStatus, adminUs
   });
 }
 
+export async function updateOrderTracking(
+  id: string,
+  trackingNumber: string,
+  carrier: string,
+  estimatedDelivery: number,
+): Promise<OrderDTO | null> {
+  return firebaseTryCatch(async () => {
+    const db = getFirebaseDb();
+    const docRef = doc(db, 'orders', id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+
+    await updateDoc(docRef, {
+      trackingNumber,
+      carrier,
+      estimatedDelivery,
+      updatedAt: serverTimestamp(),
+    });
+
+    const updatedSnap = await getDoc(docRef);
+    if (!updatedSnap.exists()) return null;
+    return snapToOrder(updatedSnap);
+  });
+}
+
+export async function addOrderAttachment(
+  id: string,
+  attachment: { key: string; url: string; name: string; uploadedAt: number },
+): Promise<OrderDTO | null> {
+  return firebaseTryCatch(async () => {
+    const db = getFirebaseDb();
+    const docRef = doc(db, 'orders', id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+
+    const currentData = docSnap.data();
+    const currentAttachments = (currentData.attachments ?? []) as Array<{
+      key: string;
+      url: string;
+      name: string;
+      uploadedAt: number;
+    }>;
+
+    await updateDoc(docRef, {
+      attachments: [...currentAttachments, attachment],
+      updatedAt: serverTimestamp(),
+    });
+
+    const updatedSnap = await getDoc(docRef);
+    if (!updatedSnap.exists()) return null;
+    return snapToOrder(updatedSnap);
+  });
+}
+
+export async function removeOrderAttachment(id: string, key: string): Promise<OrderDTO | null> {
+  return firebaseTryCatch(async () => {
+    const db = getFirebaseDb();
+    const docRef = doc(db, 'orders', id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+
+    const currentData = docSnap.data();
+    const currentAttachments = (currentData.attachments ?? []) as Array<{
+      key: string;
+      url: string;
+      name: string;
+      uploadedAt: number;
+    }>;
+
+    await updateDoc(docRef, {
+      attachments: currentAttachments.filter((att) => att.key !== key),
+      updatedAt: serverTimestamp(),
+    });
+
+    const updatedSnap = await getDoc(docRef);
+    if (!updatedSnap.exists()) return null;
+    return snapToOrder(updatedSnap);
+  });
+}
+
 function snapToOrder(docSnap: QueryDocumentSnapshot<DocumentData>): OrderDTO {
   const data = docSnap.data();
 
@@ -343,6 +416,17 @@ function snapToOrder(docSnap: QueryDocumentSnapshot<DocumentData>): OrderDTO {
       {},
     paymentMethod: (data.paymentMethod ?? data.payment_method ?? 'card') as PaymentMethod,
     notes: data.notes,
+    trackingNumber: data.trackingNumber,
+    carrier: data.carrier,
+    estimatedDelivery: data.estimatedDelivery ? toMillis(data.estimatedDelivery) : undefined,
+    attachments: data.attachments?.map((att: { key: string; url: string; name: string; uploadedAt: number }) => ({
+      key: att.key,
+      url: att.url,
+      name: att.name,
+      uploadedAt: att.uploadedAt,
+    })),
+    createdAt: toMillis(data.createdAt),
+    updatedAt: toMillis(data.updatedAt),
   };
 }
 

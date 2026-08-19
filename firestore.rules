@@ -72,6 +72,7 @@ service cloud.firestore {
         'shippingCents', 'discountCents', 'totalCents', 'currency',
         'status', 'statusHistory', 'createdAt', 'updatedAt',
         'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
+        'trackingNumber', 'carrier', 'estimatedDelivery', 'attachments',
       ]);
     }
 
@@ -82,6 +83,7 @@ service cloud.firestore {
         'shippingCents', 'discountCents', 'totalCents', 'currency',
         'status', 'statusHistory', 'createdAt', 'updatedAt',
         'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
+        'trackingNumber', 'carrier', 'estimatedDelivery', 'attachments',
       ])
         && request.resource.data.userId == resource.data.userId
         && request.resource.data.status == resource.data.status
@@ -95,7 +97,11 @@ service cloud.firestore {
         && request.resource.data.statusHistory == resource.data.statusHistory
         && request.resource.data.shippingAddress == resource.data.shippingAddress
         && request.resource.data.billingAddress == resource.data.billingAddress
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.trackingNumber == resource.data.trackingNumber
+        && request.resource.data.carrier == resource.data.carrier
+        && request.resource.data.estimatedDelivery == resource.data.estimatedDelivery
+        && request.resource.data.attachments == resource.data.attachments;
     }
 
     /** Allowed top-level keys for a user document. */
@@ -189,10 +195,7 @@ service cloud.firestore {
         && pricesValid()
         && itemsValid()
         && request.resource.data.statusHistory is list
-        && request.resource.data.statusHistory.size() == 1
-        && request.resource.data.statusHistory[0].from == 'pending'
-        && request.resource.data.statusHistory[0].to == 'pending'
-        && request.resource.data.statusHistory[0].by == request.auth.uid;
+        && request.resource.data.statusHistory.size() == 0;
 
       // Update: admin full access; customer can only edit notes.
       allow update: if isAdmin() && orderAllowedFields()

@@ -1,0 +1,13 @@
+const fs=require('fs');  
+const p='src/components/catalog/ProductFilters.tsx';  
+const content=fs.readFileSync(p,'utf8');  
+const lines=content.split('\n');  
+const newLines=lines.slice(0,17);  
+newLines.push('const DEFAULT_CATEGORIES: readonly CategoryOption[] = [');  
+newLines.push('  { id: '+String.fromCharCode(39)+'action-figures'+String.fromCharCode(39)+', label: '+String.fromCharCode(39)+'Figuras de Accion'+String.fromCharCode(39)+' },');  
+newLines.push('  { id: '+String.fromCharCode(39)+'video-games'+String.fromCharCode(39)+', label: '+String.fromCharCode(39)+'Videojuegos'+String.fromCharCode(39)+' },');  
+newLines.push('  { id: '+String.fromCharCode(39)+'shoes'+String.fromCharCode(39)+', label: '+String.fromCharCode(39)+'Zapatillas'+String.fromCharCode(39)+' },');  
+newLines.push('];');  
+newLines.push(...lines.slice(23));  
+fs.writeFileSync(p, newLines.join('\n'), 'utf8');  
+console.log('Fixed ProductFilters.tsx');  

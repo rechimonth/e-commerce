@@ -67,6 +67,15 @@ export interface Order {
   readonly billingAddress: Address;
   readonly paymentMethod: PaymentMethod;
   readonly notes?: string;
+  readonly trackingNumber?: string;
+  readonly carrier?: string;
+  readonly estimatedDelivery?: Date;
+  readonly attachments?: ReadonlyArray<{
+    readonly key: string;
+    readonly url: string;
+    readonly name: string;
+    readonly uploadedAt: Date;
+  }>;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -100,6 +109,15 @@ export interface OrderDTO {
   readonly billingAddress: Address;
   readonly paymentMethod: PaymentMethod;
   readonly notes?: string;
+  readonly trackingNumber?: string;
+  readonly carrier?: string;
+  readonly estimatedDelivery?: number;
+  readonly attachments?: ReadonlyArray<{
+    readonly key: string;
+    readonly url: string;
+    readonly name: string;
+    readonly uploadedAt: number;
+  }>;
   readonly createdAt?: number;
   readonly updatedAt?: number;
 }

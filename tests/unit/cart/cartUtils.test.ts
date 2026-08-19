@@ -18,7 +18,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     name: 'Test Product',
     description: 'A test product',
     price: money(10.0),
-    category: 'electronics',
+    category: 'action-figures',
     image: { url: 'https://example.com/img.png', alt: 'Test', key: 'img-1' },
     stock: 10,
     rating: 4.5,

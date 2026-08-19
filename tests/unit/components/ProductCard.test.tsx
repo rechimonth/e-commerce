@@ -9,7 +9,7 @@ const mockProduct = {
   currency: 'USD',
   imageUrl: 'https://img',
   imageAlt: 'Producto Test',
-  category: 'electronics',
+  category: 'action-figures',
   stock: 10,
   rating: 4.5,
   reviewCount: 100,
@@ -24,7 +24,7 @@ describe('ProductCard', () => {
 
   it('renderiza categoria', () => {
     render(<ProductCard {...mockProduct} />);
-    expect(screen.getByText('electronics')).toBeInTheDocument();
+    expect(screen.getByText('action-figures')).toBeInTheDocument();
   });
 
   it('renderiza rating y reviewCount', () => {

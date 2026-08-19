@@ -8,12 +8,31 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/hooks/useAuth';
+import { ordersService } from '@/services/ordersService';
 import { ROUTES } from '@/constants/routes';
+import type { Order } from '@/types/order';
+import { useState } from 'react';
 
 export function OrdersPage() {
   const { user } = useAuth();
   const userId = user?.uid ?? '';
   const { orders, status, error, isLoading, isEmpty, refetch } = useOrders(userId);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  const handleCancel = async (order: Order) => {
+    if (!user) return;
+    setCancellingId(order.id);
+    try {
+      await ordersService.cancelOrder(order.id, user.uid);
+      refetch();
+    } catch {
+      refetch();
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const canCancel = (order: Order) => order.status === 'pending';
 
   return (
     <>
@@ -84,13 +103,23 @@ export function OrdersPage() {
                     {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
                   </span>
                   <div className="flex items-center gap-4">
-                    <Price amount={order.pricing.total} />
+                    <Price amount={order.pricing.total.amount} currency={order.pricing.total.currency} />
                     <Link
                       to={ROUTES.ORDER_DETAIL(order.id)}
                       className="text-sm font-medium text-primary-600 hover:text-primary-700"
                     >
                       Ver detalle
                     </Link>
+                    {canCancel(order) && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(order)}
+                        disabled={cancellingId === order.id}
+                        className="text-sm font-medium text-error-600 hover:text-error-700 disabled:opacity-50"
+                      >
+                        {cancellingId === order.id ? 'Cancelando...' : 'Cancelar'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider } from '@/contexts/AuthProvider';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
@@ -135,7 +135,7 @@ describe('AdminOrdersPage', () => {
     const selects = screen.getAllByRole('combobox');
     await userEvent.selectOptions(selects[0]!, 'processing');
 
-    expect(ordersService.fetchAllOrders).toHaveBeenCalledWith({ status: 'processing' });
+    expect(ordersService.fetchAllOrders).toHaveBeenCalledWith({ status: 'processing', limit: 50 });
   });
 
   it('changes order status', async () => {
@@ -157,8 +157,10 @@ describe('AdminOrdersPage', () => {
       expect(screen.getByText(/order-1/i)).toBeInTheDocument();
     });
 
-    const selects = screen.getAllByRole('combobox');
-    await userEvent.selectOptions(selects[1]!, 'processing');
+    const row = screen.getByText(/order-1/i).closest('tr');
+    if (!row) throw new Error('Row not found');
+    const statusSelect = within(row).getByRole('combobox');
+    await userEvent.selectOptions(statusSelect, 'processing');
 
     expect(ordersService.updateOrderStatus).toHaveBeenCalledWith('order-1', 'processing', 'admin-1');
   });

@@ -43,6 +43,12 @@ describe('AdminLayout', () => {
     expect(screen.getByTestId('nav-link-dashboard')).toHaveTextContent('Dashboard');
     expect(screen.getByTestId('nav-link-productos')).toHaveTextContent('Productos');
     expect(screen.getByTestId('nav-link-órdenes')).toHaveTextContent('Órdenes');
+    expect(screen.getByTestId('nav-link-usuarios')).toHaveTextContent('Usuarios');
+    expect(screen.getByTestId('nav-link-categorías')).toHaveTextContent('Categorías');
+    expect(screen.getByTestId('nav-link-media')).toHaveTextContent('Media');
+    expect(screen.getByTestId('nav-link-analytics')).toHaveTextContent('Analytics');
+    expect(screen.getByTestId('nav-link-auditoría')).toHaveTextContent('Auditoría');
+    expect(screen.getByTestId('nav-link-configuración')).toHaveTextContent('Configuración');
   });
 
   it('renders user display name in sidebar', () => {

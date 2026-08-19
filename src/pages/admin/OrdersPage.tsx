@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Price } from '@/components/ui/Price';
 import { ordersService } from '@/services/ordersService';
+import { exportToCsv } from '@/utils/export';
 import { canTransition } from '@/types/order';
 import type { Order, OrderStatus } from '@/types/order';
 import type { ServiceError } from '@/types/api';
@@ -24,6 +26,13 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: 'cancelled', label: 'Cancelado' },
 ];
 
+const PAYMENT_METHODS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'card', label: 'Tarjeta' },
+  { value: 'paypal', label: 'PayPal' },
+  { value: 'cash', label: 'Contra reembolso' },
+];
+
 export function AdminOrdersPage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -31,14 +40,17 @@ export function AdminOrdersPage() {
   const [error, setError] = useState<ServiceError | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const [statusSelectValue, setStatusSelectValue] = useState<string>('');
+  const [statusSelectValues, setStatusSelectValues] = useState<Record<string, string>>({});
 
   const fetchOrders = useCallback(async () => {
     setStatus('loading');
     setError(null);
     try {
-      const filters = statusFilter === 'all' ? undefined : { status: statusFilter };
+      const filters: { status?: OrderStatus; limit?: number } = {};
+      if (statusFilter !== 'all') filters.status = statusFilter;
+      filters.limit = 50;
       const result = await ordersService.fetchAllOrders(filters);
       setOrders(result);
       setStatus('success');
@@ -57,6 +69,26 @@ export function AdminOrdersPage() {
     void fetchOrders();
   }, [fetchOrders]);
 
+  const handleExport = () => {
+    const columns = [
+      { key: 'id', label: 'ID' },
+      { key: 'userId', label: 'Usuario' },
+      { key: 'createdAt', label: 'Fecha' },
+      { key: 'total', label: 'Total' },
+      { key: 'status', label: 'Estado' },
+      { key: 'paymentMethod', label: 'Pago' },
+    ];
+    const rows = filteredOrders.map((o) => ({
+      id: o.id.slice(-8),
+      userId: o.userId,
+      createdAt: o.createdAt.toLocaleDateString('es-ES'),
+      total: `${o.pricing.total.currency} ${o.pricing.total.amount}`,
+      status: o.status,
+      paymentMethod: o.paymentMethod,
+    }));
+    exportToCsv('ordenes', rows, columns);
+  };
+
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingOrderId(orderId);
     try {
@@ -66,7 +98,11 @@ export function AdminOrdersPage() {
         setOrders((prev) =>
           prev ? prev.map((o) => (o.id === orderId ? updated : o)) : prev,
         );
-        setStatusSelectValue("");
+        setStatusSelectValues((prev) => {
+          const next = { ...prev };
+          delete next[orderId];
+          return next;
+        });
       } else {
         void fetchOrders();
       }
@@ -86,7 +122,8 @@ export function AdminOrdersPage() {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.userId.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    const matchesPayment = paymentFilter === 'all' || order.paymentMethod === paymentFilter;
+    return matchesSearch && matchesPayment;
   }) ?? [];
 
   const getAvailableStatusTransitions = (current: OrderStatus): OrderStatus[] => {
@@ -109,21 +146,27 @@ export function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-neutral-900">Órdenes</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-neutral-900">Órdenes</h1>
+        <Button variant="outline" size="md" onClick={handleExport}>
+          Exportar CSV
+        </Button>
+      </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
-          <select
+          <Select
+            label="Estado"
+            options={STATUS_FILTERS}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-          >
-            {STATUS_FILTERS.map((filter) => (
-              <option key={filter.value} value={filter.value}>
-                {filter.label}
-              </option>
-            ))}
-          </select>
+          />
+          <Select
+            label="Pago"
+            options={PAYMENT_METHODS}
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+          />
         </div>
 
         <div className="w-full max-w-md">
@@ -186,10 +229,11 @@ export function AdminOrdersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
                         <select
-                          value={statusSelectValue}
-                          onChange={(e) =>
-                            handleStatusChange(order.id, e.target.value as OrderStatus)
-                          }
+                          value={statusSelectValues[order.id] ?? ''}
+                          onChange={(e) => {
+                            setStatusSelectValues((prev) => ({ ...prev, [order.id]: e.target.value }));
+                            handleStatusChange(order.id, e.target.value as OrderStatus);
+                          }}
                           disabled={updatingOrderId === order.id || getAvailableStatusTransitions(order.status).length === 0}
                           className="text-sm"
                         >

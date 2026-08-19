@@ -5,9 +5,9 @@ import { ProductFilters } from '@/components/catalog/ProductFilters';
 import type { ProductCategory } from '@/types/domain';
 
 const categories = [
-  { id: 'electronics' as ProductCategory, label: 'Electrónicos', count: 12 },
-  { id: 'clothing' as ProductCategory, label: 'Ropa', count: 5 },
-  { id: 'books' as ProductCategory, label: 'Libros' },
+  { id: 'action-figures' as ProductCategory, label: 'Electrónicos', count: 12 },
+  { id: 'video-games' as ProductCategory, label: 'Ropa', count: 5 },
+  { id: 'shoes' as ProductCategory, label: 'Libros' },
 ];
 
 describe('ProductFilters', () => {
@@ -25,12 +25,12 @@ describe('ProductFilters', () => {
     const onSelect = vi.fn();
     render(<ProductFilters categories={categories} selected="all" onSelect={onSelect} />);
     fireEvent.click(screen.getByText('Electrónicos'));
-    expect(onSelect).toHaveBeenCalledWith('electronics');
+    expect(onSelect).toHaveBeenCalledWith('action-figures');
   });
 
   it('highlights selected category', () => {
     render(
-      <ProductFilters categories={categories} selected="electronics" onSelect={() => {}} />,
+      <ProductFilters categories={categories} selected="action-figures" onSelect={() => {}} />,
     );
     const btn = screen.getByText('Electrónicos');
     expect(btn).toHaveClass('border-primary-600');

@@ -1,8 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { DashboardStats } from '@/types/admin';
-import { type ReactNode } from 'react';
+import { dashboardService } from '@/services/dashboardService';
+import type { DashboardStats, OrderStatusCounts } from '@/types/admin';
+import type { ServiceError } from '@/types/api';
+import type { AsyncStatus } from '@/types/ui';
+import type { ReactNode } from 'react';
 
 interface StatCardProps {
   readonly label: string;
@@ -26,21 +30,44 @@ function StatCard({ label, value, icon, subtitle }: StatCardProps) {
   );
 }
 
-export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats }) {
-  const orderStatusCounts = stats?.orderStatusCounts ?? {
-    pending: 0,
-    processing: 0,
-    completed: 0,
-    cancelled: 0,
-  };
+export function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [status, setStatus] = useState<AsyncStatus>('loading');
+  const [error, setError] = useState<ServiceError | null>(null);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    setStatus('loading');
+    setError(null);
+
+    const fetchStats = async () => {
+      try {
+        const data = await dashboardService.getStats();
+        if (controller.signal.aborted) return;
+        setStats(data);
+        setStatus('success');
+      } catch (e) {
+        if (controller.signal.aborted) return;
+        const serviceError: ServiceError = {
+          code: 'INTERNAL_ERROR',
+          message: e instanceof Error ? e.message : 'Error al cargar estadísticas',
+          details: { error: e instanceof Error ? e.message : String(e) },
+        };
+        setError(serviceError);
+        setStatus('error');
+      }
+    };
+
+    void fetchStats();
+    return () => controller.abort();
+  }, []);
+
+  const orderStatusCounts = stats?.orderStatusCounts ?? emptyCounts();
   const pendingCount = stats?.pendingOrders ?? 0;
   const completedCount = stats?.completedOrders ?? 0;
   const totalProducts = stats?.totalProducts ?? 0;
   const totalRevenueCents = stats?.totalRevenue?.amount ?? 0;
-
   const revenueCurrency = stats?.totalRevenue?.currency ?? 'USD';
-
   const formattedRevenue = (totalRevenueCents / 100).toLocaleString('es-ES', {
     style: 'currency',
     currency: revenueCurrency,
@@ -80,6 +107,12 @@ export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats 
           </svg>
         } subtitle="últimos 30 dias" />
       </div>
+
+      {status === 'error' && error && (
+        <Card className="p-6">
+          <p className="text-error-600">{error.message}</p>
+        </Card>
+      )}
 
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold text-neutral-900">Estados de órdenes</h2>
@@ -126,6 +159,10 @@ export function AdminDashboardPage({ stats }: { readonly stats?: DashboardStats 
   );
 }
 
+function emptyCounts(): OrderStatusCounts {
+  return { pending: 0, processing: 0, completed: 0, cancelled: 0 };
+}
+
 function StatusCard({
   label,
   count,
@@ -151,3 +188,4 @@ function StatusCard({
 }
 
 export default AdminDashboardPage;
+

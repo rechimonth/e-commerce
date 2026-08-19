@@ -43,7 +43,7 @@ MaybeDescribe('Firestore Security Rules', () => {
     description: 'A test product',
     priceCents: 9999,
     currency: 'USD',
-    category: 'electronics',
+    category: 'action-figures',
     imageKey: 'img-1',
     imageUrl: 'https://example.com/img.png',
     stock: 10,

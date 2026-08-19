@@ -2,3 +2,4 @@ export { productsService, type ProductsResult, type FetchProductsParams } from '
 export type { ProductDTO } from './productsService';
 export { ordersService } from './ordersService';
 export { checkoutService } from './checkoutService';
+export { dashboardService } from './dashboardService';

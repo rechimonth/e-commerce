@@ -27,7 +27,7 @@ const mockProducts = [
     name: 'Producto 1',
     description: 'Desc',
     price: { amount: 1000, currency: 'USD' },
-    category: 'electronics',
+    category: 'action-figures',
     image: { url: 'https://img1', alt: 'img1', key: 'k1' },
     stock: 10,
     rating: 4,
@@ -93,7 +93,7 @@ describe('AdminProductsPage', () => {
       expect(screen.getByText('Producto 1')).toBeInTheDocument();
     });
 
-    const input = screen.getByPlaceholderText('Buscar productos......');
+    const input = screen.getByPlaceholderText('Buscar productos...');
     await userEvent.type(input, 'Producto 1');
 
     expect(input).toHaveValue('Producto 1');

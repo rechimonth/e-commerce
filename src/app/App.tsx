@@ -15,6 +15,7 @@ const CartPage = lazy(() => import('@/pages/CartPage'));
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'));
 const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'));
+const OrderConfirmationPage = lazy(() => import('@/pages/OrderConfirmationPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -25,6 +26,14 @@ const AdminProductsPage = lazy(() => import('@/pages/admin/ProductsPage'));
 const AdminProductFormPage = lazy(() => import('@/pages/admin/ProductFormPage'));
 const AdminOrdersPage = lazy(() => import('@/pages/admin/OrdersPage'));
 const AdminOrderDetailPage = lazy(() => import('@/pages/admin/OrderDetailPage'));
+const AdminUsersPage = lazy(() => import('@/pages/admin/UsersPage'));
+const AdminUserFormPage = lazy(() => import('@/pages/admin/UserFormPage'));
+const AdminCategoriesPage = lazy(() => import('@/pages/admin/CategoriesPage'));
+const AdminCategoryFormPage = lazy(() => import('@/pages/admin/CategoryFormPage'));
+const AdminUploadsPage = lazy(() => import('@/pages/admin/UploadsPage'));
+const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AnalyticsPage'));
+const AdminAuditLogPage = lazy(() => import('@/pages/admin/AuditLogPage'));
+const AdminSettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 
 function App() {
   return (
@@ -50,6 +59,10 @@ function App() {
               path="/orders/:id"
               element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>}
             />
+            <Route
+              path={ROUTES.ORDER_CONFIRMATION(':id')}
+              element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>}
+            />
             <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
             <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
@@ -67,6 +80,16 @@ function App() {
               <Route path="products/:id/edit" element={<AdminProductFormPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="orders/:id" element={<AdminOrderDetailPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="users/new" element={<AdminUserFormPage />} />
+              <Route path="users/:id/edit" element={<AdminUserFormPage />} />
+              <Route path="categories" element={<AdminCategoriesPage />} />
+              <Route path="categories/new" element={<AdminCategoryFormPage />} />
+              <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
+              <Route path="uploads" element={<AdminUploadsPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route path="audit" element={<AdminAuditLogPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />

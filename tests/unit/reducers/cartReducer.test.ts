@@ -10,7 +10,7 @@ function productFixture(): Product {
     name: 'Test Product',
     description: 'Test description',
     price: money(1000),
-    category: 'electronics',
+    category: 'action-figures',
     image: { url: 'https://example.com/img.png', alt: 'Test', key: 'img-1' },
     stock: 10,
     rating: 4.5,

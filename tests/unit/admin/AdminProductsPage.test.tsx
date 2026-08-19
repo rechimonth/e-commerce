@@ -20,7 +20,7 @@ const mockProducts = [
     name: 'Test Product 1',
     description: 'Desc 1',
     price: { amount: 10000, currency: 'USD' as const },
-    category: 'electronics' as const,
+    category: 'action-figures' as const,
     image: { url: 'img1.jpg', alt: 'Test 1', key: 'key1' },
     stock: 10,
     rating: 4,
@@ -35,7 +35,7 @@ const mockProducts = [
     name: 'Test Product 2',
     description: 'Desc 2',
     price: { amount: 25000, currency: 'USD' as const },
-    category: 'clothing' as const,
+    category: 'video-games' as const,
     image: { url: 'img2.jpg', alt: 'Test 2', key: 'key2' },
     stock: 5,
     rating: 3,
@@ -113,7 +113,7 @@ describe('AdminProductsPage', () => {
       expect(screen.getByText('Test Product 1')).toBeInTheDocument();
     });
 
-    const input = screen.getByPlaceholderText('Buscar productos......');
+    const input = screen.getByPlaceholderText('Buscar productos...');
     await userEvent.type(input, 'Product 1');
 
     expect(screen.getByText('Test Product 1')).toBeInTheDocument();

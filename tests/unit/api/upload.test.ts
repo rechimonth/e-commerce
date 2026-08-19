@@ -36,15 +36,27 @@ vi.mock('firebase-admin/auth', () => ({
   getAuth: vi.fn(() => ({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'admin-1' }) })),
 }));
 
-vi.mock('firebase-admin/firestore', () => ({
-  getFirestore: vi.fn(() => ({
-    collection: vi.fn(() => ({
-      doc: vi.fn(() => ({
-        get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ role: 'admin' }) }),
-      })),
+vi.mock('firebase-admin/firestore', () => {
+  const mockDoc = vi.fn(() => ({
+    get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ role: 'admin', attachments: [] }) }),
+    set: vi.fn().mockResolvedValue(undefined),
+    update: vi.fn().mockResolvedValue(undefined),
+  }));
+  const mockCollection = vi.fn(() => ({
+    doc: mockDoc,
+    add: vi.fn(),
+  }));
+  return {
+    getFirestore: vi.fn(() => ({
+      collection: mockCollection,
+      doc: mockDoc,
     })),
-  })),
-}));
+    doc: mockDoc,
+    getDoc: vi.fn(async (ref: { get: () => Promise<{ exists: boolean; data: () => Record<string, unknown> }> }) => ref.get()),
+    updateDoc: vi.fn().mockResolvedValue(undefined),
+    serverTimestamp: vi.fn(),
+  };
+});
 
 // --------------------------------------------------------------
 // Helpers de test

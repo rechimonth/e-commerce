@@ -144,9 +144,9 @@ export default function Playground() {
           <h2 className="text-xl font-semibold">CategoryFilter</h2>
           <CategoryFilter
             categories={[
-              { id: 'electronics', label: 'Electrónicos', count: 12 },
-              { id: 'clothing', label: 'Ropa', count: 5 },
-              { id: 'books', label: 'Libros', count: 8 },
+              { id: 'action-figures', label: 'Electrónicos', count: 12 },
+              { id: 'video-games', label: 'Videojuegos', count: 5 },
+              { id: 'shoes', label: 'Zapatillas', count: 8 },
             ]}
             selected={selectedCategory}
             onSelect={setSelectedCategory}
@@ -195,7 +195,7 @@ export default function Playground() {
                   priceCents={9999}
                   currency="USD"
                   imageUrl="https://via.placeholder.com/150"
-                  category="electronics"
+                  category="action-figures"
                   rating={4.5}
                   reviewCount={128}
                   stock={10}

@@ -89,7 +89,7 @@ export function CheckoutPage() {
       );
       if (!createdOrder) return;
       clearCart();
-      navigate(ROUTES.ORDERS);
+      navigate(ROUTES.ORDER_CONFIRMATION(createdOrder.id));
     } catch {
       // useCheckout conserva el error visible y el carrito intacto.
     }

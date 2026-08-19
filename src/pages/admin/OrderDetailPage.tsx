@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { OrderStatusBadge } from '@/components/ui/OrderStatusBadge';
 import { Alert } from '@/components/ui/Alert';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -22,6 +23,14 @@ export function AdminOrderDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [statusSelectValue, setStatusSelectValue] = useState<string>('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [carrier, setCarrier] = useState('');
+  const [estimatedDelivery, setEstimatedDelivery] = useState('');
+  const [isSavingTracking, setIsSavingTracking] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchOrder = useCallback(async () => {
     if (!id) return;
@@ -32,6 +41,9 @@ export function AdminOrderDetailPage() {
       if (result) {
         setOrder(result);
         setStatus('success');
+        setTrackingNumber(result.trackingNumber ?? '');
+        setCarrier(result.carrier ?? '');
+        setEstimatedDelivery(result.estimatedDelivery ? result.estimatedDelivery.toISOString().slice(0, 10) : '');
       } else {
         setError({ code: 'NOT_FOUND', message: 'Orden no encontrada' });
         setStatus('error');
@@ -67,6 +79,70 @@ export function AdminOrderDetailPage() {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleSaveTracking = async () => {
+    if (!order || !trackingNumber.trim() || !carrier.trim() || !estimatedDelivery) return;
+    setIsSavingTracking(true);
+    setTrackingError(null);
+    try {
+      const updated = await ordersService.updateTracking(
+        order.id,
+        trackingNumber.trim(),
+        carrier.trim(),
+        new Date(estimatedDelivery),
+      );
+      if (updated) setOrder(updated);
+    } catch (e) {
+      setTrackingError(e instanceof Error ? e.message : 'Error al guardar seguimiento');
+    } finally {
+      setIsSavingTracking(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !order) return;
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const { getCurrentUserIdToken } = await import('@/infrastructure/firebase/auth');
+      const idToken = await getCurrentUserIdToken();
+      const formData = new FormData();
+      formData.append('fileName', file.name);
+      formData.append('fileType', file.type);
+      formData.append('fileSize', String(file.size));
+      formData.append('prefix', 'orders');
+      formData.append('orderId', order.id);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Error al subir archivo');
+      const attachment = {
+        key: data.data.key,
+        url: data.data.publicUrl,
+        name: file.name,
+        uploadedAt: new Date(),
+      };
+      const updated = await ordersService.addAttachment(order.id, attachment);
+      if (updated) setOrder(updated);
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Error al subir archivo');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAttachment = async (key: string) => {
+    if (!order) return;
+    const updated = await ordersService.removeAttachment(order.id, key);
+    if (updated) setOrder(updated);
   };
 
   const getAvailableTransitions = (current: OrderStatus): OrderStatus[] => {
@@ -146,6 +222,98 @@ export function AdminOrderDetailPage() {
       </Card>
 
       <Card className="p-6">
+        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Seguimiento de envío</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Input
+            label="Número de seguimiento"
+            value={trackingNumber}
+            onChange={(e) => setTrackingNumber(e.target.value)}
+            placeholder="Ej. 1Z999AA10123456784"
+          />
+          <Input
+            label="Paquetería"
+            value={carrier}
+            onChange={(e) => setCarrier(e.target.value)}
+            placeholder="Ej. FedEx, DHL, UPS"
+          />
+          <Input
+            label="Fecha estimada de entrega"
+            type="date"
+            value={estimatedDelivery}
+            onChange={(e) => setEstimatedDelivery(e.target.value)}
+          />
+        </div>
+        {trackingError && <p className="mt-2 text-sm text-error-600">{trackingError}</p>}
+        <div className="mt-4">
+          <Button
+            variant="solid"
+            size="sm"
+            onClick={handleSaveTracking}
+            disabled={isSavingTracking || !trackingNumber.trim() || !carrier.trim() || !estimatedDelivery}
+          >
+            {isSavingTracking ? 'Guardando...' : 'Guardar seguimiento'}
+          </Button>
+        </div>
+        {(order.trackingNumber || order.carrier || order.estimatedDelivery) && (
+          <div className="mt-4 rounded-md border border-neutral-200 p-4">
+            <p className="text-sm font-medium text-neutral-900">Información actual</p>
+            <p className="mt-1 text-sm text-neutral-600">Número: {order.trackingNumber}</p>
+            <p className="text-sm text-neutral-600">Paquetería: {order.carrier}</p>
+            <p className="text-sm text-neutral-600">Entrega estimada: {order.estimatedDelivery?.toLocaleDateString('es-ES')}</p>
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="mb-4 text-lg font-semibold text-neutral-900">Archivos adjuntos</h2>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? 'Subiendo...' : 'Subir archivo'}
+            </Button>
+          </div>
+        </div>
+        {uploadError && <p className="mt-2 text-sm text-error-600">{uploadError}</p>}
+        {order.attachments && order.attachments.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            {order.attachments.map((att) => (
+              <div key={att.key} className="flex items-center justify-between rounded-md border border-neutral-200 p-3">
+                <div className="flex items-center gap-3">
+                  <img src={att.url} alt={att.name} className="h-10 w-10 rounded object-cover" />
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900">{att.name}</p>
+                    <p className="text-xs text-neutral-500">{att.uploadedAt.toLocaleString('es-ES')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={att.url} target="_blank" rel="noreferrer">Abrir</a>
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={() => handleRemoveAttachment(att.key)}>
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-neutral-500">No hay archivos adjuntos</p>
+        )}
+      </Card>
+
+      <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold text-neutral-900">Productos</h2>
         <div className="space-y-4">
           {order.items.map((item) => (
@@ -169,7 +337,7 @@ export function AdminOrderDetailPage() {
       </Card>
 
       <Card className="p-6">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Informaciónón de envío</h2>
+        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Información de envío</h2>
         <div className="space-y-2">
           <p className="text-sm text-neutral-600">{order.shippingAddress.street}</p>
           <p className="text-sm text-neutral-600">
@@ -199,7 +367,7 @@ export function AdminOrderDetailPage() {
             <Price amount={order.pricing.tax.amount} currency={order.pricing.tax.currency} />
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-neutral-600">Envíoío</span>
+            <span className="text-neutral-600">Envío</span>
             <Price amount={order.pricing.shipping.amount} currency={order.pricing.shipping.currency} />
           </div>
           <div className="flex justify-between text-sm">
@@ -228,7 +396,7 @@ export function AdminOrderDetailPage() {
                 <p className="text-xs text-neutral-500">
                   Por: {entry.by} • {entry.timestamp.toLocaleString('es-ES')}
                 </p>
-                {entry.reason && <p className="text-xs text-neutral-500">Razónón: {entry.reason}</p>}
+                 {entry.reason && <p className="text-xs text-neutral-500">Razón: {entry.reason}</p>}
               </div>
             ))}
           </div>

@@ -18,7 +18,7 @@ const mockProducts: Product[] = [
     name: 'iPhone 15 Pro',
     description: 'Latest iPhone',
     price: { amount: 99999, currency: 'USD' },
-    category: 'electronics',
+    category: 'action-figures',
     image: { url: 'https://example.com/iphone.jpg', alt: 'iPhone 15 Pro', key: 'iphone-key' },
     stock: 10,
     rating: 4.8,
@@ -33,7 +33,7 @@ const mockProducts: Product[] = [
     name: 'Samsung Galaxy S24',
     description: 'Android flagship',
     price: { amount: 89999, currency: 'USD' },
-    category: 'electronics',
+    category: 'action-figures',
     image: { url: 'https://example.com/samsung.jpg', alt: 'Samsung', key: 'samsung-key' },
     stock: 5,
     rating: 4.5,
@@ -153,11 +153,11 @@ describe('useProducts', () => {
       pagination: { page: 1, limit: 20, total: 2, hasNext: false, hasPrev: false },
     });
 
-    renderHook(() => useProducts({ category: 'electronics' }));
+    renderHook(() => useProducts({ category: 'action-figures' }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith({
-        category: 'electronics',
+        category: 'action-figures',
         limit: 20,
         search: undefined,
       });
@@ -212,7 +212,7 @@ describe('useProducts', () => {
       pagination: { page: 1, limit: 20, total: 0, hasNext: false, hasPrev: false },
     });
 
-    rerender({ category: 'books' as ProductCategory | 'all' });
+    rerender({ category: 'shoes' as ProductCategory | 'all' });
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.products).toHaveLength(0);

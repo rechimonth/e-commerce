@@ -15,6 +15,7 @@ export interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
   clearError: () => void;
+  getIdToken: () => Promise<string>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

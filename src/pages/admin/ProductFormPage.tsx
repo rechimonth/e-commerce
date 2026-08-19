@@ -41,7 +41,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
     name: '',
     description: '',
     price: '',
-    category: 'electronics',
+    category: 'action-figures',
     stock: '',
     imageKey: '',
     imageUrl: '',
