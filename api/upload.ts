@@ -1,14 +1,8 @@
-/**
- * Vercel Serverless Function: genera presigned PUT URLs para imágenes de productos.
- *
- * El navegador nunca recibe credenciales AWS. Primero se valida el Firebase ID token
- * y el rol admin mediante firebase-admin; recién después se firma la operación S3.
- */
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -129,14 +123,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fileSize,
       prefix: safePrefix,
       orderId: orderId ?? null,
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     };
 
     await firestore.collection('uploads').doc(key).set(uploadMeta);
 
     if (orderId) {
-      const orderRef = doc(firestore, 'orders', orderId);
-      const orderSnap = await getDoc(orderRef);
+      const orderRef = firestore.collection('orders').doc(orderId);
+      const orderSnap = await orderRef.get();
       if (orderSnap.exists()) {
         const currentAttachments = (orderSnap.data()?.attachments ?? []) as Array<{
           key: string;
@@ -144,17 +138,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           name: string;
           uploadedAt: unknown;
         }>;
-        await updateDoc(orderRef, {
+        await orderRef.update({
           attachments: [
             ...currentAttachments,
             {
               key,
               url: publicUrl,
               name: fileName,
-              uploadedAt: serverTimestamp(),
+              uploadedAt: FieldValue.serverTimestamp(),
             },
           ],
-          updatedAt: serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       }
     }
