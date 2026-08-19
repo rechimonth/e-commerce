@@ -60,3 +60,4 @@ No quedan bloqueadores funcionales identificados en la revisión estática.
 12. prueba end-to-end en producción con customer y admin
 
 No inventar resultados de estas verificaciones.
+

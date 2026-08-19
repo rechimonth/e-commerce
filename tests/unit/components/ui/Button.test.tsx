@@ -28,7 +28,7 @@ describe('Button', () => {
   });
 
   it('renders as non-button element when asChild is true', () => {
-    render(<Button asChild>Test</Button>);
+    render(<Button asChild><span>Test</span></Button>);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByText('Test')).toBeInTheDocument();
   });

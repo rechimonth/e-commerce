@@ -2,7 +2,7 @@
   "name": "e-commerce",
   "version": "0.1.0",
   "private": true,
-  "description": "AI Driven E-Commerce \u2014 Proyecto Integrador 5",
+  "description": "E-Commerce — Proyecto Integrador 5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:rules": "RUN_RULES_TESTS=true vitest run tests/unit/security",
-    "typecheck:api": "tsc --noEmit -p tsconfig.api.json"
+    "typecheck:api": "tsc --noEmit -p tsconfig.api.json",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1112.0",
@@ -34,12 +35,13 @@
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^26.2.0",
     "@types/react": "^18.3.14",
     "@types/react-dom": "^18.3.0",
     "@vercel/node": "^5.10.1",
     "@vitejs/plugin-react-swc": "^4.3.0",
-    "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.16",
+    "dotenv": "^17.4.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react-hooks": "^5.1.0",
@@ -47,9 +49,10 @@
     "jsdom": "^25.0.0",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.12",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.0.0",
     "vite": "^5.4.1",
-    "vitest": "^4.1.10"
+    "vitest": "^2.1.9"
   }
 }

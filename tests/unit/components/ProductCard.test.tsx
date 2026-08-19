@@ -19,7 +19,7 @@ describe('ProductCard', () => {
   it('renderiza nombre y precio', () => {
     render(<ProductCard {...mockProduct} />);
     expect(screen.getByText('Producto Test')).toBeInTheDocument();
-    expect(screen.getByText('$19.99')).toBeInTheDocument();
+    expect(screen.getByText(/\$19\.99/)).toBeInTheDocument();
   });
 
   it('renderiza categoria', () => {

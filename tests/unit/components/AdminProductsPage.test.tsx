@@ -112,7 +112,7 @@ describe('AdminProductsPage', () => {
     userEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Confirmar eliminación')).toBeInTheDocument();
+      expect(screen.getByText('Confirmar eliminaciÃ³n')).toBeInTheDocument();
     });
   });
 });

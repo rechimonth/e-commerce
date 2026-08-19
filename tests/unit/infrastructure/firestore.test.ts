@@ -292,7 +292,7 @@ describe('Firebase firestore', () => {
       notes: 'Test order',
     });
 
-    expect(mocks.firestoreStubs.addDoc).toHaveBeenCalled();
+    expect(mocks.firestoreStubs.setDoc).toHaveBeenCalled();
     expect(result.id).toBe('order-1');
     expect(result.status).toBe('pending');
   });

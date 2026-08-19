@@ -1,4 +1,4 @@
-# AI Driven E-Commerce — Proyecto Integrador 5
+# E-Commerce — Proyecto Integrador 5
 
 SPA de e-commerce desarrollada con React 18, TypeScript, Vite, Firebase, AWS S3 y Vercel Serverless Functions. El proyecto implementa dos experiencias: **customer** para comprar y **admin** para gestionar productos y órdenes.
 
@@ -17,7 +17,6 @@ SPA de e-commerce desarrollada con React 18, TypeScript, Vite, Firebase, AWS S3 
 - Gestión de estados de órdenes.
 - Tests unitarios/integración y mocks de Firebase/AWS.
 
-> Los extras de Analytics, paginación avanzada y Reviews/Ratings no forman parte de esta entrega porque son opcionales en la consigna.
 
 ## Arquitectura
 
@@ -113,6 +112,8 @@ Nunca subir `.env`. Usar `.env.example` sin valores reales.
 
 ## Instalación
 
+Para configuración local detallada, consultar `docs/LOCAL_SETUP.md`.
+
 ```bash
 npm ci
 npm run dev
@@ -145,7 +146,7 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 Configurar las variables frontend y server-only en Project Settings → Environment Variables. Las credenciales privadas nunca se colocan en variables `VITE_*`.
 
-El despliegue público y su URL deben agregarse aquí una vez realizada la publicación final; no se inventa una URL antes de tener un deploy verificable.
+Producción: https://e-commerce-mauve-one-98.vercel.app/
 
 ## Testing
 

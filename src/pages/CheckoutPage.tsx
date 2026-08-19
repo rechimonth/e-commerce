@@ -248,7 +248,7 @@ export function CheckoutPage() {
                   className="w-full"
                   disabled={isProcessing}
                 >
-                  {isProcessing ? 'Procesando...' : `Pagar `}
+                  {isProcessing ? 'Procesando...' : `Pagar`}
                   {!isProcessing && <Price amount={totalPrice} />}
                 </Button>
               </form>
@@ -289,3 +289,4 @@ export function CheckoutPage() {
 }
 
 export default CheckoutPage;
+

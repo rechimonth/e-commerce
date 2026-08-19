@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Container } from '@/components/ui/Container';
-import { Navbar } from '@/components/ui/Navbar';
+import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Price } from '@/components/ui/Price';
@@ -25,7 +25,7 @@ export function ProductDetailPage() {
   if (noId) {
     return (
       <>
-        <Navbar brand="E-Commerce AI" />
+        <Header />
         <Container className="py-8">
           <EmptyState
             config={{
@@ -42,13 +42,7 @@ export function ProductDetailPage() {
 
   return (
     <>
-      <Navbar
-        brand="E-Commerce AI"
-        links={[
-          { label: 'Inicio', href: '/' },
-          { label: 'Catálogo', href: '/catalog' },
-        ]}
-      />
+      <Header />
       <Container className="py-8">
         <div className="mb-6 flex items-center gap-2">
           <Link to="/catalog" className="text-neutral-600 hover:text-neutral-900">
@@ -126,3 +120,4 @@ export function ProductDetailPage() {
 }
 
 export default ProductDetailPage;
+

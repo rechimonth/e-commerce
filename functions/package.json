@@ -2,7 +2,7 @@
   "name": "e-commerce-ai-functions",
   "version": "0.1.0",
   "private": true,
-  "description": "Serverless functions stubs for AI Driven E-Commerce",
+  "description": "Serverless functions stubs for E-Commerce",
   "main": "index.js",
   "scripts": {
     "test": "echo \"No tests in functions/ yet\" && exit 0"

@@ -1,6 +1,6 @@
 ﻿# Preparación Defensa Técnica — Proyecto Integrador 5 (continuación)
 
-> **Proyecto**: AI Driven E-Commerce (Patagonix Tech)  
+> **Proyecto**: E-Commerce (Patagonix Tech)  
 > **Evaluador**: Kilo (Staff Full-Stack Engineer)  
 > **Fecha**: 16/8/2026
 

@@ -24,7 +24,7 @@ service cloud.firestore {
 
     /** Admin = signed-in user whose profile role is 'admin'. */
     function isAdmin() {
-      return getUserRole() == 'admin';
+      return getUserRole() is string && getUserRole() == 'admin';
     }
 
     /** The request is for the user's own document (path param == auth.uid). */
@@ -52,18 +52,18 @@ service cloud.firestore {
         && request.resource.data.totalCents >= 0;
     }
 
-    /** Validate order items: each has positive priceCents and quantity. */
+    /** Validate order items: each has productId, name, priceCents >= 0, quantity >= 1, imageUrl, orderId. */
     function itemsValid() {
       return request.resource.data.items is list
         && request.resource.data.items.size() >= 1
-        && request.resource.data.items.hasAll([0])
+        && request.resource.data.items[0].productId is string
+        && request.resource.data.items[0].name is string
         && request.resource.data.items[0].priceCents is int
         && request.resource.data.items[0].priceCents >= 0
         && request.resource.data.items[0].quantity is int
         && request.resource.data.items[0].quantity >= 1
-        && request.resource.data.items[0].productId is string
-        && request.resource.data.items[0].name is string
-        && request.resource.data.items[0].imageUrl is string;
+        && request.resource.data.items[0].imageUrl is string
+        && request.resource.data.items[0].orderId is string;
     }
 
     function orderAllowedFields() {
@@ -211,3 +211,4 @@ service cloud.firestore {
     }
   }
 }
+

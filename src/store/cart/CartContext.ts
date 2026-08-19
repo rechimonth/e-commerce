@@ -13,6 +13,7 @@ export interface CartContextValue {
   readonly items: readonly CartItem[];
   readonly totalItems: number;
   readonly totalPrice: Money;
+  readonly discount: Money;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;

@@ -12,6 +12,7 @@ import {
   getUserOrders as firestoreGetUserOrders,
   updateOrderStatus as firestoreUpdateOrderStatus,
   getOrder as firestoreGetOrder,
+  createOrder as firestoreCreateOrder,
 } from '@/infrastructure/firebase/firestore';
 
 function toOrder(dto: OrderDTO): Order {
@@ -77,6 +78,13 @@ export const ordersService = {
         'INTERNAL_ERROR',
         'La cancelación de ordenes no esta implementada en esta fase',
       );
+    });
+  },
+
+  async createOrder(input: Omit<OrderDTO, 'id' | 'status' | 'statusHistory'>): Promise<Order> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreCreateOrder(input);
+      return toOrder(dto);
     });
   },
 

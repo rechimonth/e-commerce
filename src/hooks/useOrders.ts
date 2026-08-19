@@ -22,8 +22,15 @@ export function useOrders(userId: string): UseOrdersResult {
   const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
+    if (!userId) {
+      setOrders([]);
+      setError(null);
+      setStatus('idle');
+      return;
+    }
+
     const controller = new AbortController();
-    setOrders(null);
+    setOrders([]);
     setError(null);
     setStatus('loading');
 
@@ -61,3 +68,4 @@ export function useOrders(userId: string): UseOrdersResult {
     refetch,
   };
 }
+

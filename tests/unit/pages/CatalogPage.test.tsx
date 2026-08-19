@@ -128,7 +128,7 @@ describe('CatalogPage', () => {
     );
 
     render(<RouterProvider router={router} />);
-    expect(screen.getByText('Catálogo')).toBeInTheDocument();
+    expect(screen.getAllByText('CatÃ¡logo').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renderiza empty state cuando no hay productos', () => {

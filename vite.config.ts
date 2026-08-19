@@ -19,11 +19,6 @@ export default defineConfig({
     },
     include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     exclude: ['node_modules/**', 'tests/unit/security/**'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      reportOnFailure: true,
-    },
   },
   esbuild: {
     jsxImportSource: 'react',

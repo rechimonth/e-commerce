@@ -11,7 +11,8 @@ vi.mock('@/services/productsService', () => ({
   },
 }));
 
-import { productsService } from '@/services/productsService';
+const { productsService } = await import('@/services/productsService');
+const { fetchProductsAdmin, deleteProduct } = productsService;
 
 const mockProducts = [
   {
@@ -52,7 +53,7 @@ describe('AdminProductsPage', () => {
   });
 
   it('renders products in table', async () => {
-    vi.spyOn(productsService, 'fetchProductsAdmin').mockResolvedValue({
+    (fetchProductsAdmin as ReturnType<typeof vi.fn>).mockResolvedValue({
       items: mockProducts,
       pagination: { page: 1, limit: 20, total: 2, hasNext: false, hasPrev: false },
     });
@@ -72,11 +73,11 @@ describe('AdminProductsPage', () => {
   });
 
   it('shows delete confirmation modal when delete clicked', async () => {
-    vi.spyOn(productsService, 'fetchProductsAdmin').mockResolvedValue({
+    (fetchProductsAdmin as ReturnType<typeof vi.fn>).mockResolvedValue({
       items: mockProducts,
       pagination: { page: 1, limit: 20, total: 2, hasNext: false, hasPrev: false },
     });
-    vi.spyOn(productsService, 'deleteProduct').mockResolvedValue(true);
+    (deleteProduct as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
     render(
       <MemoryRouter initialEntries={['/admin/products']}>
@@ -97,7 +98,7 @@ describe('AdminProductsPage', () => {
   });
 
   it('filters products by search term', async () => {
-    vi.spyOn(productsService, 'fetchProductsAdmin').mockResolvedValue({
+    (fetchProductsAdmin as ReturnType<typeof vi.fn>).mockResolvedValue({
       items: mockProducts,
       pagination: { page: 1, limit: 20, total: 2, hasNext: false, hasPrev: false },
     });

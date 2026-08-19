@@ -32,6 +32,7 @@ export function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [statusSelectValue, setStatusSelectValue] = useState<string>('');
 
   const fetchOrders = useCallback(async () => {
     setStatus('loading');
@@ -65,6 +66,7 @@ export function AdminOrdersPage() {
         setOrders((prev) =>
           prev ? prev.map((o) => (o.id === orderId ? updated : o)) : prev,
         );
+        setStatusSelectValue("");
       } else {
         void fetchOrders();
       }
@@ -184,7 +186,7 @@ export function AdminOrdersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
                         <select
-                          value=""
+                          value={statusSelectValue}
                           onChange={(e) =>
                             handleStatusChange(order.id, e.target.value as OrderStatus)
                           }

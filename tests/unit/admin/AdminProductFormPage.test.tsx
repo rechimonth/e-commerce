@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AuthProvider } from '@/contexts/AuthProvider';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type * as ReactRouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
@@ -23,6 +24,22 @@ vi.mock('react-router-dom', async (importOriginal) => {
     useParams: vi.fn(),
   };
 });
+
+vi.mock('@/infrastructure/firebase/config', () => ({
+  getFirebaseDb: vi.fn(() => ({ _type: 'Firestore' })),
+  firebaseTryCatch: async (fn: () => Promise<unknown>) => fn(),
+  _resetFirebaseForTesting: vi.fn(),
+  initializeFirebase: vi.fn(),
+}));
+
+vi.mock('@/infrastructure/firebase/auth', () => ({
+  observeAuthState: vi.fn(() => vi.fn()),
+  signInWithEmail: vi.fn(),
+  signUpWithEmail: vi.fn(),
+  signInWithGoogle: vi.fn(),
+  signOutUser: vi.fn(),
+  getUserProfile: vi.fn(),
+}));
 
 import { useParams } from 'react-router-dom';
 
@@ -51,7 +68,9 @@ describe('AdminProductFormPage', () => {
   it('renders create form without product id', () => {
     render(
       <MemoryRouter initialEntries={['/admin/products/new']}>
-        <AdminProductFormPage />
+        <AuthProvider>
+          <AdminProductFormPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -67,7 +86,9 @@ describe('AdminProductFormPage', () => {
 
     render(
       <MemoryRouter initialEntries={['/admin/products/prod-1/edit']}>
-        <AdminProductFormPage />
+        <AuthProvider>
+          <AdminProductFormPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -98,14 +119,15 @@ describe('AdminProductFormPage', () => {
 
     render(
       <MemoryRouter initialEntries={['/admin/products/new']}>
-        <AdminProductFormPage />
+        <AuthProvider>
+          <AdminProductFormPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'New Product' } });
     fireEvent.change(screen.getByLabelText('Precio (USD)'), { target: { value: '99.99' } });
     fireEvent.change(screen.getByLabelText('Stock'), { target: { value: '5' } });
-    fireEvent.change(screen.getByLabelText('URL de la imagen'), { target: { value: 'img.jpg' } });
 
     fireEvent.click(screen.getByText('Crear producto'));
 
@@ -114,4 +136,3 @@ describe('AdminProductFormPage', () => {
     });
   });
 });
-

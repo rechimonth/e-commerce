@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import HomePage from '@/pages/HomePage';
@@ -57,26 +57,26 @@ describe('App Routing', () => {
   it('should render HomePage on /', () => {
     renderWithProviders(
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path='/' element={<HomePage />} />
+        <Route path='/cart' element={<CartPage />} />
+        <Route path='/checkout' element={<CheckoutPage />} />
+        <Route path='/orders' element={<OrdersPage />} />
+        <Route path='*' element={<NotFoundPage />} />
       </Routes>,
       ['/'],
     );
 
-    expect(screen.getByRole('heading', { name: /AI Driven E-Commerce/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /E-Commerce/i })).toBeInTheDocument();
   });
 
   it('should render NotFoundPage on unknown route', () => {
     renderWithProviders(
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path='/' element={<HomePage />} />
+        <Route path='/cart' element={<CartPage />} />
+        <Route path='/checkout' element={<CheckoutPage />} />
+        <Route path='/orders' element={<OrdersPage />} />
+        <Route path='*' element={<NotFoundPage />} />
       </Routes>,
       ['/nonexistent'],
     );
@@ -88,8 +88,8 @@ describe('App Routing', () => {
   it('should render CartPage on /cart', () => {
     renderWithProviders(
       <Routes>
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path='/cart' element={<CartPage />} />
+        <Route path='*' element={<NotFoundPage />} />
       </Routes>,
       ['/cart'],
     );
@@ -100,8 +100,8 @@ describe('App Routing', () => {
   it('should render CheckoutPage on /checkout', () => {
     renderWithProviders(
       <Routes>
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path='/checkout' element={<CheckoutPage />} />
+        <Route path='*' element={<NotFoundPage />} />
       </Routes>,
       ['/checkout'],
     );
@@ -112,8 +112,8 @@ describe('App Routing', () => {
   it('should render OrdersPage on /orders', () => {
     renderWithProviders(
       <Routes>
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path='/orders' element={<OrdersPage />} />
+        <Route path='*' element={<NotFoundPage />} />
       </Routes>,
       ['/orders'],
     );

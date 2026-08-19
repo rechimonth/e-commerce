@@ -15,7 +15,7 @@ export interface FooterProps {
 
 export function Footer({ brand, columns, copyright, socialLinks }: FooterProps) {
   const year = new Date().getFullYear();
-  const defaultCopyright = `© ${year} ${brand ?? 'E-Commerce AI'}. Todos los derechos reservados.`;
+  const defaultCopyright = `© ${year} ${brand ?? 'E-Commerce'}. Todos los derechos reservados.`;
 
   return (
     <footer className="mt-auto border-t border-neutral-200 bg-neutral-50">

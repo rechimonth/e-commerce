@@ -1,6 +1,6 @@
 # Plan de Implementación — Proyecto Integrador 5
 
-> **Proyecto**: AI Driven E-Commerce (Patagonix Tech)
+> **Proyecto**: E-Commerce (Patagonix Tech)
 > **Estado actual**: Repositorio inicializado, commit único, 36 tests fallando, build/lint OK
 > **Objetivo**: Llevar el proyecto a estado production-ready cumpliendo las 18 fases del requisito
 > **Metodología**: Inspeccionar → Planificar → Implementar → Testear → Reportar → Continuar

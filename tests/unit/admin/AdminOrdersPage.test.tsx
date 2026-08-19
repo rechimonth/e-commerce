@@ -1,14 +1,56 @@
-﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AuthProvider } from '@/contexts/AuthProvider';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: {
+      uid: 'admin-1',
+      email: 'admin@test.com',
+      displayName: 'Admin',
+      photoURL: null,
+      role: 'admin',
+      createdAt: new Date(),
+      lastLoginAt: new Date(),
+      preferences: { currency: 'USD', locale: 'es-MX', notifications: true },
+    },
+    roleState: 'admin',
+    session: { uid: 'admin-1', role: 'admin', isAuthenticated: true },
+    isLoading: false,
+    error: null,
+    signIn: vi.fn(),
+    signUp: vi.fn(),
+    signInWithGoogle: vi.fn(),
+    signOut: vi.fn(),
+    refreshUserProfile: vi.fn(),
+    clearError: vi.fn(),
+  }),
+}));
 
 vi.mock('@/services/ordersService', () => ({
   ordersService: {
     fetchAllOrders: vi.fn(),
     updateOrderStatus: vi.fn(),
   },
+}));
+
+vi.mock('@/infrastructure/firebase/config', () => ({
+  getFirebaseDb: vi.fn(() => ({ _type: 'Firestore' })),
+  firebaseTryCatch: async (fn: () => Promise<unknown>) => fn(),
+  _resetFirebaseForTesting: vi.fn(),
+  initializeFirebase: vi.fn(),
+}));
+
+vi.mock('@/infrastructure/firebase/auth', () => ({
+  observeAuthState: vi.fn(() => vi.fn()),
+  signInWithEmail: vi.fn(),
+  signUpWithEmail: vi.fn(),
+  signInWithGoogle: vi.fn(),
+  signOutUser: vi.fn(),
+  getUserProfile: vi.fn(),
 }));
 
 import { ordersService } from '@/services/ordersService';
@@ -43,11 +85,13 @@ describe('AdminOrdersPage', () => {
   });
 
   it('renders orders in table', async () => {
-    vi.spyOn(ordersService, 'fetchAllOrders').mockResolvedValue([mockOrder]);
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
 
     render(
       <MemoryRouter initialEntries={['/admin/orders']}>
-        <AdminOrdersPage />
+        <AuthProvider>
+          <AdminOrdersPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -58,11 +102,13 @@ describe('AdminOrdersPage', () => {
   });
 
   it('shows empty state when no orders', async () => {
-    vi.spyOn(ordersService, 'fetchAllOrders').mockResolvedValue([]);
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([]);
 
     render(
       <MemoryRouter initialEntries={['/admin/orders']}>
-        <AdminOrdersPage />
+        <AuthProvider>
+          <AdminOrdersPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -72,11 +118,13 @@ describe('AdminOrdersPage', () => {
   });
 
   it('filters orders by status', async () => {
-    vi.spyOn(ordersService, 'fetchAllOrders').mockResolvedValue([mockOrder]);
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
 
     render(
       <MemoryRouter initialEntries={['/admin/orders']}>
-        <AdminOrdersPage />
+        <AuthProvider>
+          <AdminOrdersPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -91,15 +139,17 @@ describe('AdminOrdersPage', () => {
   });
 
   it('changes order status', async () => {
-    vi.spyOn(ordersService, 'fetchAllOrders').mockResolvedValue([mockOrder]);
-    vi.spyOn(ordersService, 'updateOrderStatus').mockResolvedValue({
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    vi.mocked(ordersService.updateOrderStatus).mockResolvedValue({
       ...mockOrder,
       status: 'processing',
     });
 
     render(
       <MemoryRouter initialEntries={['/admin/orders']}>
-        <AdminOrdersPage />
+        <AuthProvider>
+          <AdminOrdersPage />
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -110,6 +160,6 @@ describe('AdminOrdersPage', () => {
     const selects = screen.getAllByRole('combobox');
     await userEvent.selectOptions(selects[1]!, 'processing');
 
-    expect(ordersService.updateOrderStatus).toHaveBeenCalledWith('order-1', 'processing', 'admin');
+    expect(ordersService.updateOrderStatus).toHaveBeenCalledWith('order-1', 'processing', 'admin-1');
   });
 });

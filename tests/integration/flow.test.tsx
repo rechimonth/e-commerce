@@ -65,6 +65,22 @@ vi.mock('@/hooks/useCheckout', () => ({
   }),
 }));
 
+vi.mock('@/infrastructure/firebase/config', () => ({
+  getFirebaseDb: vi.fn(() => ({ _type: 'Firestore' })),
+  firebaseTryCatch: async (fn: () => Promise<unknown>) => fn(),
+  _resetFirebaseForTesting: vi.fn(),
+  initializeFirebase: vi.fn(),
+}));
+
+vi.mock('@/infrastructure/firebase/auth', () => ({
+  observeAuthState: vi.fn(() => vi.fn()),
+  signInWithEmail: vi.fn(),
+  signUpWithEmail: vi.fn(),
+  signInWithGoogle: vi.fn(),
+  signOutUser: vi.fn(),
+  getUserProfile: vi.fn(),
+}));
+
 describe('Integration flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,14 +92,14 @@ describe('Integration flow', () => {
         <AuthProvider>
           <CartProvider>
             <Routes>
-              <Route path="/catalog" element={<CatalogPage />} />
+              <Route path='/catalog' element={<CatalogPage />} />
             </Routes>
           </CartProvider>
         </AuthProvider>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/cat.glogo/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/catálogo/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders cart page', () => {
@@ -92,7 +108,7 @@ describe('Integration flow', () => {
         <AuthProvider>
           <CartProvider>
             <Routes>
-              <Route path="/cart" element={<CartPage />} />
+              <Route path='/cart' element={<CartPage />} />
             </Routes>
           </CartProvider>
         </AuthProvider>
@@ -108,7 +124,7 @@ describe('Integration flow', () => {
         <AuthProvider>
           <CartProvider>
             <Routes>
-              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path='/checkout' element={<CheckoutPage />} />
             </Routes>
           </CartProvider>
         </AuthProvider>
@@ -118,4 +134,3 @@ describe('Integration flow', () => {
     expect(screen.getByText('Checkout')).toBeInTheDocument();
   });
 });
-

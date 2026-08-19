@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [roleState, setRoleState] = useState<UserRoleState>('loading');
   const [error, setError] = useState<ServiceError | null>(null);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   const isLoading = roleState === 'loading';
 
@@ -129,17 +130,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user?.uid]);
 
   useEffect(() => {
-    const unsubscribe = observeAuthState((profile) => {
-      if (profile) {
-        setUser(toUserProfile(profile));
-        setRoleState(profile.role === 'admin' ? 'admin' : 'customer');
-      } else {
-        setUser(null);
-        setRoleState('unauthenticated');
-      }
-    });
+    try {
+      const unsubscribe = observeAuthState((profile) => {
+        if (profile) {
+          setUser(toUserProfile(profile));
+          setRoleState(profile.role === 'admin' ? 'admin' : 'customer');
+        } else {
+          setUser(null);
+          setRoleState('unauthenticated');
+        }
+      });
 
-    return unsubscribe;
+      return unsubscribe;
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error ? e.message : 'No se pudo inicializar Firebase.';
+      setBootstrapError(message);
+      setUser(null);
+      setRoleState('unauthenticated');
+      return undefined;
+    }
   }, []);
 
   const session: AuthSession | null =
@@ -163,7 +173,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearError,
       }}
     >
-      {children}
+      {bootstrapError ? (
+        <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
+          <div className="w-full max-w-lg rounded-xl border border-error-500/20 bg-white p-6 shadow-sm">
+            <h1 className="text-lg font-semibold text-neutral-900">
+              No se pudo iniciar la aplicación
+            </h1>
+            <p className="mt-2 text-sm text-neutral-600">
+              Falta configuración de Firebase para este entorno. Revisa las variables
+              VITE_FIREBASE_* y vuelve a iniciar el servidor.
+            </p>
+            <pre className="mt-4 overflow-auto rounded-lg bg-neutral-900 p-4 text-xs text-neutral-100">
+              {bootstrapError}
+            </pre>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

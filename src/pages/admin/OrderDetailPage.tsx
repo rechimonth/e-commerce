@@ -21,6 +21,7 @@ export function AdminOrderDetailPage() {
   const [error, setError] = useState<ServiceError | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [statusSelectValue, setStatusSelectValue] = useState<string>('');
 
   const fetchOrder = useCallback(async () => {
     if (!id) return;
@@ -59,6 +60,7 @@ export function AdminOrderDetailPage() {
       const updated = await ordersService.updateOrderStatus(order.id, newStatus, user.uid);
       if (updated) {
         setOrder(updated);
+        setStatusSelectValue("");
       }
     } catch (e) {
       setUpdateError(e instanceof Error ? e.message : 'Error al actualizar estado');
@@ -124,7 +126,7 @@ export function AdminOrderDetailPage() {
 
           <div className="flex items-center gap-3">
             <select
-              value=""
+              value={statusSelectValue}
               onChange={(e) => handleStatusChange(e.target.value as OrderStatus)}
               disabled={isUpdating || getAvailableTransitions(order.status).length === 0}
               className="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"

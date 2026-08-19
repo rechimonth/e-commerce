@@ -77,7 +77,7 @@ export function Header() {
     </div>
   );
 
-  return <Navbar brand="E-Commerce AI" links={navLinks} rightContent={rightContent} />;
+  return <Navbar brand="E-Commerce" links={navLinks} rightContent={rightContent} />;
 }
 
 export default Header;

@@ -1,4 +1,4 @@
-# Flujo de Upload de Imágenes — AWS S3 + Vercel Serverless
+# Flujo de Upload de ImÃ­genes â€” AWS S3 + Vercel Serverless
 
 ## Arquitectura
 
@@ -6,14 +6,14 @@ Browser
   ? POST /api/upload (fileName, fileType, token)
 Vercel Serverless Function
   ? valida auth + rol admin
-  ? valida extensión, content type, tamaño
+  ? valida extensiÃ³n, content type, tamaÃ±o
   ? genera key segura
   ? AWS SDK
   ? genera presigned PUT URL (5 min)
 Browser
   ? PUT directo a S3
 S3
-  ? URL pública almacenada en Product
+  ? URL pÃºblica almacenada en Product
 
 ## Seguridad
 
@@ -24,12 +24,12 @@ S3
 
 ## Variables de entorno (Vercel)
 
-| Variable | Descripción |
+| Variable | DescripciÃ³n |
 |----------|-------------|
 | AWS_ACCESS_KEY_ID | Clave de acceso AWS |
 | AWS_SECRET_ACCESS_KEY | Secreto AWS |
 | AWS_S3_BUCKET | Nombre del bucket S3 |
-| AWS_REGION | Región AWS (ej: us-east-1) |
+| AWS_REGION | RegiÃ³n AWS (ej: us-east-1) |
 
 ## Endpoint
 
@@ -55,11 +55,11 @@ S3
 ```
 
 ### Errores
-- `400`: validación fallida (extensión, tipo, tamaño)
-- `401`: token faltante o inválido
+- `400`: validaciÃ³n fallida (extensiÃ³n, tipo, tamaÃ±o)
+- `401`: token faltante o invÃ¡lido
 - `403`: rol no admin
-- `405`: método no POST
-- `500`: error AWS o configuración
+- `405`: mÃ­todo no POST
+- `500`: error AWS o configuraciÃ³n
 
 ## Frontend
 

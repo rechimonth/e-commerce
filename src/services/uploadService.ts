@@ -1,10 +1,10 @@
 /**
- * UploadService — capa de servicios para upload de imágenes a S3.
+ * UploadService â€” capa de servicios para upload de imÃ¡genes a S3.
  *
  * Flujo:
  * 1. Solicitar presigned URL al backend (/api/upload).
  * 2. Subir el archivo directamente a S3 con PUT.
- * 3. Devolver la URL pública para guardarla en el producto.
+ * 3. Devolver la URL pÃºblica para guardarla en el producto.
  */
 
 export interface UploadFileResult {
@@ -19,7 +19,7 @@ export interface UploadFileParams {
 
 export const uploadService = {
   async uploadFile({ file, prefix = 'products' }: UploadFileParams): Promise<UploadFileResult> {
-    // Validaciones locales rápidas antes de tocar la red
+    // Validaciones locales rÃ¡pidas antes de tocar la red
     const maxSize = 5 * 1024 * 1024; // 5 MB
     if (file.size > maxSize) {
       throw new Error(`File too large. Max size is ${maxSize / (1024 * 1024)} MB`);
@@ -80,7 +80,7 @@ export const uploadService = {
 };
 
 async function getFirebaseIdToken(): Promise<string | null> {
-  // Import dinámico para evitar ciclos y asegurar que firebase esté listo
+  // Import dinÃ¡mico para evitar ciclos y asegurar que firebase estÃ¡ listo
   const { getAuth } = await import('firebase/auth');
   const auth = getAuth();
   const user = auth.currentUser;

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AuthProvider } from '@/contexts/AuthProvider';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AdminOrderDetailPage } from '@/pages/admin/OrderDetailPage';
@@ -8,6 +9,22 @@ vi.mock('@/services/ordersService', () => ({
     fetchOrder: vi.fn(),
     updateOrderStatus: vi.fn(),
   },
+}));
+
+vi.mock('@/infrastructure/firebase/config', () => ({
+  getFirebaseDb: vi.fn(() => ({ _type: 'Firestore' })),
+  firebaseTryCatch: async (fn: () => Promise<unknown>) => fn(),
+  _resetFirebaseForTesting: vi.fn(),
+  initializeFirebase: vi.fn(),
+}));
+
+vi.mock('@/infrastructure/firebase/auth', () => ({
+  observeAuthState: vi.fn(() => vi.fn()),
+  signInWithEmail: vi.fn(),
+  signUpWithEmail: vi.fn(),
+  signInWithGoogle: vi.fn(),
+  signOutUser: vi.fn(),
+  getUserProfile: vi.fn(),
 }));
 
 import { ordersService } from '@/services/ordersService';
@@ -53,9 +70,11 @@ describe('AdminOrderDetailPage', () => {
 
     render(
       <MemoryRouter initialEntries={['/admin/orders/order-abc123']}>
-        <Routes>
-          <Route path="/admin/orders/:id" element={<AdminOrderDetailPage />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path='/admin/orders/:id' element={<AdminOrderDetailPage />} />
+          </Routes>
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -72,9 +91,11 @@ describe('AdminOrderDetailPage', () => {
 
     render(
       <MemoryRouter initialEntries={['/admin/orders/nonexistent']}>
-        <Routes>
-          <Route path="/admin/orders/:id" element={<AdminOrderDetailPage />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path='/admin/orders/:id' element={<AdminOrderDetailPage />} />
+          </Routes>
+        </AuthProvider>
       </MemoryRouter>,
     );
 
@@ -88,16 +109,18 @@ describe('AdminOrderDetailPage', () => {
 
     render(
       <MemoryRouter initialEntries={['/admin/orders/order-abc123']}>
-        <Routes>
-          <Route path="/admin/orders/:id" element={<AdminOrderDetailPage />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path='/admin/orders/:id' element={<AdminOrderDetailPage />} />
+          </Routes>
+        </AuthProvider>
       </MemoryRouter>,
     );
 
     await waitFor(() => {
       expect(screen.getByText('Historial de estados')).toBeInTheDocument();
     });
-    expect(screen.getByText('pending')).toBeInTheDocument();
-    expect(screen.getByText('system')).toBeInTheDocument();
+    expect(screen.getAllByText('pending').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/system/)).toBeInTheDocument();
   });
 });

@@ -7,7 +7,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (isLoading || roleState === 'loading') {
-    return <div className="flex min-h-screen items-center justify-center">Cargando…</div>;
+    return <div className="flex min-h-screen items-center justify-center">Cargandoâ€¦</div>;
   }
 
   if (roleState === 'unauthenticated') {

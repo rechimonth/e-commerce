@@ -12,9 +12,9 @@ import type { VercelRequest } from '@vercel/node';
 
 vi.mock('@aws-sdk/client-s3', () => {
   const mockSend = vi.fn();
-  const MockS3Client = vi.fn(() => ({
-    send: mockSend,
-  }));
+  const MockS3Client = vi.fn(function MockS3Client() {
+    return { send: mockSend };
+  });
 
   return {
     S3Client: MockS3Client,
@@ -172,7 +172,7 @@ describe('POST /api/upload', () => {
     delete process.env.AWS_REGION;
 
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'test.jpg', fileType: 'image/jpeg' });
+    const req = createRequest({ fileName: 'test.jpg', fileType: 'image/jpeg', fileSize: 1024 });
     const res = createResponse();
 
     await handler(req, res);
@@ -185,7 +185,7 @@ describe('POST /api/upload', () => {
     vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url' as unknown as never);
 
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'photo.jpg', fileType: 'image/jpeg' });
+    const req = createRequest({ fileName: 'photo.jpg', fileType: 'image/jpeg', fileSize: 1024 });
     const res = createResponse();
 
     await handler(req, res);

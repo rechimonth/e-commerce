@@ -3,8 +3,8 @@
  * Los componentes no conocen Firebase; esta capa orquesta la lógica de negocio.
  */
 import { firebaseTryCatch } from '@/infrastructure/firebase/config';
-import { createOrder } from '@/infrastructure/firebase/firestore';
 import { calculateTotal } from '@/utils/cart/cartUtils';
+import { ordersService } from './ordersService';
 import type { Order, CheckoutData } from '@/types/order';
 import type { CartState } from '@/types/cart';
 import type { AsyncStatus } from '@/types/ui';
@@ -29,7 +29,7 @@ export const checkoutService = {
       const totals = calculateTotal(cartState.items, cartState.discount);
       const currency = totals.total.currency;
 
-      const dto = await createOrder({
+      const order = await ordersService.createOrder({
         userId,
         items: cartState.items.map((item) => ({
           productId: item.productId,
@@ -53,37 +53,7 @@ export const checkoutService = {
         updatedAt: Date.now(),
       });
 
-      // createOrder devuelve el ID real de Firestore. Normalizamos orderId de cada item.
-      return {
-        id: dto.id,
-        userId: dto.userId,
-        items: dto.items.map((item) => ({
-          orderId: dto.id,
-          productId: item.productId,
-          name: item.name,
-          price: { amount: item.priceCents, currency: dto.currency },
-          quantity: item.quantity,
-          image: { url: item.imageUrl, alt: item.name, key: dto.id },
-        })),
-        pricing: {
-          subtotal: { amount: dto.subtotalCents, currency: dto.currency },
-          tax: { amount: dto.taxCents, currency: dto.currency },
-          shipping: { amount: dto.shippingCents, currency: dto.currency },
-          discount: { amount: dto.discountCents, currency: dto.currency },
-          total: { amount: dto.totalCents, currency: dto.currency },
-        },
-        status: dto.status,
-        statusHistory: dto.statusHistory.map((entry) => ({
-          ...entry,
-          timestamp: new Date(entry.timestamp),
-        })),
-        shippingAddress: dto.shippingAddress,
-        billingAddress: dto.billingAddress,
-        paymentMethod: dto.paymentMethod,
-        notes: dto.notes,
-        createdAt: new Date(dto.createdAt ?? Date.now()),
-        updatedAt: new Date(dto.updatedAt ?? Date.now()),
-      };
+      return order;
     });
   },
 };

@@ -29,7 +29,9 @@ const mocks = vi.hoisted(() => {
     signInWithEmailAndPassword: vi.fn(),
     createUserWithEmailAndPassword: vi.fn(),
     signInWithPopup: vi.fn(),
-    GoogleAuthProvider: vi.fn().mockImplementation(() => ({ _type: 'GoogleProvider' })),
+    GoogleAuthProvider: vi.fn().mockImplementation(function GoogleAuthProvider() {
+      return { _type: 'GoogleProvider' };
+    }),
     signOut: vi.fn(),
     onAuthStateChanged: vi.fn(),
     updateProfile: vi.fn(),
@@ -151,6 +153,10 @@ describe('Firebase auth', () => {
     const { signInWithGoogle } = await setupAuth();
     mocks.authStubs.signInWithPopup.mockResolvedValue(mocks.mockUserCredential);
     mocks.firestoreStubs.setDoc.mockResolvedValue(undefined);
+    mocks.firestoreStubs.getDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => null,
+    });
 
     const result = await signInWithGoogle();
 
@@ -241,3 +247,4 @@ describe('Firebase auth', () => {
     await expect(signInWithEmail('test@test.com', 'wrong')).rejects.toThrow(FirebaseInfraError);
   });
 });
+

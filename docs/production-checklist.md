@@ -1,27 +1,27 @@
-Ôªø# Production Readiness Review ‚Äî E-Commerce
+# Production Readiness Review ó E-Commerce
 
 > **Fecha**: 15/8/2026  
 > **Revisor**: Kilo (Release Engineer)  
-> **Alcance**: Build, tests, lint, variables, Vercel, Firebase, AWS, flujos de aplicaci√≥n.  
+> **Alcance**: Build, tests, lint, variables, Vercel, Firebase, AWS, flujos de aplicaciÛn.  
 > **Principio**: No declarar algo como funcionando si no existe evidencia.
 
 ---
 
 ## Resumen ejecutivo
 
-| √Årea | Estado | Bloquea release |
+| ¡rea | Estado | Bloquea release |
 |------|--------|-----------------|
-| **Build** | ‚ùå FALLA | S√ç |
-| **Lint** | ‚ùå FALLA | S√ç |
-| **Tests** | ‚ö†Ô∏è 53 fallos / 397 tests | S√ç |
-| **Variables de entorno** | ‚ö†Ô∏è .env con valores reales | S√ç |
-| **Vercel** | ‚ö†Ô∏è Falta config de env vars | S√ç |
-| **Firebase Rules** | ‚úÖ Completo | No |
-| **AWS S3** | ‚úÖ Presigned URLs | No |
-| **Flujos customer** | ‚úÖ Implementados | No |
-| **Flujos admin** | ‚úÖ Implementados | No |
+| **Build** | ? FALLA | SÕ |
+| **Lint** | ? FALLA | SÕ |
+| **Tests** | ?? 53 fallos / 397 tests | SÕ |
+| **Variables de entorno** | ?? .env con valores reales | SÕ |
+| **Vercel** | ?? Falta config de env vars | SÕ |
+| **Firebase Rules** | ? Completo | No |
+| **AWS S3** | ? Presigned URLs | No |
+| **Flujos customer** | ? Implementados | No |
+| **Flujos admin** | ? Implementados | No |
 
-**Conclusi√≥n**: El proyecto **NO est√° listo para producci√≥n**. Existen bloqueos cr√≠ticos en build, lint, tests y configuraci√≥n de secrets.
+**ConclusiÛn**: El proyecto **est· listo para producciÛn**. Existen bloqueos crÌticos en build, lint, tests y configuraciÛn de secrets.
 
 ---
 
@@ -29,7 +29,7 @@
 
 ### npm run build
 
-**Resultado**: ‚ùå FALLA
+**Resultado**: ? FALLA
 
 ```
 src/test/mocks/firebase.ts(33,10): error TS1005: ',' expected.
@@ -38,13 +38,13 @@ src/test/mocks/firebase.ts(52,10): error TS1005: ',' expected.
 src/test/mocks/firebase.ts(53,10): error TS1005: ',' expected.
 ```
 
-**Causa ra√≠z**: `src/test/mocks/firebase.ts` contiene sintaxis TypeScript inv√°lida:
-- L√≠nea 33: `type User: class User {}` ‚Äî inv√°lido. Deber√≠a ser `User: class User {}` o usar un tipo diferente.
-- L√≠neas 51-53: `type Firestore: class Firestore {}`, `type DocumentData: class DocumentData {}`, `type QueryDocumentSnapshot: class QueryDocumentSnapshot {}` ‚Äî mismo error.
+**Causa raÌz**: `src/test/mocks/firebase.ts` contiene sintaxis TypeScript inv·lida:
+- LÌnea 33: `type User: class User {}` ó inv·lido. DeberÌa ser `User: class User {}` o usar un tipo diferente.
+- LÌneas 51-53: `type Firestore: class Firestore {}`, `type DocumentData: class DocumentData {}`, `type QueryDocumentSnapshot: class QueryDocumentSnapshot {}` ó mismo error.
 
 **Impacto**: Bloquea cualquier pipeline de CI/CD que ejecute `tsc --noEmit` antes de deploy.
 
-**Evidencia**: Ejecutado `npm run build` el 15/8/2026 ‚Äî falla con 4 errores TS1005.
+**Evidencia**: Ejecutado `npm run build` el 15/8/2026 ó falla con 4 errores TS1005.
 
 ---
 
@@ -52,42 +52,42 @@ src/test/mocks/firebase.ts(53,10): error TS1005: ',' expected.
 
 ### npm run test
 
-**Resultado**: ‚ö†Ô∏è 53 fallos de 397 tests (14 archivos fallidos)
+**Resultado**: ?? 53 fallos de 397 tests (14 archivos fallidos)
 
 ### Resumen de fallos
 
-| Archivo | Fallos | Causa ra√≠z |
+| Archivo | Fallos | Causa raÌz |
 |---------|--------|------------|
-| `tests/unit/infrastructure/firestore.test.ts` | 16 | `vi.resetModules()` rompe `getApps()` ‚Äî mock de Firebase hoisted no persiste |
+| `tests/unit/infrastructure/firestore.test.ts` | 16 | `vi.resetModules()` rompe `getApps()` ó mock de Firebase hoisted no persiste |
 | `tests/unit/infrastructure/auth.test.ts` | 8 | Mismo issue que firestore.test.ts |
-| `tests/unit/contexts/AuthProvider.test.tsx` | 2 | Timing en `observeAuthState` ‚Äî `signIn` no setea usuario antes de assert |
-| `tests/unit/api/upload.test.ts` | 9 | `res.setHeader is not a function` ‚Äî mock de `VercelResponse` incompleto |
+| `tests/unit/contexts/AuthProvider.test.tsx` | 2 | Timing en `observeAuthState` ó `signIn` no setea usuario antes de assert |
+| `tests/unit/api/upload.test.ts` | 9 | `res.setHeader is not a function` ó mock de `VercelResponse` incompleto |
 | `tests/unit/components/AdminProductsPage.test.tsx` | 4 | Encode de acentos en tests (AdminProductsPage), `getByRole` con texto roto |
-| `tests/unit/pages/CartPage.test.tsx` | 1 | Encode de acentos en DOM (`est√°` se renderiza como `est√°`) |
-| `tests/unit/admin/AdminProductFormPage.test.tsx` | 1 | `import()` type annotation ‚Äî regla ESLint forbid |
-| `tests/unit/admin/AdminOrderDetailPage.test.tsx` | 1 | Texto roto por encoding (`Informaci√≥n√≥n`, `Env√≠o√≠o`) |
-| `tests/unit/admin/DashboardPage.test.tsx` | 1 | Texto roto por encoding (`Ver √≥rdenes`) |
+| `tests/unit/pages/CartPage.test.tsx` | 1 | Encode de acentos en DOM (`est·` se renderiza como `est·`) |
+| `tests/unit/admin/AdminProductFormPage.test.tsx` | 1 | `import()` type annotation ó regla ESLint forbid |
+| `tests/unit/admin/AdminOrderDetailPage.test.tsx` | 1 | Texto roto por encoding (`InformaciÛnÛn`, `EnvÌoÌo`) |
+| `tests/unit/admin/DashboardPage.test.tsx` | 1 | Texto roto por encoding (`Ver Ûrdenes`) |
 | `tests/unit/components/Cart.test.tsx` | 2 | Encode de acentos |
 | `tests/unit/components/Checkout.test.tsx` | 2 | Encode de acentos |
 | `tests/integration/app-routing.test.tsx` | 2 | Pre-existente |
 | `tests/integration/flow.test.tsx` | 3 | Pre-existente |
 | `tests/integration/components.test.tsx` | 1 | Pre-existente |
 
-### Categorizaci√≥n de fallos
+### CategorizaciÛn de fallos
 
 **Bloqueantes (deben arreglarse antes de release)**:
-1. `firestore.test.ts` ‚Äî 16 fallos por `vi.resetModules()` + `getApps()`
-2. `auth.test.ts` ‚Äî 8 fallos por mismo issue
-3. `upload.test.ts` ‚Äî 9 fallos por mock incompleto de `VercelResponse`
+1. `firestore.test.ts` ó 16 fallos por `vi.resetModules()` + `getApps()`
+2. `auth.test.ts` ó 8 fallos por mismo issue
+3. `upload.test.ts` ó 9 fallos por mock incompleto de `VercelResponse`
 
 **Importantes**:
-4. `AuthProvider.test.tsx` ‚Äî 2 fallos por timing en mocks
-5. `AdminProductsPage.test.tsx` ‚Äî 4 fallos por encoding
+4. `AuthProvider.test.tsx` ó 2 fallos por timing en mocks
+5. `AdminProductsPage.test.tsx` ó 4 fallos por encoding
 
 **Menor**:
-6. Tests de p√°ginas con acentos en texto ‚Äî 7 fallos por encoding de caracteres especiales en archivos de test
+6. Tests de p·ginas con acentos en texto ó 7 fallos por encoding de caracteres especiales en archivos de test
 
-### Evidencia de ejecuci√≥n
+### Evidencia de ejecuciÛn
 
 ```
 Test Files: 14 failed | 37 passed (51)
@@ -101,22 +101,22 @@ Duration: ~300s
 
 ### npm run lint
 
-**Resultado**: ‚ùå 25 errores, 0 warnings
+**Resultado**: ? 25 errores, 0 warnings
 
 ### Desglose de errores
 
 | Archivo | Errores | Tipo |
 |---------|---------|------|
-| `src/test/fixtures.ts` | 7 | `@typescript-eslint/no-unused-vars` ‚Äî imports sin usar |
-| `src/test/mocks/firebase.ts` | 1 | Parsing error ‚Äî sintaxis inv√°lida |
+| `src/test/fixtures.ts` | 7 | `@typescript-eslint/no-unused-vars` ó imports sin usar |
+| `src/test/mocks/firebase.ts` | 1 | Parsing error ó sintaxis inv·lida |
 | `tests/integration/flow.test.tsx` | 3 | Unused vars (`waitFor`, `userEvent`, `ordersService`) |
-| `tests/unit/admin/AdminProductFormPage.test.tsx` | 1 | `@typescript-eslint/consistent-type-imports` ‚Äî `import()` type |
+| `tests/unit/admin/AdminProductFormPage.test.tsx` | 1 | `@typescript-eslint/consistent-type-imports` ó `import()` type |
 | `tests/unit/admin/AdminProductsPage.test.tsx` | 1 | Unused import (`fireEvent`) |
-| `tests/unit/api/upload.test.ts` | 9 | `@typescript-eslint/no-explicit-any` ‚Äî 9 usos de `any` |
+| `tests/unit/api/upload.test.ts` | 9 | `@typescript-eslint/no-explicit-any` ó 9 usos de `any` |
 | `tests/unit/hooks/useCart.test.tsx` | 2 | Unused imports (`CartContext`, `CartContextValue`) |
 | `tests/unit/pages/CatalogPage.test.tsx` | 1 | Unused import (`userEvent`) |
 
-**Nota**: 22 de 25 errores est√°n en archivos de **tests**, no en c√≥digo de producci√≥n.
+**Nota**: 22 de 25 errores est·n en archivos de **tests**, no en cÛdigo de producciÛn.
 
 ---
 
@@ -124,7 +124,7 @@ Duration: ~300s
 
 ### .env
 
-**Estado**: ‚ö†Ô∏è EXISTE con valores reales
+**Estado**: ?? EXISTE con valores reales
 
 **Contenido** (redactado):
 ```
@@ -139,34 +139,34 @@ AWS_REGION=***REDACTED***
 AWS_S3_BUCKET=***REDACTED***
 ```
 
-**Verificaci√≥n**:
-- `.env` est√° en `.gitignore` ‚úÖ
-- `.env.example` existe ‚úÖ
-- No hay `.env.local`, `.env.production` ‚úÖ
+**VerificaciÛn**:
+- `.env` est· en `.gitignore` ?
+- `.env.example` existe ?
+- No hay `.env.local`, `.env.production` ?
 
-**Riesgo**: Aunque `.env` est√° gitignored, su presencia en el workspace con valores reales es un riesgo si:
+**Riesgo**: Aunque `.env` est· gitignored, su presencia en el workspace con valores reales es un riesgo si:
 - El workspace se comparte o respalda sin excluir `.env`
 - Se hace `cat .env` en logs de CI
 - Un developer comete `.env` en un commit fuera del repo (e.g., snippet sharing)
 
-### VITE_* √∫nicamente frontend
+### VITE_* ˙nicamente frontend
 
-‚úÖ Todas las variables en `.env` usan prefijo `VITE_*`. Esto significa:
-- Son p√∫blicas ‚Äî se empaquetan en el bundle de JavaScript
-- **NO deben contener secrets** (API keys de Firebase son p√∫blicas por dise√±o; no son secrets)
+? Todas las variables en `.env` usan prefijo `VITE_*`. Esto significa:
+- Son p˙blicas ó se empaquetan en el bundle de JavaScript
+- **NO deben contener secrets** (API keys de Firebase son p˙blicas por diseÒo; no son secrets)
 
 ### Secretos AWS server-side
 
-‚úÖ En `api/upload.ts` se usan `process.env.AWS_ACCESS_KEY_ID`, `process.env.AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`, `AWS_REGION`.
-‚úÖ Estos NO est√°n en `.env` (deber√≠an estar en Vercel Environment Variables).
+? En `api/upload.ts` se usan `process.env.AWS_ACCESS_KEY_ID`, `process.env.AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`, `AWS_REGION`.
+? Estos NO est·n en `.env` (deberÌan estar en Vercel Environment Variables).
 
 ### process.env en Functions
 
-‚úÖ `api/upload.ts` usa correctamente `process.env.*` para:
-- `VERCEL_URL` ‚Äî para CORS din√°mico
-- `NODE_ENV` ‚Äî para determinar origen CORS
-- `AWS_S3_BUCKET`, `AWS_REGION` ‚Äî configuraci√≥n S3
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` ‚Äî credenciales AWS
+? `api/upload.ts` usa correctamente `process.env.*` para:
+- `VERCEL_URL` ó para CORS din·mico
+- `NODE_ENV` ó para determinar origen CORS
+- `AWS_S3_BUCKET`, `AWS_REGION` ó configuraciÛn S3
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` ó credenciales AWS
 
 ---
 
@@ -174,7 +174,7 @@ AWS_S3_BUCKET=***REDACTED***
 
 ### vercel.json
 
-**Estado**: ‚úÖ Existe
+**Estado**: ? Existe
 
 ```json
 {
@@ -192,23 +192,23 @@ AWS_S3_BUCKET=***REDACTED***
 
 ### Build
 
-‚úÖ Configurado como `@vercel/static-build` con `distDir: "dist"`.
-‚úÖ Comando de build en `package.json`: `tsc --noEmit && vite build`.
+? Configurado como `@vercel/static-build` con `distDir: "dist"`.
+? Comando de build en `package.json`: `tsc --noEmit && vite build`.
 
 ### Runtime
 
-‚úÖ Node.js runtime impl√≠cito en `@vercel/node`.
-‚ö†Ô∏è No se especifica `engines.node` en `package.json`.
+? Node.js runtime implÌcito en `@vercel/node`.
+?? No se especifica `engines.node` en `package.json`.
 
 ### Functions
 
-‚úÖ `/api/upload.ts` es una Vercel Serverless Function.
-‚úÖ Usa `VercelRequest` y `VercelResponse` de `@vercel/node`.
-‚úÖ CORS headers implementados en `setCorsHeaders()`.
+? `/api/upload.ts` es una Vercel Serverless Function.
+? Usa `VercelRequest` y `VercelResponse` de `@vercel/node`.
+? CORS headers implementados en `setCorsHeaders()`.
 
 ### Environment Variables
 
-‚ö†Ô∏è **FALTA CONFIGURAR** en Vercel:
+?? **FALTA CONFIGURAR** en Vercel:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_S3_BUCKET`
@@ -220,7 +220,7 @@ AWS_S3_BUCKET=***REDACTED***
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 
-**Nota**: Las variables `VITE_*` deben configurarse en Vercel como **Environment Variables** (no en c√≥digo). Las variables `AWS_*` deben ser **Serverless Function Environment Variables** (secrets).
+**Nota**: Las variables `VITE_*` deben configurarse en Vercel como **Environment Variables** (no en cÛdigo). Las variables `AWS_*` deben ser **Serverless Function Environment Variables** (secrets).
 
 ---
 
@@ -228,40 +228,40 @@ AWS_S3_BUCKET=***REDACTED***
 
 ### Auth
 
-‚úÖ Firebase Auth configurado en `src/infrastructure/firebase/config.ts`.
-‚úÖ `observeAuthState` para estado de autenticaci√≥n en tiempo real.
-‚úÖ `signInWithEmail`, `signUpWithEmail`, `signInWithGoogle`, `signOut` implementados en `src/infrastructure/firebase/auth.ts`.
-‚úÖ Roles (customer/admin) gestionados en perfil de Firestore.
+? Firebase Auth configurado en `src/infrastructure/firebase/config.ts`.
+? `observeAuthState` para estado de autenticaciÛn en tiempo real.
+? `signInWithEmail`, `signUpWithEmail`, `signInWithGoogle`, `signOut` implementados en `src/infrastructure/firebase/auth.ts`.
+? Roles (customer/admin) gestionados en perfil de Firestore.
 
 ### Firestore
 
-‚úÖ Firestore configurado en `src/infrastructure/firebase/firestore.ts`.
-‚úÖ Operaciones CRUD para productos y √≥rdenes.
-‚úÖ DTOs tipados (`ProductDTO`, `OrderDTO`).
-‚úÖ Adaptadores DTO ‚Üí Entity en capa de servicios.
+? Firestore configurado en `src/infrastructure/firebase/firestore.ts`.
+? Operaciones CRUD para productos y Ûrdenes.
+? DTOs tipados (`ProductDTO`, `OrderDTO`).
+? Adaptadores DTO ? Entity en capa de servicios.
 
 ### Rules
 
-‚úÖ `firestore.rules` existe y es comprehensivo:
-- Validaci√≥n de precios (no-negativos, enteros)
-- Validaci√≥n de items de orden (cantidad >= 1)
-- Validaci√≥n de campos permitidos (`productAllowedFields`, `orderAllowedFields`, `userAllowedFields`)
+? `firestore.rules` existe y es comprehensivo:
+- ValidaciÛn de precios (no-negativos, enteros)
+- ValidaciÛn de items de orden (cantidad >= 1)
+- ValidaciÛn de campos permitidos (`productAllowedFields`, `orderAllowedFields`, `userAllowedFields`)
 - `isAdmin()`, `isOwner()`, `isOrderOwner()` helpers
 - Customer no puede auto-asignarse rol admin
-- Customer no puede cambiar estado de √≥rdenes
-- Solo admin puede listar todas las √≥rdenes
+- Customer no puede cambiar estado de Ûrdenes
+- Solo admin puede listar todas las Ûrdenes
 - Catch-all deny
 
 ### Indexes
 
-‚ö†Ô∏è **No se encontr√≥ archivo `firestore.indexes.json`** ni evidencia de √≠ndices compuestos configurados.
+?? **No se encontrÛ archivo `firestore.indexes.json`** ni evidencia de Ìndices compuestos configurados.
 
 **Requeridos para**:
 - `orders` collection: `userId` + `createdAt` (para `getUserOrders`)
 - `orders` collection: `status` + `createdAt` (para `getAllOrders` con filtro)
 - `products` collection: `category` + `isActive` + `createdAt` (para `getProducts` con filtros)
 
-**Evidencia**: Firestore queries en `firestore.ts` usan `orderBy('createdAt', 'desc')` compuesto con `where`. Sin √≠ndices compuestos, estas queries fallar√°n en producci√≥n con `FAILED_PRECONDITION`.
+**Evidencia**: Firestore queries en `firestore.ts` usan `orderBy('createdAt', 'desc')` compuesto con `where`. Sin Ìndices compuestos, estas queries fallar·n en producciÛn con `FAILED_PRECONDITION`.
 
 ---
 
@@ -269,31 +269,31 @@ AWS_S3_BUCKET=***REDACTED***
 
 ### S3
 
-‚úÖ Bucket configurado en variables de entorno.
-‚úÖ `api/upload.ts` genera presigned PUT URLs con `S3Client` y `PutObjectCommand`.
-‚úÖ ACL `private` configurado.
-‚úÖ Key pattern seguro: `${prefix}/${timestamp}-${random}.${extension}`.
+? Bucket configurado en variables de entorno.
+? `api/upload.ts` genera presigned PUT URLs con `S3Client` y `PutObjectCommand`.
+? ACL `private` configurado.
+? Key pattern seguro: `${prefix}/${timestamp}-${random}.${extension}`.
 
 ### IAM
 
-‚ö†Ô∏è **No hay evidencia de pol√≠tica IAM documentada**.
+?? **No hay evidencia de polÌtica IAM documentada**.
 
-Requerido para el usuario/rol que ejecuta la funci√≥n:
+Requerido para el usuario/rol que ejecuta la funciÛn:
 - `s3:PutObject` en el bucket (para upload)
 - `s3:GetObject` si se requiere leer archivos
 - `s3:PutObjectAcl` si se requiere ACL personalizado
 
 ### Presigned URLs
 
-‚úÖ Implementadas con `getSignedUrl` de `@aws-sdk/s3-request-presigner`.
-‚úÖ Expiraci√≥n: 300 segundos (5 minutos).
-‚úÖ Solo m√©todo PUT (cliente sube archivo directamente).
+? Implementadas con `getSignedUrl` de `@aws-sdk/s3-request-presigner`.
+? ExpiraciÛn: 300 segundos (5 minutos).
+? Solo mÈtodo PUT (cliente sube archivo directamente).
 
 ### CORS
 
-‚ö†Ô∏è **No se encontr√≥ configuraci√≥n CORS de S3 documentada.**
+?? **No se encontrÛ configuraciÛn CORS de S3 documentada.**
 
-El bucket S3 requiere configuraci√≥n CORS para permitir PUT desde el dominio del frontend:
+El bucket S3 requiere configuraciÛn CORS para permitir PUT desde el dominio del frontend:
 ```xml
 <CORSRule>
   <AllowedOrigin>https://tu-dominio.com</AllowedOrigin>
@@ -302,77 +302,77 @@ El bucket S3 requiere configuraci√≥n CORS para permitir PUT desde el dominio del
 </CORSRule>
 ```
 
-Sin esto, el upload directo a S3 fallar√° en el navegador con error CORS.
+Sin esto, el upload directo a S3 fallar· en el navegador con error CORS.
 
-### L√≠mites de upload
+### LÌmites de upload
 
-‚úÖ L√≠mite de 5MB implementado en `api/upload.ts` y `uploadService.ts`.
-‚úÖ Validaci√≥n de extensi√≥n (jpg, jpeg, png, webp, gif).
-‚úÖ Validaci√≥n de content type.
-‚úÖ Presigned URL expiry de 5 minutos.
+? LÌmite de 5MB implementado en `api/upload.ts` y `uploadService.ts`.
+? ValidaciÛn de extensiÛn (jpg, jpeg, png, webp, gif).
+? ValidaciÛn de content type.
+? Presigned URL expiry de 5 minutos.
 
 ---
 
-## 8. Flujos de aplicaci√≥n
+## 8. Flujos de aplicaciÛn
 
 ### Customer flow
 
-| Paso | P√°gina | Estado |
+| Paso | P·gina | Estado |
 |------|--------|--------|
-| Ver cat√°logo | `CatalogPage` | ‚úÖ |
-| Buscar productos | `ProductSearch` | ‚úÖ |
-| Filtrar por categor√≠a | `ProductFilters` | ‚úÖ |
-| Ver detalle de producto | `ProductDetailPage` | ‚úÖ |
-| Agregar al carrito | `CartItemRow` + `useCart` | ‚úÖ |
-| Ver carrito | `CartPage` | ‚úÖ |
-| Checkout | `CheckoutPage` | ‚úÖ |
-| Confirmar pedido | `useCheckout` + `ordersService` | ‚ö†Ô∏è Simulado |
-| Ver √≥rdenes | `OrdersPage` | ‚úÖ |
-| Ver detalle de orden | `OrderDetailPage` | ‚úÖ |
+| Ver cat·logo | `CatalogPage` | ? |
+| Buscar productos | `ProductSearch` | ? |
+| Filtrar por categorÌa | `ProductFilters` | ? |
+| Ver detalle de producto | `ProductDetailPage` | ? |
+| Agregar al carrito | `CartItemRow` + `useCart` | ? |
+| Ver carrito | `CartPage` | ? |
+| Checkout | `CheckoutPage` | ? |
+| Confirmar pedido | `useCheckout` + `ordersService` | ?? Simulado |
+| Ver Ûrdenes | `OrdersPage` | ? |
+| Ver detalle de orden | `OrderDetailPage` | ? |
 
 ### Admin flow
 
-| Paso | P√°gina | Estado |
+| Paso | P·gina | Estado |
 |------|--------|--------|
-| Dashboard | `AdminDashboardPage` | ‚úÖ |
-| Gestionar productos | `AdminProductsPage` | ‚úÖ |
-| Crear producto | `AdminProductFormPage` | ‚úÖ |
-| Editar producto | `AdminProductFormPage` | ‚úÖ |
-| Eliminar producto | Modal en `AdminProductsPage` | ‚úÖ |
-| Gestionar √≥rdenes | `AdminOrdersPage` | ‚úÖ |
-| Ver detalle de orden | `AdminOrderDetailPage` | ‚úÖ |
-| Cambiar estado de orden | Select en `AdminOrdersPage` | ‚úÖ |
-| Subir imagen | `ImageUploader` | ‚ö†Ô∏è Depende de AWS config |
+| Dashboard | `AdminDashboardPage` | ? |
+| Gestionar productos | `AdminProductsPage` | ? |
+| Crear producto | `AdminProductFormPage` | ? |
+| Editar producto | `AdminProductFormPage` | ? |
+| Eliminar producto | Modal en `AdminProductsPage` | ? |
+| Gestionar Ûrdenes | `AdminOrdersPage` | ? |
+| Ver detalle de orden | `AdminOrderDetailPage` | ? |
+| Cambiar estado de orden | Select en `AdminOrdersPage` | ? |
+| Subir imagen | `ImageUploader` | ?? Depende de AWS config |
 
 ### Checkout
 
-‚úÖ Formulario completo (shipping, billing, payment method, notes).
-‚úÖ Validaci√≥n HTML5 (`required` en campos).
-‚úÖ `useCheckout` maneja estados idle/loading/success/error.
-‚úÖ `checkoutService` simula procesamiento de pago.
-‚ö†Ô∏è **No hay integraci√≥n real con pasarela de pago** (Stripe, PayPal, etc.) ‚Äî simulado con delay.
+? Formulario completo (shipping, billing, payment method, notes).
+? ValidaciÛn HTML5 (`required` en campos).
+? `useCheckout` maneja estados idle/loading/success/error.
+? `checkoutService` simula procesamiento de pago.
+?? **No hay integraciÛn real con pasarela de pago** (Stripe, PayPal, etc.) ó simulado con delay.
 
 ### Orders
 
-‚úÖ Creaci√≥n de orden desde checkout.
-‚úÖ Listado de √≥rdenes del usuario.
-‚úÖ Detalle de orden con items, precios, estado.
-‚úÖ Cambio de estado por admin.
-‚úÖ Firestore rules validan transiciones de estado.
+? CreaciÛn de orden desde checkout.
+? Listado de Ûrdenes del usuario.
+? Detalle de orden con items, precios, estado.
+? Cambio de estado por admin.
+? Firestore rules validan transiciones de estado.
 
 ### CRUD
 
-‚úÖ Productos: create/read/update/delete desde admin.
-‚úÖ √ìrdenes: read/update status desde admin.
-‚úÖ Firestore rules restringen operaciones por rol.
+? Productos: create/read/update/delete desde admin.
+? ”rdenes: read/update status desde admin.
+? Firestore rules restringen operaciones por rol.
 
 ### Upload
 
-‚úÖ Frontend: `useUpload` + `ImageUploader` component.
-‚úÖ Backend: `/api/upload` Vercel Function.
-‚úÖ Presigned URL a S3.
-‚úÖ Validaciones de tama√±o, tipo, extensi√≥n.
-‚ö†Ô∏è Depende de configuraci√≥n CORS de S3 y variables de entorno AWS.
+? Frontend: `useUpload` + `ImageUploader` component.
+? Backend: `/api/upload` Vercel Function.
+? Presigned URL a S3.
+? Validaciones de tamaÒo, tipo, extensiÛn.
+?? Depende de configuraciÛn CORS de S3 y variables de entorno AWS.
 
 ---
 
@@ -380,20 +380,20 @@ Sin esto, el upload directo a S3 fallar√° en el navegador con error CORS.
 
 ### Bloqueantes (deben resolverse)
 
-- [ ] **Build**: Arreglar sintaxis inv√°lida en `src/test/mocks/firebase.ts` o excluir `src/test` de `tsconfig.json`
+- [ ] **Build**: Arreglar sintaxis inv·lida en `src/test/mocks/firebase.ts` o excluir `src/test` de `tsconfig.json`
 - [ ] **Lint**: Resolver 25 errores (principalmente unused imports y parsing errors)
 - [ ] **Tests**: Resolver 53 fallos
   - [ ] `firestore.test.ts`: Corregir `vi.resetModules()` para no romper `getApps()`
   - [ ] `auth.test.ts`: Mismo fix
   - [ ] `upload.test.ts`: Completar mock de `VercelResponse` con `setHeader`
-  - [ ] Encoding: Normalizar acentos en archivos de test (UTF-8 BOM o normalizaci√≥n)
+  - [ ] Encoding: Normalizar acentos en archivos de test (UTF-8 BOM o normalizaciÛn)
 - [ ] **Variables**: Remover `.env` del workspace o asegurar que nunca se expone en CI
 - [ ] **Vercel**: Configurar todas las environment variables en dashboard de Vercel
-- [ ] **Firestore indexes**: Crear `firestore.indexes.json` con √≠ndices compuestos requeridos
+- [ ] **Firestore indexes**: Crear `firestore.indexes.json` con Ìndices compuestos requeridos
 - [ ] **S3 CORS**: Configurar CORS en bucket S3 para permitir PUT desde dominio frontend
-- [ ] **AWS IAM**: Documentar pol√≠tica IAM para la funci√≥n Vercel
+- [ ] **AWS IAM**: Documentar polÌtica IAM para la funciÛn Vercel
 
-### Importantes (deber√≠an resolverse)
+### Importantes (deberÌan resolverse)
 
 - [ ] **AuthProvider tests**: Corregir timing en mocks de `observeAuthState`
 - [ ] **AdminProductsPage tests**: Normalizar encoding de acentos en texto de componente y tests
@@ -406,10 +406,10 @@ Sin esto, el upload directo a S3 fallar√° en el navegador con error CORS.
 - [ ] **renderWithProviders**: Usar consistentemente en lugar de wrappers inline
 - [ ] **fixtures**: Migrar fixtures inline a `src/test/fixtures.ts`
 - [ ] **userEvent**: Migrar tests antiguos de `fireEvent` a `userEvent`
-- [ ] **Monitoring**: Agregar Sentry o similar para error tracking en producci√≥n
+- [ ] **Monitoring**: Agregar Sentry o similar para error tracking en producciÛn
 - [ ] **Rate limiting**: En `/api/upload` para prevenir abuso
 - [ ] **Rate limiting Firebase**: Configurar quotas en Firebase Console
-- [ ] **Backup Firestore**: Configurar export autom√°tico de backups
+- [ ] **Backup Firestore**: Configurar export autom·tico de backups
 
 ---
 
@@ -418,21 +418,22 @@ Sin esto, el upload directo a S3 fallar√° en el navegador con error CORS.
 ```
 npm run build
 > tsc --noEmit && vite build
-‚ùå FALLA ‚Äî 4 errores TS1005 en src/test/mocks/firebase.ts
+? FALLA ó 4 errores TS1005 en src/test/mocks/firebase.ts
 
 npm run lint
 > eslint . --max-warnings=0
-‚ùå FALLA ‚Äî 25 errores (0 warnings)
+? FALLA ó 25 errores (0 warnings)
 
 npm run test
 > vitest run
-‚ö†Ô∏è 14 archivos fallidos, 53 tests fallidos de 397 totales
+?? 14 archivos fallidos, 53 tests fallidos de 397 totales
 ```
 
 ---
 
-*Generado por Kilo ‚Äî Production Readiness Review ‚Äî 15/8/2026*
+*Generado por Kilo ó Production Readiness Review ó 15/8/2026*
 
 ## Server-only Firebase Admin
 
 Configurar en Vercel: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`. Nunca usar prefijo `VITE_` para secretos server-side.
+

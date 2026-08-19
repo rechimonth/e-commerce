@@ -56,12 +56,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items: state.items,
       totalItems: state.totalItems,
       totalPrice: state.totalPrice,
+      discount: state.discount,
       addItem,
       removeItem,
       updateQuantity,
       clearCart,
     };
-  }, [state.items, state.totalItems, state.totalPrice, addItem, removeItem, updateQuantity, clearCart]);
+  }, [state.items, state.totalItems, state.totalPrice, state.discount, addItem, removeItem, updateQuantity, clearCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

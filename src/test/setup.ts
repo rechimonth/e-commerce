@@ -7,9 +7,9 @@ import { vi } from 'vitest';
 // ──────────────────────────────────────────────────────────────
 
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(() => ({
-    send: vi.fn(),
-  })),
+  S3Client: vi.fn(function S3Client() {
+    return { send: vi.fn() };
+  }),
   PutObjectCommand: vi.fn(),
   DeleteObjectCommand: vi.fn(),
 }));
@@ -54,6 +54,5 @@ globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.resetAllMocks();
   localStorage.clear();
 });
