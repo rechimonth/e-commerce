@@ -72,7 +72,6 @@ service cloud.firestore {
         'shippingCents', 'discountCents', 'totalCents', 'currency',
         'status', 'statusHistory', 'createdAt', 'updatedAt',
         'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
-        'trackingNumber', 'carrier', 'estimatedDelivery', 'attachments',
       ]);
     }
 
@@ -83,25 +82,20 @@ service cloud.firestore {
         'shippingCents', 'discountCents', 'totalCents', 'currency',
         'status', 'statusHistory', 'createdAt', 'updatedAt',
         'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
-        'trackingNumber', 'carrier', 'estimatedDelivery', 'attachments',
       ])
-        && request.resource.data.userId == resource.data.userId
-        && request.resource.data.status == resource.data.status
-        && request.resource.data.items == resource.data.items
-        && request.resource.data.subtotalCents == resource.data.subtotalCents
-        && request.resource.data.taxCents == resource.data.taxCents
-        && request.resource.data.shippingCents == resource.data.shippingCents
-        && request.resource.data.discountCents == resource.data.discountCents
-        && request.resource.data.totalCents == resource.data.totalCents
-        && request.resource.data.currency == resource.data.currency
-        && request.resource.data.statusHistory == resource.data.statusHistory
-        && request.resource.data.shippingAddress == resource.data.shippingAddress
-        && request.resource.data.billingAddress == resource.data.billingAddress
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.trackingNumber == resource.data.trackingNumber
-        && request.resource.data.carrier == resource.data.carrier
-        && request.resource.data.estimatedDelivery == resource.data.estimatedDelivery
-        && request.resource.data.attachments == resource.data.attachments;
+      && request.resource.data.userId == resource.data.userId
+      && request.resource.data.status == resource.data.status
+      && request.resource.data.items == resource.data.items
+      && request.resource.data.subtotalCents == resource.data.subtotalCents
+      && request.resource.data.taxCents == resource.data.taxCents
+      && request.resource.data.shippingCents == resource.data.shippingCents
+      && request.resource.data.discountCents == resource.data.discountCents
+      && request.resource.data.totalCents == resource.data.totalCents
+      && request.resource.data.currency == resource.data.currency
+      && request.resource.data.statusHistory == resource.data.statusHistory
+      && request.resource.data.shippingAddress == resource.data.shippingAddress
+      && request.resource.data.billingAddress == resource.data.billingAddress
+      && request.resource.data.createdAt == resource.data.createdAt;
     }
 
     /** Allowed top-level keys for a user document. */
@@ -139,7 +133,7 @@ service cloud.firestore {
         && request.resource.data.role == 'customer';
 
       allow update: if isAdmin()
-          && userAllowedFields()
+        && userAllowedFields()
         // Admin can change any field except uid and createdAt
         && request.resource.data.uid == uid
         && request.resource.data.createdAt == resource.data.createdAt
@@ -163,10 +157,10 @@ service cloud.firestore {
 
     match /products/{productId} {
 
-      // Any authenticated user can browse products.
-      allow list, get: if isSignedIn();
+      // Lectura pública: permite que cualquier visitante vea el catálogo de productos
+      allow list, get: if true;
 
-      // Only admin can create/update/delete products.
+      // Solo administradores pueden crear, actualizar o eliminar productos
       allow create: if isAdmin() && productAllowedFields();
       allow update: if isAdmin() && productAllowedFields();
       allow delete: if isAdmin();
@@ -182,8 +176,7 @@ service cloud.firestore {
       allow get: if isAdmin() || isOrderOwner();
 
       // List: admin sees all; a customer may run a query only when every
-      // returned document belongs to that customer. Firestore evaluates the
-      // rule against each candidate document, so an unrestricted query is denied.
+      // returned document belongs to that customer.
       allow list: if isAdmin() || isOrderOwner();
 
       // Create: authenticated user, order must be for themselves.
@@ -195,7 +188,10 @@ service cloud.firestore {
         && pricesValid()
         && itemsValid()
         && request.resource.data.statusHistory is list
-        && request.resource.data.statusHistory.size() == 0;
+        && request.resource.data.statusHistory.size() == 1
+        && request.resource.data.statusHistory[0].from == 'pending'
+        && request.resource.data.statusHistory[0].to == 'pending'
+        && request.resource.data.statusHistory[0].by == request.auth.uid;
 
       // Update: admin full access; customer can only edit notes.
       allow update: if isAdmin() && orderAllowedFields()
@@ -214,4 +210,3 @@ service cloud.firestore {
     }
   }
 }
-
