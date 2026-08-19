@@ -131,7 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (orderId) {
       const orderRef = firestore.collection('orders').doc(orderId);
       const orderSnap = await orderRef.get();
-      if (orderSnap.exists()) {
+      if (orderSnap.exists) {
         const currentAttachments = (orderSnap.data()?.attachments ?? []) as Array<{
           key: string;
           url: string;
