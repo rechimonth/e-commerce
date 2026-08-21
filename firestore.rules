@@ -19,12 +19,13 @@ service cloud.firestore {
     function getUserRole() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
     }
 
     /** Admin = signed-in user whose profile role is 'admin'. */
     function isAdmin() {
-      return getUserRole() is string && getUserRole() == 'admin';
+      return getUserRole() == 'admin';
     }
 
     /** The request is for the user's own document (path param == auth.uid). */
@@ -107,7 +108,7 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
-    // USERS  —  users/{uid}
+    // USERS  ï¿½  users/{uid}
     // ----------------------------------------------------------
 
     match /users/{uid} {
@@ -116,7 +117,7 @@ service cloud.firestore {
       allow get: if isOwner(uid) || isAdmin();
 
       // Create: user creates their own profile on sign-up.
-      // Role is always 'customer' — customers cannot self-assign.
+      // Role is always 'customer' ï¿½ customers cannot self-assign.
       allow create: if isOwner(uid)
         && !exists(/databases/$(database)/documents/users/$(uid))
         && userAllowedFields()
@@ -143,24 +144,24 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
-    // PRODUCTS  —  products/{productId}
+    // PRODUCTS  ï¿½  products/{productId}
     // ----------------------------------------------------------
 
     match /products/{productId} {
 
-      // Cualquier usuario, autenticado o anónimo, puede leer productos.
+      // Cualquier usuario, autenticado o anï¿½nimo, puede leer productos.
       allow list, get: if true;
 
       // Solo administradores pueden crear, actualizar o eliminar productos.
       // No se aplica una lista estricta de campos permitidos para permitir
-      // campos dinámicos o formateados enviados por el formulario.
+      // campos dinï¿½micos o formateados enviados por el formulario.
       allow create: if isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     // ----------------------------------------------------------
-    // ORDERS  —  orders/{orderId}
+    // ORDERS  ï¿½  orders/{orderId}
     // ----------------------------------------------------------
 
     match /orders/{orderId} {
@@ -195,7 +196,7 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
-    // CATCH-ALL — deny everything not explicitly allowed.
+    // CATCH-ALL ï¿½ deny everything not explicitly allowed.
     // ----------------------------------------------------------
 
     match /{document=**} {
@@ -203,5 +204,6 @@ service cloud.firestore {
     }
   }
 }
+
 
 
