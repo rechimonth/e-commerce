@@ -19,7 +19,8 @@
                     "typecheck:api":  "tsc --noEmit -p tsconfig.api.json",
                     "seed":  "tsx scripts/seed.ts",
                     "migrate:categories":  "tsx scripts/migrateProductCategories.ts",
-                    "fix:product-images":  "tsx scripts/fix-product-images.ts"
+                    "fix:product-images":  "tsx scripts/fix-product-images.ts",
+                    "fix:replace-picsum":  "tsx scripts/replace-picsum-images.ts"
                 },
     "dependencies":  {
                          "@aws-sdk/client-s3":  "^3.1112.0",
