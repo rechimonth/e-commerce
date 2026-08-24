@@ -158,6 +158,23 @@ export const productsService = {
   },
 
   toProduct,
+
+  async activateProduct(id: string): Promise<Product | null> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreUpdateProduct(id, { isActive: true });
+      if (!dto) return null;
+      return toProduct(dto);
+    });
+  },
+
+  async deactivateProduct(id: string): Promise<Product | null> {
+    return firebaseTryCatch(async () => {
+      const dto = await firestoreUpdateProduct(id, { isActive: false });
+      if (!dto) return null;
+      return toProduct(dto);
+    });
+  },
 };
 
 export type { ProductDTO } from '@/types/domain';
+

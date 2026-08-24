@@ -111,6 +111,37 @@ export function AdminProductsPage() {
     });
   };
 
+  const handleBulkActivate = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => productsService.activateProduct(id)));
+      setSelectedIds(new Set());
+      void fetchProducts();
+    } catch (e) {
+      const err = {
+        code: 'INTERNAL_ERROR' as const,
+        message: e instanceof Error ? e.message : 'Error al activar productos',
+        details: { error: e instanceof Error ? e.message : String(e) },
+      } as const;
+      setState((prev) => ({ ...prev, error: err }));
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => productsService.deactivateProduct(id)));
+      setSelectedIds(new Set());
+      void fetchProducts();
+    } catch (e) {
+      const err = {
+        code: 'INTERNAL_ERROR' as const,
+        message: e instanceof Error ? e.message : 'Error al desactivar productos',
+        details: { error: e instanceof Error ? e.message : String(e) },
+      } as const;
+      setState((prev) => ({ ...prev, error: err }));
+    }
+  };
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     setIsBulkDeleting(true);
@@ -213,6 +244,12 @@ export function AdminProductsPage() {
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 rounded-md bg-primary-50 p-3">
           <span className="text-sm text-neutral-700">{selectedIds.size} seleccionado(s)</span>
+          <Button variant="solid" size="sm" onClick={handleBulkActivate} className="bg-green-600 hover:bg-green-700 text-white">
+            Activar
+          </Button>
+          <Button variant="solid" size="sm" onClick={handleBulkDeactivate} className="bg-amber-500 hover:bg-amber-600 text-white">
+            Desactivar
+          </Button>
           <Button variant="danger" size="sm" onClick={handleBulkDelete} disabled={isBulkDeleting}>
             {isBulkDeleting ? 'Eliminando...' : 'Eliminar seleccionados'}
           </Button>
