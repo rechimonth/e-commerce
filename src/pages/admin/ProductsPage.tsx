@@ -293,6 +293,7 @@ export function AdminProductsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
+                        {(() => { const resolved = resolveProductImage(product); console.log('[AdminProductsPage] Image debug:', product.name, 'imageUrl=', product.image?.url, 'resolved=', resolved); return null; })()}
                         <img
                           src={resolveProductImage(product)}
                           alt={product.image.alt}
