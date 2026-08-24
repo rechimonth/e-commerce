@@ -26,6 +26,7 @@ const AdminProductsPage = lazy(() => import('@/pages/admin/ProductsPage'));
 const AdminProductFormPage = lazy(() => import('@/pages/admin/ProductFormPage'));
 const AdminOrdersPage = lazy(() => import('@/pages/admin/OrdersPage'));
 const AdminOrderDetailPage = lazy(() => import('@/pages/admin/OrderDetailPage'));
+const AdminCreateOrderPage = lazy(() => import('@/pages/admin/CreateOrderPage'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/UsersPage'));
 const AdminUserFormPage = lazy(() => import('@/pages/admin/UserFormPage'));
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/CategoriesPage'));
@@ -79,6 +80,7 @@ function App() {
               <Route path="products/new" element={<AdminProductFormPage />} />
               <Route path="products/:id/edit" element={<AdminProductFormPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="orders/new" element={<AdminCreateOrderPage />} />
               <Route path="orders/:id" element={<AdminOrderDetailPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="users/new" element={<AdminUserFormPage />} />
