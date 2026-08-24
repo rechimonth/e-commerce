@@ -109,12 +109,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+function generatePlaceholderSvg(name: string): string {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hue = hash % 360;
+  const color = `hsl(${hue}, 70%, 60%)`;
+  const textColor = `hsl(${hue}, 70%, 20%)`;
+  const initial = name.charAt(0).toUpperCase();
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+    <rect width="300" height="300" fill="${color}"/>
+    <text x="150" y="150" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="${textColor}" text-anchor="middle" dominant-baseline="central">${initial}</text>
+  </svg>`;
+
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
 async function seed(): Promise<void> {
   const products = Object.entries(CATALOG).flatMap(([categoryId, names]) =>
     names.map((name) => ({
       name,
       nameLower: name.toLowerCase(),
-      image: `https://picsum.photos/seed/${encodeURIComponent(name)}/300/300`,
+      image: generatePlaceholderSvg(name),
       description: createDescription(name, categoryId as CategoryId),
       price: randomPrice(),
       stock: randomStock(),
