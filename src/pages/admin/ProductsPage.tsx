@@ -44,13 +44,16 @@ export function AdminProductsPage() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const fetchProducts = useCallback(async () => {
+    console.log('[AdminProductsPage] Firebase project:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
     setState((prev) => ({ ...prev, status: 'loading', error: null }));
     try {
+      console.log('[AdminProductsPage] Fetching products...');
       const result: PaginatedResult<Product> = await productsService.fetchProductsAdmin({
         search: searchTerm || undefined,
         category: categoryFilter || undefined,
         limit: 20,
       });
+      console.log('[AdminProductsPage] Products loaded:', result.items.length);
       setState({ products: result.items as Product[], status: 'success', error: null, pagination: result.pagination });
     } catch (e) {
       const err: ServiceError = {
