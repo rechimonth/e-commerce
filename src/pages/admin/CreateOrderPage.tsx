@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -6,17 +6,11 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Price } from '@/components/ui/Price';
+import { productsService } from '@/services/productsService';
 import { ROUTES } from '@/constants/routes';
+import type { Product } from '@/types/domain';
 
 type PaymentMethod = 'card' | 'paypal' | 'cash';
-
-interface Product {
-  readonly id: string;
-  readonly name: string;
-  readonly price: number;
-  readonly stock: number;
-  readonly image: string;
-}
 
 interface CartItem extends Product {
   readonly quantity: number;
@@ -27,44 +21,6 @@ interface Customer {
   readonly name: string;
   readonly email: string;
 }
-
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Nike Air Max',
-    price: 120,
-    stock: 15,
-    image: 'https://images.unsplash.com/photo-1605901309584-818e25960b8f?w=300&h=300&fit=crop',
-  },
-  {
-    id: '2',
-    name: 'Adidas Ultraboost',
-    price: 180,
-    stock: 8,
-    image: 'https://images.unsplash.com/photo-1606813907293-d86fa128fe5b?w=300&h=300&fit=crop',
-  },
-  {
-    id: '3',
-    name: 'PlayStation 5',
-    price: 499,
-    stock: 3,
-    image: 'https://images.unsplash.com/photo-1593305841991-05c29736b94f?w=300&h=300&fit=crop',
-  },
-  {
-    id: '4',
-    name: 'iPhone 15 Pro',
-    price: 999,
-    stock: 5,
-    image: 'https://images.unsplash.com/photo-1696446701796-da75a0a3e9b8?w=300&h=300&fit=crop',
-  },
-  {
-    id: '5',
-    name: 'Samsung Galaxy S24',
-    price: 899,
-    stock: 10,
-    image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067b59d?w=300&h=300&fit=crop',
-  },
-];
 
 const MOCK_CUSTOMERS: Customer[] = [
   {
@@ -93,6 +49,31 @@ export function AdminCreateOrderPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
+
+  useEffect(() => {
+    if (!isCatalogOpen) return;
+    let isMounted = true;
+    setIsLoadingCatalog(true);
+    productsService
+      .fetchProductsAdmin({ limit: 100 })
+      .then((result) => {
+        if (!isMounted) return;
+        setCatalogProducts([...result.items]);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCatalogProducts([]);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingCatalog(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isCatalogOpen]);
 
   const addToCart = useCallback((product: Product) => {
     setCart((prev) => {
@@ -122,7 +103,7 @@ export function AdminCreateOrderPage() {
     );
   }, []);
 
-  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price.amount * item.quantity, 0), [cart]);
   const tax = useMemo(() => subtotal * TAX_RATE, [subtotal]);
   const total = useMemo(() => subtotal + tax, [subtotal, tax]);
 
@@ -209,13 +190,13 @@ export function AdminCreateOrderPage() {
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
-                              <img src={item.image} alt={item.name} className="h-12 w-12 object-cover" />
+                              <img src={item.image.url} alt={item.image.alt} className="h-12 w-12 object-cover" />
                             </div>
                             <span className="text-sm font-medium text-neutral-900">{item.name}</span>
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">
-                          <Price amount={item.price * 100} currency="USD" />
+                          <Price amount={item.price.amount} currency={item.price.currency} />
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <Input
@@ -228,7 +209,7 @@ export function AdminCreateOrderPage() {
                           />
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                          <Price amount={item.price * item.quantity * 100} currency="USD" />
+                          <Price amount={item.price.amount * item.quantity} currency={item.price.currency} />
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-right">
                           <Button
@@ -287,20 +268,20 @@ export function AdminCreateOrderPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-neutral-600">Subtotal</span>
                 <span className="font-medium text-neutral-900">
-                  <Price amount={subtotal * 100} currency="USD" />
+                  <Price amount={subtotal} currency="USD" />
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-neutral-600">Impuestos (21%)</span>
                 <span className="font-medium text-neutral-900">
-                  <Price amount={tax * 100} currency="USD" />
+                  <Price amount={tax} currency="USD" />
                 </span>
               </div>
               <div className="border-t border-neutral-200 pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-neutral-900">Total</span>
                   <span className="text-xl font-bold text-primary-600">
-                    <Price amount={total * 100} currency="USD" />
+                    <Price amount={total} currency="USD" />
                   </span>
                 </div>
               </div>
@@ -323,49 +304,55 @@ export function AdminCreateOrderPage() {
       <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl">
         <div className="space-y-4">
           <p className="text-sm text-neutral-600">Selecciona los productos que deseas agregar a la orden:</p>
-          <div className="max-h-96 overflow-y-auto">
-            <table className="min-w-full">
-              <thead className="sticky top-0 bg-white">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Producto</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Precio</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Stock</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-200">
-                {MOCK_PRODUCTS.map((product) => {
-                  const isInCart = cart.some((item) => item.id === product.id);
-                  return (
-                    <tr key={product.id} className={isInCart ? 'bg-primary-50/50' : ''}>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
-                            <img src={product.image} alt={product.name} className="h-10 w-10 object-cover" />
+          {isLoadingCatalog ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-sm text-neutral-500">Cargando catálogo...</p>
+            </div>
+          ) : (
+            <div className="max-h-96 overflow-y-auto">
+              <table className="min-w-full">
+                <thead className="sticky top-0 bg-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Producto</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Precio</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Stock</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-200">
+                  {catalogProducts.map((product) => {
+                    const isInCart = cart.some((item) => item.id === product.id);
+                    return (
+                      <tr key={product.id} className={isInCart ? 'bg-primary-50/50' : ''}>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
+                              <img src={product.image.url} alt={product.image.alt} className="h-10 w-10 object-cover" />
+                            </div>
+                            <span className="text-sm font-medium text-neutral-900">{product.name}</span>
                           </div>
-                          <span className="text-sm font-medium text-neutral-900">{product.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">
-                        <Price amount={product.price * 100} currency="USD" />
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">{product.stock}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right">
-                        <Button
-                          variant={isInCart ? 'outline' : 'solid'}
-                          size="sm"
-                          onClick={() => addToCart(product)}
-                          disabled={product.stock === 0}
-                        >
-                          {isInCart ? 'Agregar más' : 'Agregar'}
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">
+                          <Price amount={product.price.amount} currency={product.price.currency} />
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">{product.stock}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <Button
+                            variant={isInCart ? 'outline' : 'solid'}
+                            size="sm"
+                            onClick={() => addToCart(product)}
+                            disabled={product.stock === 0}
+                          >
+                            {isInCart ? 'Agregar más' : 'Agregar'}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
