@@ -70,7 +70,12 @@ export async function getProducts(filters?: ProductFilters): Promise<ProductDTO[
     if (filters?.category) constraints.push(where('category', '==', filters.category));
     if (filters?.isActive !== undefined)
       constraints.push(where('isActive', '==', filters.isActive));
-    q = query(q, ...constraints, orderBy('createdAt', 'desc') as ReturnType<typeof orderBy>);
+
+    if (filters?.category) {
+      q = query(q, ...constraints);
+    } else {
+      q = query(q, ...constraints, orderBy('createdAt', 'desc') as ReturnType<typeof orderBy>);
+    }
     if (filters?.limit) q = query(q, firestoreLimit(filters.limit));
 
     const snapshot = await getDocs(q);

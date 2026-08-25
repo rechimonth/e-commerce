@@ -11,6 +11,7 @@ import { ROUTES } from '@/constants/routes';
 import type { Product } from '@/types/domain';
 
 type PaymentMethod = 'card' | 'paypal' | 'cash';
+type CategoryFilter = '' | 'action-figures' | 'video-games' | 'shoes';
 
 interface CartItem extends Product {
   readonly quantity: number;
@@ -41,6 +42,13 @@ const PAYMENT_METHODS = [
   { value: 'cash', label: 'Efectivo contra entrega' },
 ];
 
+const CATEGORY_FILTERS = [
+  { value: '', label: 'Todas las categorías' },
+  { value: 'action-figures', label: 'Action Figures' },
+  { value: 'video-games', label: 'Video Games' },
+  { value: 'shoes', label: 'Shoes' },
+];
+
 const TAX_RATE = 0.21;
 
 export function AdminCreateOrderPage() {
@@ -51,13 +59,17 @@ export function AdminCreateOrderPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('');
 
   useEffect(() => {
     if (!isCatalogOpen) return;
     let isMounted = true;
     setIsLoadingCatalog(true);
     productsService
-      .fetchProductsAdmin({ limit: 100 })
+      .fetchProductsAdmin({
+        limit: 100,
+        category: selectedCategory || undefined,
+      })
       .then((result) => {
         if (!isMounted) return;
         setCatalogProducts([...result.items]);
@@ -73,7 +85,7 @@ export function AdminCreateOrderPage() {
     return () => {
       isMounted = false;
     };
-  }, [isCatalogOpen]);
+  }, [isCatalogOpen, selectedCategory]);
 
   const addToCart = useCallback((product: Product) => {
     setCart((prev) => {
@@ -124,6 +136,7 @@ export function AdminCreateOrderPage() {
       setCart([]);
       setSelectedCustomerId('');
       setPaymentMethod('card');
+      setSelectedCategory('');
     } catch (error) {
       console.error('Error al crear orden:', error);
       alert('Error al crear la orden');
@@ -304,9 +317,18 @@ export function AdminCreateOrderPage() {
       <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl">
         <div className="space-y-4">
           <p className="text-sm text-neutral-600">Selecciona los productos que deseas agregar a la orden:</p>
+          <div className="w-full">
+            <Select
+              label="Categoría"
+              options={CATEGORY_FILTERS}
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as CategoryFilter)}
+              placeholder="Filtrar por categoría..."
+            />
+          </div>
           {isLoadingCatalog ? (
             <div className="flex items-center justify-center py-12">
-              <p className="text-sm text-neutral-500">Cargando catálogo...</p>
+              <p className="text-sm text-neutral-500">Cargando productos...</p>
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
