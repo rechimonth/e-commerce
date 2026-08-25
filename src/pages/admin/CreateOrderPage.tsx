@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Price } from '@/components/ui/Price';
-import { productsService } from '@/services/productsService';
 import { ROUTES } from '@/constants/routes';
 import type { Product } from '@/types/domain';
 
@@ -50,6 +49,13 @@ const CATEGORY_FILTERS = [
 ];
 
 const TAX_RATE = 0.21;
+const DEFAULT_ADDRESS = {
+  street: 'Calle Principal 123',
+  city: 'Ciudad',
+  state: 'Provincia',
+  zipCode: '12345',
+  country: 'País',
+};
 
 export function AdminCreateOrderPage() {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
@@ -60,16 +66,20 @@ export function AdminCreateOrderPage() {
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isCatalogOpen) return;
     let isMounted = true;
     setIsLoadingCatalog(true);
-    productsService
-      .fetchProductsAdmin({
-        limit: 100,
-        category: selectedCategory || undefined,
-      })
+    setError(null);
+    import('@/services/productsService')
+      .then(({ productsService }) =>
+        productsService.fetchProductsAdmin({
+          limit: 100,
+          category: selectedCategory || undefined,
+        }),
+      )
       .then((result) => {
         if (!isMounted) return;
         setCatalogProducts([...result.items]);
@@ -117,29 +127,46 @@ export function AdminCreateOrderPage() {
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price.amount * item.quantity, 0), [cart]);
   const tax = useMemo(() => subtotal * TAX_RATE, [subtotal]);
-  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
+  const shipping = useMemo(() => 0, []);
+  const discount = useMemo(() => 0, []);
+  const total = useMemo(() => subtotal + tax + shipping - discount, [subtotal, tax, shipping, discount]);
 
   const handleCreateOrder = async () => {
     if (!selectedCustomerId || cart.length === 0) return;
     setIsSubmitting(true);
+    setError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.warn('Orden creada:', {
-        customerId: selectedCustomerId,
+      const { ordersService } = await import('@/services/ordersService');
+      const order = await ordersService.createOrder({
+        userId: selectedCustomerId,
+        items: cart.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          priceCents: item.price.amount,
+          quantity: item.quantity,
+          imageUrl: item.image.url,
+          orderId: '',
+        })),
+        subtotalCents: subtotal,
+        taxCents: Math.round(tax),
+        shippingCents: shipping,
+        discountCents: discount,
+        totalCents: Math.round(total),
+        currency: 'USD',
+        shippingAddress: DEFAULT_ADDRESS,
+        billingAddress: DEFAULT_ADDRESS,
         paymentMethod,
-        items: cart,
-        subtotal,
-        tax,
-        total,
       });
-      alert('Orden creada exitosamente (simulado)');
+      alert('Orden creada exitosamente: ' + order.id);
       setCart([]);
       setSelectedCustomerId('');
       setPaymentMethod('card');
       setSelectedCategory('');
-    } catch (error) {
-      console.error('Error al crear orden:', error);
-      alert('Error al crear la orden');
+      setIsCatalogOpen(false);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error al crear la orden';
+      setError(message);
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -244,6 +271,7 @@ export function AdminCreateOrderPage() {
                 </table>
               </div>
             )}
+            {error && <p className="mt-2 text-sm text-error-600">{error}</p>}
           </Card>
         </div>
 
