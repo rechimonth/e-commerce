@@ -7,6 +7,7 @@ import { CartProvider } from '@/store/cart/CartProvider';
 import { AdminRoute } from '@/components/auth/AdminRoute';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { SiteChrome } from '@/components/layout/SiteChrome';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const CatalogPage = lazy(() => import('@/pages/CatalogPage'));
@@ -40,63 +41,46 @@ function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            <Route path={ROUTES.HOME} element={<HomePage />} />
-            <Route path={ROUTES.CATALOG} element={<CatalogPage />} />
-            <Route path="/products/:id" element={<ProductDetailPage />} />
-            <Route path={ROUTES.CART} element={<CartPage />} />
-            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-            <Route
-              path={ROUTES.CHECKOUT}
-              element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ORDERS}
-              element={<ProtectedRoute><OrdersPage /></ProtectedRoute>}
-            />
-            <Route
-              path="/orders/:id"
-              element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ORDER_CONFIRMATION(':id')}
-              element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>}
-            />
-            <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
-            <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
+        <SiteChrome>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path={ROUTES.HOME} element={<HomePage />} />
+              <Route path={ROUTES.CATALOG} element={<CatalogPage />} />
+              <Route path="/products/:id" element={<ProductDetailPage />} />
+              <Route path={ROUTES.CART} element={<CartPage />} />
+              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+              <Route path={ROUTES.CHECKOUT} element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path={ROUTES.ORDERS} element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+              <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+              <Route path={ROUTES.ORDER_CONFIRMATION(':id')} element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
+              <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
+              <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
-            <Route
-              path={ROUTES.ADMIN}
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            >
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="products" element={<AdminProductsPage />} />
-              <Route path="products/new" element={<AdminProductFormPage />} />
-              <Route path="products/:id/edit" element={<AdminProductFormPage />} />
-              <Route path="orders" element={<AdminOrdersPage />} />
-              <Route path="orders/new" element={<AdminCreateOrderPage />} />
-              <Route path="orders/:id" element={<AdminOrderDetailPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-              <Route path="users/new" element={<AdminUserFormPage />} />
-              <Route path="users/:id/edit" element={<AdminUserFormPage />} />
-              <Route path="categories" element={<AdminCategoriesPage />} />
-              <Route path="categories/new" element={<AdminCategoryFormPage />} />
-              <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
-              <Route path="uploads" element={<AdminUploadsPage />} />
-              <Route path="analytics" element={<AdminAnalyticsPage />} />
-              <Route path="audit" element={<AdminAuditLogPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
-            </Route>
+              <Route path={ROUTES.ADMIN} element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="products" element={<AdminProductsPage />} />
+                <Route path="products/new" element={<AdminProductFormPage />} />
+                <Route path="products/:id/edit" element={<AdminProductFormPage />} />
+                <Route path="orders" element={<AdminOrdersPage />} />
+                <Route path="orders/new" element={<AdminCreateOrderPage />} />
+                <Route path="orders/:id" element={<AdminOrderDetailPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="users/new" element={<AdminUserFormPage />} />
+                <Route path="users/:id/edit" element={<AdminUserFormPage />} />
+                <Route path="categories" element={<AdminCategoriesPage />} />
+                <Route path="categories/new" element={<AdminCategoryFormPage />} />
+                <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
+                <Route path="uploads" element={<AdminUploadsPage />} />
+                <Route path="analytics" element={<AdminAnalyticsPage />} />
+                <Route path="audit" element={<AdminAuditLogPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
 
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </SiteChrome>
       </CartProvider>
     </AuthProvider>
   );

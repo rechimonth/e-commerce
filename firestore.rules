@@ -1,59 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ----------------------------------------------------------
-    // HELPERS
-    // ----------------------------------------------------------
-
-    /** The user is authenticated with Firebase Auth. */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * Reads the user's role from their Firestore profile document.
-     * Guarded by exists() so a signed-in user without a profile
-     * gets false rather than a rule-evaluation error.
-     */
+    function isSignedIn() { return request.auth != null; }
     function getUserRole() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
         : null;
     }
-
-    /** Admin = signed-in user whose profile role is 'admin'. */
-    function isAdmin() {
-      return getUserRole() == 'admin';
-    }
-
-    /** The request is for the user's own document (path param == auth.uid). */
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
-    }
-
-    /** The existing order document belongs to the authenticated user. */
-    function isOrderOwner() {
-      return isSignedIn()
-        && resource.data.userId == request.auth.uid;
-    }
-
-    /** Validate that every price field is a non-negative integer. */
+    function isAdmin() { return getUserRole() == 'admin'; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isOrderOwner() { return isSignedIn() && resource.data.userId == request.auth.uid; }
     function pricesValid() {
-      return request.resource.data.subtotalCents is int
-        && request.resource.data.subtotalCents >= 0
-        && request.resource.data.taxCents is int
-        && request.resource.data.taxCents >= 0
-        && request.resource.data.shippingCents is int
-        && request.resource.data.shippingCents >= 0
-        && request.resource.data.discountCents is int
-        && request.resource.data.discountCents >= 0
-        && request.resource.data.totalCents is int
-        && request.resource.data.totalCents >= 0;
+      return request.resource.data.subtotalCents is int && request.resource.data.subtotalCents >= 0
+        && request.resource.data.taxCents is int && request.resource.data.taxCents >= 0
+        && request.resource.data.shippingCents is int && request.resource.data.shippingCents >= 0
+        && request.resource.data.discountCents is int && request.resource.data.discountCents >= 0
+        && request.resource.data.totalCents is int && request.resource.data.totalCents >= 0;
     }
-
-    /** Validate order items: each has productId, name, priceCents >= 0, quantity >= 1, imageUrl, orderId. */
     function itemsValid() {
       return request.resource.data.items is list
         && request.resource.data.items.size() >= 1
@@ -66,23 +29,16 @@ service cloud.firestore {
         && request.resource.data.items[0].imageUrl is string
         && request.resource.data.items[0].orderId is string;
     }
-
     function orderAllowedFields() {
       return request.resource.data.keys().hasOnly([
-        'id', 'userId', 'items', 'subtotalCents', 'taxCents',
-        'shippingCents', 'discountCents', 'totalCents', 'currency',
-        'status', 'statusHistory', 'createdAt', 'updatedAt',
-        'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
+        'id', 'userId', 'items', 'subtotalCents', 'taxCents', 'shippingCents', 'discountCents', 'totalCents', 'currency',
+        'status', 'statusHistory', 'createdAt', 'updatedAt', 'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
       ]);
     }
-
-    /** Customer may only touch notes + updatedAt; everything else is frozen. */
     function orderCustomerUpdatableFields() {
       return request.resource.data.keys().hasOnly([
-        'id', 'userId', 'items', 'subtotalCents', 'taxCents',
-        'shippingCents', 'discountCents', 'totalCents', 'currency',
-        'status', 'statusHistory', 'createdAt', 'updatedAt',
-        'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
+        'id', 'userId', 'items', 'subtotalCents', 'taxCents', 'shippingCents', 'discountCents', 'totalCents', 'currency',
+        'status', 'statusHistory', 'createdAt', 'updatedAt', 'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
       ])
       && request.resource.data.userId == resource.data.userId
       && request.resource.data.status == resource.data.status
@@ -98,112 +54,39 @@ service cloud.firestore {
       && request.resource.data.billingAddress == resource.data.billingAddress
       && request.resource.data.createdAt == resource.data.createdAt;
     }
-
-    /** Allowed top-level keys for a user document. */
     function userAllowedFields() {
-      return request.resource.data.keys().hasOnly([
-        'uid', 'email', 'displayName', 'photoURL',
-        'role', 'createdAt', 'lastLoginAt', 'preferences',
-      ]);
+      return request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'role', 'createdAt', 'lastLoginAt', 'preferences']);
     }
 
-    // ----------------------------------------------------------
-    // USERS  �  users/{uid}
-    // ----------------------------------------------------------
-
     match /users/{uid} {
-
-      // Read: own profile or admin.
       allow get: if isOwner(uid) || isAdmin();
-
-      // Create: user creates their own profile on sign-up.
-      // Role is always 'customer' � customers cannot self-assign.
-      allow create: if isOwner(uid)
-        && !exists(/databases/$(database)/documents/users/$(uid))
-        && userAllowedFields()
-        && request.resource.data.uid == uid
-        && request.resource.data.role == 'customer';
-
-      allow update: if isAdmin()
-        && userAllowedFields()
-        // Admin can change any field except uid and createdAt
-        && request.resource.data.uid == uid
-        && request.resource.data.createdAt == resource.data.createdAt
-        || isOwner(uid)
-        // Customer can update only non-security fields.
-        && request.resource.data.keys().hasOnly([
-          'email', 'displayName', 'photoURL',
-          'lastLoginAt', 'preferences',
-        ])
-        && request.resource.data.uid == uid
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.createdAt == resource.data.createdAt;
-
-      // Nobody can delete user profiles via client SDK.
+      allow create: if isOwner(uid) && !exists(/databases/$(database)/documents/users/$(uid)) && userAllowedFields()
+        && request.resource.data.uid == uid && request.resource.data.role == 'customer';
+      allow update: if (isAdmin() && userAllowedFields() && request.resource.data.uid == uid && request.resource.data.createdAt == resource.data.createdAt)
+        || (isOwner(uid) && request.resource.data.keys().hasOnly(['email', 'displayName', 'photoURL', 'lastLoginAt', 'preferences'])
+        && request.resource.data.uid == uid && request.resource.data.role == resource.data.role && request.resource.data.createdAt == resource.data.createdAt);
       allow delete: if false;
     }
 
-    // ----------------------------------------------------------
-    // PRODUCTS  �  products/{productId}
-    // ----------------------------------------------------------
-
     match /products/{productId} {
-
-      // Cualquier usuario, autenticado o an�nimo, puede leer productos.
       allow list, get: if true;
-
-      // Solo administradores pueden crear, actualizar o eliminar productos.
-      // No se aplica una lista estricta de campos permitidos para permitir
-      // campos din�micos o formateados enviados por el formulario.
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
-
-    // ----------------------------------------------------------
-    // ORDERS  �  orders/{orderId}
-    // ----------------------------------------------------------
 
     match /orders/{orderId} {
-
-      // Read: admin reads any; customer reads own orders only.
       allow get: if isAdmin() || isOrderOwner();
-
-      // List: admin sees all; a customer may run a query only when every
-      // returned document belongs to that customer.
       allow list: if isAdmin() || isOrderOwner();
-
-      // Create: authenticated user, order must be for themselves.
-      allow create: if isSignedIn()
-        && orderAllowedFields()
-        && request.resource.data.userId == request.auth.uid
+      // Customer checkout is performed by /api/checkout using Firebase Admin.
+      // This prevents client-controlled prices and stock writes from reaching Firestore directly.
+      allow create: if isAdmin() && orderAllowedFields()
         && request.resource.data.id == orderId
-        && request.resource.data.status == 'pending'
-        && pricesValid()
-        && itemsValid()
-        && request.resource.data.statusHistory is list
-        && request.resource.data.statusHistory.size() == 1
-        && request.resource.data.statusHistory[0].from == 'pending'
-        && request.resource.data.statusHistory[0].to == 'pending'
-        && request.resource.data.statusHistory[0].by == request.auth.uid;
-
-      // Update: admin full access; customer can only edit notes.
-      allow update: if isAdmin() && orderAllowedFields()
-        || isOrderOwner() && orderCustomerUpdatableFields();
-
-      // Only admin can delete orders.
+        && request.resource.data.status == 'pending';
+      allow update: if (isAdmin() && orderAllowedFields()) || (isOrderOwner() && orderCustomerUpdatableFields());
       allow delete: if isAdmin();
     }
-
-    // ----------------------------------------------------------
-    // CATCH-ALL � deny everything not explicitly allowed.
-    // ----------------------------------------------------------
 
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
-
-
-
