@@ -1,4 +1,5 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+/* eslint-disable no-console */
+import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 
@@ -29,8 +30,7 @@ function getUnsplashImage(index: number): string {
 }
 
 async function replaceAllPicsumImages() {
-  console.log('?? Reemplazando TODAS las imágenes de picsum.photos por Unsplash...\n');
-
+  console.log('Reemplazando imÃ¡genes de picsum.photos por Unsplash...\n');
   const snapshot = await db.collection('products').get();
   let replaced = 0;
   let skipped = 0;
@@ -43,28 +43,22 @@ async function replaceAllPicsumImages() {
     if (imageUrl && imageUrl.includes('picsum.photos')) {
       const newImage = getUnsplashImage(replaced);
       console.log(`[${doc.id}] ${data.name ?? 'Sin nombre'}`);
-      console.log(`  ?? Reemplazando: ${imageUrl}`);
-      console.log(`  ?? Por: ${newImage}`);
-
-      await doc.ref.update({
-        imageUrl: newImage,
-        imageKey: `unsplash-${doc.id}`,
-      });
-
+      console.log(`  Reemplazando: ${imageUrl}`);
+      console.log(`  Por: ${newImage}`);
+      await doc.ref.update({ imageUrl: newImage, imageKey: `unsplash-${doc.id}` });
       replaced++;
     } else {
       skipped++;
     }
   }
 
-  console.log(`\n?? Resultados:`);
+  console.log('\nResultados:');
   console.log(`  - Productos actualizados: ${replaced}`);
   console.log(`  - Productos sin cambios: ${skipped}`);
   console.log(`  - Total: ${snapshot.size}`);
-  process.exit(0);
 }
 
 replaceAllPicsumImages().catch((error) => {
-  console.error('? Error:', error);
-  process.exit(1);
+  console.error('Error:', error);
+  process.exitCode = 1;
 });
