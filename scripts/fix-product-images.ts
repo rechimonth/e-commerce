@@ -1,4 +1,5 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+/* eslint-disable no-console */
+import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 
@@ -28,7 +29,7 @@ function getFallbackImage(index: number): string {
   return FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
 }
 
-function isInvalidImageUrl(url: string): boolean {
+function isInvalidImageUrl(url: string | undefined): boolean {
   if (!url || url.trim() === '') return true;
   if (!url.startsWith('http://') && !url.startsWith('https://')) return true;
   if (url.includes('localhost') || url.includes('127.0.0.1')) return true;
@@ -37,8 +38,7 @@ function isInvalidImageUrl(url: string): boolean {
 }
 
 async function fixProductImages() {
-  console.log('?? Buscando productos con imágenes inválidas...\n');
-
+  console.log('Buscando productos con imÃ¡genes invÃ¡lidas...\n');
   const snapshot = await db.collection('products').get();
   let fixed = 0;
   let skipped = 0;
@@ -51,28 +51,22 @@ async function fixProductImages() {
     if (isInvalidImageUrl(imageUrl)) {
       const fallback = getFallbackImage(fixed);
       console.log(`[${doc.id}] ${data.name ?? 'Sin nombre'}`);
-      console.log(`  ? URL inválida: ${imageUrl}`);
-      console.log(`  ? Reemplazando por: ${fallback}`);
-
-      await doc.ref.update({
-        imageUrl: fallback,
-        imageKey: `fallback-${doc.id}`,
-      });
-
+      console.log(`  URL invÃ¡lida: ${imageUrl}`);
+      console.log(`  Reemplazando por: ${fallback}`);
+      await doc.ref.update({ imageUrl: fallback, imageKey: `fallback-${doc.id}` });
       fixed++;
     } else {
       skipped++;
     }
   }
 
-  console.log(`\n?? Resultados:`);
+  console.log('\nResultados:');
   console.log(`  - Productos corregidos: ${fixed}`);
   console.log(`  - Productos sin cambios: ${skipped}`);
   console.log(`  - Total: ${snapshot.size}`);
-  process.exit(0);
 }
 
 fixProductImages().catch((error) => {
-  console.error('? Error al corregir imágenes:', error);
-  process.exit(1);
+  console.error('Error al corregir imÃ¡genes:', error);
+  process.exitCode = 1;
 });
