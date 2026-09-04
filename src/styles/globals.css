@@ -2,16 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  --cyber-bg: #05060d;
+  --cyber-surface: rgba(12, 15, 29, 0.88);
+  --cyber-surface-2: rgba(17, 21, 39, 0.92);
+  --cyber-cyan: #22d3ee;
+  --cyber-pink: #f472b6;
+  --cyber-violet: #a78bfa;
+  --cyber-text: #e5f7ff;
+  --cyber-muted: #91a4b8;
+}
+
+html {
+  background: var(--cyber-bg);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.11), transparent 28rem),
+    radial-gradient(circle at 85% 20%, rgba(244, 114, 182, 0.09), transparent 30rem),
+    linear-gradient(180deg, #05060d 0%, #090b16 45%, #05060d 100%);
+  font-family: 'Rajdhani', system-ui, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: white;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: theme('colors.neutral.100');
+  background: #05060d;
 }
 ::-webkit-scrollbar-thumb {
-  background: theme('colors.neutral.300');
-  border-radius: theme('borderRadius.DEFAULT');
+  background: linear-gradient(180deg, #22d3ee, #a78bfa, #f472b6);
+  border-radius: 999px;
+  border: 2px solid #05060d;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: theme('colors.neutral.400');
+
+.font-display {
+  font-family: 'Orbitron', system-ui, sans-serif;
+}
+
+.cyber-app-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: transparent;
+}
+
+.cyber-grid {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.3;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 90%);
+}
+
+@layer components {
+  .cyber-panel {
+    @apply border border-cyan-300/20 bg-slate-950/70 backdrop-blur-xl;
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.03), 0 18px 60px rgba(0, 0, 0, 0.35);
+  }
+
+  .cyber-kicker {
+    @apply font-display text-xs font-bold uppercase tracking-[0.28em] text-cyan-300;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
