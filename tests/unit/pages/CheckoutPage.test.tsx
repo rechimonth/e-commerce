@@ -41,8 +41,8 @@ describe('CheckoutPage', () => {
   it('renderiza el formulario de checkout cuando hay items', () => {
     const router = createMemoryRouter([{ path: '/checkout', element: <CheckoutPage /> }], { initialEntries: ['/checkout'] });
     render(<RouterProvider router={router} />);
-    expect(screen.getByRole('heading', { name: /completa tu pedido/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /tu pedido/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /completa tu pedido/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tu pedido', level: 2 })).toBeInTheDocument();
     expect(screen.getByText('Test Product')).toBeInTheDocument();
   });
 
@@ -65,7 +65,8 @@ describe('CheckoutPage', () => {
     fireEvent.change(screen.getByLabelText('Código postal'), { target: { value: '1870' } });
     fireEvent.change(screen.getByLabelText('País'), { target: { value: 'Argentina' } });
 
-    fireEvent.submit(document.querySelector('form')!);
+    const checkoutButton = screen.getByRole('button', { name: /confirmar pedido/i });
+    fireEvent.submit(checkoutButton.closest('form')!);
     expect(mockProcessCheckout).toHaveBeenCalledTimes(1);
   });
 
