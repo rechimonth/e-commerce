@@ -15,6 +15,6 @@ describe('Components', () => {
     render(<AuthContext.Provider value={mockAuthValue}><CartProvider><BrowserRouter><HomePage /></BrowserRouter></CartProvider></AuthContext.Provider>);
     expect(screen.getByText(/Explorar catálogo/i)).toBeInTheDocument();
     expect(screen.getByText(/Ver carrito/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Entrar/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Entrar', exact: true })).toBeInTheDocument();
   });
 });
