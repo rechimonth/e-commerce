@@ -35,4 +35,10 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    files: ['scripts/**/*.ts', 'src/pages/admin/ProductsPage.tsx'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 );
