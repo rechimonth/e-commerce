@@ -4,27 +4,15 @@
  * Mockea AWS SDK v3 y Vercel runtime.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { VercelRequest } from '@vercel/node';
-
-// --------------------------------------------------------------
-// Mocks
-// --------------------------------------------------------------
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 vi.mock('@aws-sdk/client-s3', () => {
   const mockSend = vi.fn();
-  const MockS3Client = vi.fn(function MockS3Client() {
-    return { send: mockSend };
-  });
-
-  return {
-    S3Client: MockS3Client,
-    PutObjectCommand: vi.fn(),
-  };
+  const MockS3Client = vi.fn(function MockS3Client() { return { send: mockSend }; });
+  return { S3Client: MockS3Client, PutObjectCommand: vi.fn() };
 });
 
-vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: vi.fn(),
-}));
+vi.mock('@aws-sdk/s3-request-presigner', () => ({ getSignedUrl: vi.fn() }));
 
 vi.mock('firebase-admin/app', () => ({
   getApps: vi.fn(() => [{ name: 'test-app' }]),
@@ -42,59 +30,35 @@ vi.mock('firebase-admin/firestore', () => {
     set: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
   }));
-  const mockCollection = vi.fn(() => ({
-    doc: mockDoc,
-    add: vi.fn(),
-  }));
+  const mockCollection = vi.fn(() => ({ doc: mockDoc, add: vi.fn() }));
+  const serverTimestamp = vi.fn(() => ({ _type: 'serverTimestamp' }));
   return {
-    getFirestore: vi.fn(() => ({
-      collection: mockCollection,
-      doc: mockDoc,
-    })),
+    getFirestore: vi.fn(() => ({ collection: mockCollection, doc: mockDoc })),
     doc: mockDoc,
     getDoc: vi.fn(async (ref: { get: () => Promise<{ exists: boolean; data: () => Record<string, unknown> }> }) => ref.get()),
     updateDoc: vi.fn().mockResolvedValue(undefined),
-    serverTimestamp: vi.fn(),
+    serverTimestamp,
+    FieldValue: { serverTimestamp },
   };
 });
 
-// --------------------------------------------------------------
-// Helpers de test
-// --------------------------------------------------------------
-
 function createRequest(body: Record<string, unknown>, method = 'POST') {
-  return {
-    method,
-    headers: {
-      authorization: 'Bearer valid-admin-token',
-    },
-    body,
-  } as unknown as VercelRequest;
+  return { method, headers: { authorization: 'Bearer valid-admin-token' }, body } as unknown as VercelRequest;
 }
 
 function createResponse() {
   let _statusCode = 200;
   let _jsonPayload: Record<string, unknown> = {};
-
   return {
     status: (code: number) => {
       _statusCode = code;
-      return {
-        json: (payload: Record<string, unknown>) => {
-          _jsonPayload = payload;
-          return { statusCode: _statusCode, jsonPayload: _jsonPayload };
-        },
-      };
+      return { json: (payload: Record<string, unknown>) => { _jsonPayload = payload; return { statusCode: _statusCode, jsonPayload: _jsonPayload }; } };
     },
     get statusCode() { return _statusCode; },
     get jsonPayload() { return _jsonPayload; },
     setHeader: vi.fn(),
   } as unknown as VercelResponse;
 }
-
-// --------------------------------------------------------------
-// Tests
-// --------------------------------------------------------------
 
 describe('POST /api/upload', () => {
   beforeEach(() => {
@@ -107,101 +71,68 @@ describe('POST /api/upload', () => {
 
   it('returns 405 for non-POST methods', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({}, 'GET');
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({}, 'GET'), res);
     expect(res.statusCode).toBe(405);
   });
 
   it('returns 401 when authorization header is missing', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = {
-      method: 'POST',
-      headers: {},
-      body: { fileName: 'test.jpg', fileType: 'image/jpeg' },
-    } as VercelRequest;
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler({ method: 'POST', headers: {}, body: { fileName: 'test.jpg', fileType: 'image/jpeg' } } as VercelRequest, res);
     expect(res.statusCode).toBe(401);
   });
 
   it('returns 400 when fileName is missing', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileType: 'image/jpeg' });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileType: 'image/jpeg' }), res);
     expect(res.statusCode).toBe(400);
   });
 
   it('returns 400 when fileType is missing', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'test.jpg' });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileName: 'test.jpg' }), res);
     expect(res.statusCode).toBe(400);
   });
 
   it('returns 400 for invalid file extension', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'test.exe', fileType: 'application/octet-stream' });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileName: 'test.exe', fileType: 'application/octet-stream' }), res);
     expect(res.statusCode).toBe(400);
   });
 
   it('returns 400 for invalid content type', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'test.jpg', fileType: 'application/pdf' });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileName: 'test.jpg', fileType: 'application/pdf' }), res);
     expect(res.statusCode).toBe(400);
   });
 
   it('returns 400 when file is too large', async () => {
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'test.jpg', fileType: 'image/jpeg', fileSize: 10 * 1024 * 1024 });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileName: 'test.jpg', fileType: 'image/jpeg', fileSize: 10 * 1024 * 1024 }), res);
     expect(res.statusCode).toBe(400);
   });
 
   it('returns 500 when AWS env is missing', async () => {
     delete process.env.AWS_S3_BUCKET;
     delete process.env.AWS_REGION;
-
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'test.jpg', fileType: 'image/jpeg', fileSize: 1024 });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileName: 'test.jpg', fileType: 'image/jpeg', fileSize: 1024 }), res);
     expect(res.statusCode).toBe(500);
   });
 
   it('returns 200 with presigned URL on success', async () => {
     const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
     vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url' as unknown as never);
-
     const handler = (await import('../../../api/upload')).default;
-    const req = createRequest({ fileName: 'photo.jpg', fileType: 'image/jpeg', fileSize: 1024 });
     const res = createResponse();
-
-    await handler(req, res);
-
+    await handler(createRequest({ fileName: 'photo.jpg', fileType: 'image/jpeg', fileSize: 1024 }), res);
     expect(res.statusCode).toBe(200);
     const payload = res.jsonPayload as { success: boolean; data: { uploadUrl: string; key: string; publicUrl: string } };
     expect(payload.success).toBe(true);
@@ -210,5 +141,3 @@ describe('POST /api/upload', () => {
     expect(payload.data.publicUrl).toContain('test-bucket');
   });
 });
-
-

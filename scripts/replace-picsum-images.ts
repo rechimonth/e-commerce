@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 
@@ -29,7 +29,7 @@ function getUnsplashImage(index: number): string {
 }
 
 async function replaceAllPicsumImages() {
-  console.log('?? Reemplazando TODAS las im·genes de picsum.photos por Unsplash...\n');
+  console.log('?? Reemplazando TODAS las im√°genes de picsum.photos por Unsplash...\n');
 
   const snapshot = await db.collection('products').get();
   let replaced = 0;

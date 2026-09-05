@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 
@@ -37,7 +37,7 @@ function isInvalidImageUrl(url: string): boolean {
 }
 
 async function fixProductImages() {
-  console.log('?? Buscando productos con imágenes inválidas...\n');
+  console.log('?? Buscando productos con imÃ¡genes invÃ¡lidas...\n');
 
   const snapshot = await db.collection('products').get();
   let fixed = 0;
@@ -51,7 +51,7 @@ async function fixProductImages() {
     if (isInvalidImageUrl(imageUrl)) {
       const fallback = getFallbackImage(fixed);
       console.log(`[${doc.id}] ${data.name ?? 'Sin nombre'}`);
-      console.log(`  ? URL inválida: ${imageUrl}`);
+      console.log(`  ? URL invÃ¡lida: ${imageUrl}`);
       console.log(`  ? Reemplazando por: ${fallback}`);
 
       await doc.ref.update({
@@ -73,6 +73,6 @@ async function fixProductImages() {
 }
 
 fixProductImages().catch((error) => {
-  console.error('? Error al corregir imágenes:', error);
+  console.error('? Error al corregir imÃ¡genes:', error);
   process.exit(1);
 });
