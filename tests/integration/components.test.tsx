@@ -7,40 +7,14 @@ import { CartProvider } from '@/store/cart/CartProvider';
 import { AuthContext } from '@/contexts/AuthContext';
 import type { AuthContextValue } from '@/contexts/AuthContext';
 
-const mockAuthValue: AuthContextValue = {
-  user: null,
-  roleState: 'unauthenticated',
-  session: null,
-  isLoading: false,
-  error: null,
-  signIn: () => Promise.resolve(),
-  signUp: () => Promise.resolve(),
-  signInWithGoogle: () => Promise.resolve(),
-  signOut: () => Promise.resolve(),
-  refreshUserProfile: () => Promise.resolve(),
-  clearError: () => {},
-};
+const mockAuthValue: AuthContextValue = { user: null, roleState: 'unauthenticated', session: null, isLoading: false, error: null, signIn: () => Promise.resolve(), signUp: () => Promise.resolve(), signInWithGoogle: () => Promise.resolve(), signOut: () => Promise.resolve(), refreshUserProfile: () => Promise.resolve(), clearError: () => {} };
 
 describe('Components', () => {
-  it('LoadingSpinner renders', () => {
-    render(<LoadingSpinner />);
-    const spinner = screen.getByRole('status');
-    expect(spinner).toBeInTheDocument();
-  });
-
+  it('LoadingSpinner renders', () => { render(<LoadingSpinner />); expect(screen.getByRole('status')).toBeInTheDocument(); });
   it('HomePage renders with navigation links', () => {
-    render(
-      <AuthContext.Provider value={mockAuthValue}>
-        <CartProvider>
-          <BrowserRouter>
-            <HomePage />
-          </BrowserRouter>
-        </CartProvider>
-      </AuthContext.Provider>,
-    );
-
-    expect(screen.getByText(/Ver catálogo/i)).toBeInTheDocument();
+    render(<AuthContext.Provider value={mockAuthValue}><CartProvider><BrowserRouter><HomePage /></BrowserRouter></CartProvider></AuthContext.Provider>);
+    expect(screen.getByText(/Explorar catálogo/i)).toBeInTheDocument();
     expect(screen.getByText(/Ver carrito/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Iniciar sesión/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Entrar/i })).toBeInTheDocument();
   });
 });
