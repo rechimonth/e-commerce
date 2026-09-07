@@ -78,25 +78,25 @@ export function AdminOrderMiniCart({
   return (
     <aside
       aria-label="Resumen flotante de la orden"
-      className="fixed bottom-4 right-4 z-40 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl shadow-neutral-900/15"
+      className="fixed bottom-4 right-4 z-40 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-cyan-400/25 bg-slate-950/95 text-slate-100 shadow-2xl shadow-cyan-950/40 backdrop-blur-md"
     >
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-controls="admin-order-mini-cart-content"
-        className="flex min-h-16 w-full items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+        className="flex min-h-16 w-full items-center justify-between gap-3 border-b border-cyan-400/15 px-4 py-3 text-left transition-colors hover:bg-cyan-400/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-300"
       >
         <span className="flex min-w-0 items-center gap-3">
-          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
             <CartIcon />
-            <span className="absolute -right-2 -top-2 flex min-h-6 min-w-6 items-center justify-center rounded-full bg-primary-600 px-1.5 text-xs font-bold text-white shadow-sm">
+            <span className="absolute -right-2 -top-2 flex min-h-6 min-w-6 items-center justify-center rounded-full border border-slate-950 bg-cyan-400 px-1.5 text-xs font-black text-slate-950 shadow-[0_0_14px_rgba(34,211,238,0.4)]">
               {totalUnits}
             </span>
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-neutral-900">Resumen de la orden</span>
-            <span className="block text-xs text-neutral-500">
+            <span className="block truncate text-sm font-bold text-white">Resumen de la orden</span>
+            <span className="block text-xs text-slate-400">
               {totalUnits} {totalUnits === 1 ? 'ítem' : 'ítems'} · {items.length} {items.length === 1 ? 'producto' : 'productos'}
             </span>
           </span>
@@ -105,26 +105,28 @@ export function AdminOrderMiniCart({
       </button>
 
       {isOpen && (
-        <div id="admin-order-mini-cart-content" className="bg-white">
+        <div id="admin-order-mini-cart-content" className="bg-slate-950/90">
           <div className="max-h-72 overflow-y-auto px-3 py-2">
-            <ul className="divide-y divide-neutral-100">
+            <ul className="divide-y divide-cyan-400/10">
               {items.map((item) => (
                 <li key={item.id} className="flex gap-3 py-3">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-neutral-100 ring-1 ring-neutral-200">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-cyan-400/15 bg-slate-900 ring-1 ring-cyan-400/5">
                     <img src={item.image.url} alt={item.image.alt} className="h-full w-full object-cover" loading="lazy" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-neutral-900" title={item.name}>{item.name}</p>
+                    <p className="truncate text-sm font-semibold text-slate-100" title={item.name}>{item.name}</p>
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <Price amount={item.price.amount * item.quantity} currency={item.price.currency} />
-                      <span className="text-xs text-neutral-500">
+                      <span className="font-bold text-cyan-300">
+                        <Price amount={item.price.amount * item.quantity} currency={item.price.currency} />
+                      </span>
+                      <span className="text-xs text-slate-500">
                         <Price amount={item.price.amount} currency={item.price.currency} /> c/u
                       </span>
                     </div>
 
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50">
+                      <div className="flex items-center rounded-lg border border-cyan-400/20 bg-slate-900/80">
                         <Button
                           type="button"
                           variant="ghost"
@@ -132,11 +134,11 @@ export function AdminOrderMiniCart({
                           onClick={() => onDecrement(item.id)}
                           disabled={item.quantity <= 1}
                           aria-label={`Reducir cantidad de ${item.name}`}
-                          className="h-9 w-9 p-0"
+                          className="h-9 w-9 p-0 text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200"
                         >
                           <MinusIcon />
                         </Button>
-                        <span className="min-w-8 text-center text-sm font-semibold text-neutral-800" aria-label={`Cantidad ${item.quantity}`}>
+                        <span className="min-w-8 text-center text-sm font-bold text-slate-100" aria-label={`Cantidad ${item.quantity}`}>
                           {item.quantity}
                         </span>
                         <Button
@@ -146,7 +148,7 @@ export function AdminOrderMiniCart({
                           onClick={() => onIncrement(item.id)}
                           disabled={item.quantity >= item.stock}
                           aria-label={`Aumentar cantidad de ${item.name}`}
-                          className="h-9 w-9 p-0"
+                          className="h-9 w-9 p-0 text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200"
                         >
                           <PlusIcon />
                         </Button>
@@ -158,7 +160,7 @@ export function AdminOrderMiniCart({
                         size="sm"
                         onClick={() => onRemove(item.id)}
                         aria-label={`Eliminar ${item.name} de la orden`}
-                        className="h-9 w-9 p-0 text-error-600 hover:bg-error-50 hover:text-error-700"
+                        className="h-9 w-9 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                       >
                         <TrashIcon />
                       </Button>
@@ -169,14 +171,14 @@ export function AdminOrderMiniCart({
             </ul>
           </div>
 
-          <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-3">
+          <div className="border-t border-cyan-400/15 bg-slate-900/80 px-4 py-3">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm font-medium text-neutral-600">Total</span>
-              <span className="text-lg font-bold text-primary-700">
+              <span className="text-sm font-semibold text-slate-400">Total</span>
+              <span className="text-lg font-black text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.25)]">
                 <Price amount={totalAmount} currency={currency} />
               </span>
             </div>
-            <p className="mt-1 text-xs text-neutral-500">Los cambios se reflejan también en la tabla principal.</p>
+            <p className="mt-1 text-xs text-slate-500">Los cambios se reflejan también en la tabla principal.</p>
           </div>
         </div>
       )}
