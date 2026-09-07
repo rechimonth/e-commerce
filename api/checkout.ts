@@ -5,14 +5,47 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const PAYMENT_METHODS = new Set(['card', 'paypal', 'cash']);
 
+function normalizePrivateKey(value: string): string {
+  let key = value.trim();
+
+  // Vercel can receive the service-account key with literal \\n sequences,
+  // real line breaks, or an extra pair of wrapping quotes.
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim();
+  }
+
+  return key
+    .replace(/\\r?\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .trim();
+}
+
 function getFirebaseAdminApp() {
   const apps = getApps();
   if (apps.length > 0) return apps[0]!;
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  if (!projectId || !clientEmail || !privateKey) throw new Error('Firebase Admin environment is not configured');
-  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+  const privateKeyValue = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (!projectId || !clientEmail || !privateKeyValue) {
+    throw new Error('Firebase Admin environment is not configured');
+  }
+
+  const privateKey = normalizePrivateKey(privateKeyValue);
+
+  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
+    throw new Error('FIREBASE_PRIVATE_KEY has an invalid format');
+  }
+
+  return initializeApp({
+    credential: cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+  });
 }
 
 function jsonError(res: VercelResponse, status: number, error: string) {
@@ -22,7 +55,9 @@ function jsonError(res: VercelResponse, status: number, error: string) {
 function validAddress(value: unknown): value is Record<string, string> {
   if (!value || typeof value !== 'object') return false;
   const address = value as Record<string, unknown>;
-  return ['street', 'city', 'state', 'zipCode', 'country'].every((key) => typeof address[key] === 'string' && address[key].trim().length > 0);
+  return ['street', 'city', 'state', 'zipCode', 'country'].every(
+    (key) => typeof address[key] === 'string' && address[key].trim().length > 0,
+  );
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -46,7 +81,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const parsedItems = requestedItems.map((entry) => {
       if (!entry || typeof entry !== 'object') throw new Error('ITEM_INVALID');
       const item = entry as Record<string, unknown>;
-      if (typeof item.productId !== 'string' || !item.productId.trim() || typeof item.quantity !== 'number' || !Number.isInteger(item.quantity) || item.quantity < 1) throw new Error('ITEM_INVALID');
+      if (
+        typeof item.productId !== 'string' ||
+        !item.productId.trim() ||
+        typeof item.quantity !== 'number' ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity < 1
+      ) {
+        throw new Error('ITEM_INVALID');
+      }
       return { productId: item.productId, quantity: item.quantity };
     });
 
@@ -106,13 +149,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ success: true, orderId: orderRef.id });
   } catch (error) {
-    const message = error instanceof Error ? error.message : '';
-    if (message === 'PRODUCT_NOT_FOUND') return jsonError(res, 404, 'Uno de los productos ya no está disponible');
-    if (message === 'PRODUCT_INVALID') return jsonError(res, 409, 'Uno de los productos tiene datos inválidos');
-    if (message === 'CURRENCY_MISMATCH') return jsonError(res, 409, 'Los productos del pedido usan monedas diferentes');
-    if (message === 'ITEM_INVALID') return jsonError(res, 400, 'El carrito contiene datos inválidos');
-    if (message.startsWith('STOCK:')) return jsonError(res, 409, `Stock insuficiente para ${message.slice(6)}`);
-    console.error('Checkout failed:', message || 'unknown');
-    return jsonError(res, 500, 'No pudimos completar el pedido. Intenta nuevamente.');
+    console.error('Checkout API Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    });
   }
 }
