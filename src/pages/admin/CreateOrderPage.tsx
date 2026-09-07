@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -9,6 +9,10 @@ import { Price } from '@/components/ui/Price';
 import { AdminOrderMiniCart } from '@/components/admin/AdminOrderMiniCart';
 import { ROUTES } from '@/constants/routes';
 import type { Product } from '@/types/domain';
+import { checkoutService } from '@/services/checkoutService';
+import type { CheckoutData } from '@/types/order';
+import type { CartState } from '@/types/cart';
+import { useAuth } from '@/hooks/useAuth';
 
 type PaymentMethod = 'card' | 'paypal' | 'cash';
 type CategoryFilter = '' | 'action-figures' | 'video-games' | 'shoes';
@@ -59,6 +63,8 @@ const DEFAULT_ADDRESS = {
 };
 
 export function AdminCreateOrderPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
@@ -155,36 +161,44 @@ export function AdminCreateOrderPage() {
 
   const handleCreateOrder = async () => {
     if (!selectedCustomerId || cart.length === 0) return;
+    if (!user) {
+      setError('No hay sesión activa. Inicia sesión nuevamente.');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
-      const { ordersService } = await import('@/services/ordersService');
-      const order = await ordersService.createOrder({
-        userId: selectedCustomerId,
-        items: cart.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          priceCents: item.price.amount,
-          quantity: item.quantity,
-          imageUrl: item.image.url,
-          orderId: '',
-        })),
-        subtotalCents: subtotal,
-        taxCents: Math.round(tax),
-        shippingCents: shipping,
-        discountCents: discount,
-        totalCents: Math.round(total),
-        currency: 'USD',
+      const checkoutData: CheckoutData = {
         shippingAddress: DEFAULT_ADDRESS,
         billingAddress: DEFAULT_ADDRESS,
         paymentMethod,
-      });
+      };
+      const cartState: CartState = {
+        items: cart.map((item) => ({
+          productId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          maxStock: item.stock,
+        })),
+        discount: { amount: 0, currency: 'USD' },
+        totalItems: totalUnits,
+        totalPrice: { amount: total, currency: 'USD' },
+        lastUpdated: new Date(),
+      };
+      const order = await checkoutService.processCheckout(checkoutData, cartState, user.uid);
+      if (!order) {
+        setError('No pudimos crear la orden. Intenta nuevamente.');
+        return;
+      }
       alert('Orden creada exitosamente: ' + order.id);
       setCart([]);
       setSelectedCustomerId('');
       setPaymentMethod('card');
       setSelectedCategory('');
       setIsCatalogOpen(false);
+      navigate(ROUTES.ADMIN_ORDERS);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Error al crear la orden';
       setError(message);
