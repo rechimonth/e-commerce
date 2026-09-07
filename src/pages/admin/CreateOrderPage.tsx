@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Price } from '@/components/ui/Price';
+import { AdminOrderMiniCart } from '@/components/admin/AdminOrderMiniCart';
 import { ROUTES } from '@/constants/routes';
 import type { Product } from '@/types/domain';
 
@@ -125,11 +126,32 @@ export function AdminCreateOrderPage() {
     );
   }, []);
 
+  const incrementQuantity = useCallback((productId: string) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === productId
+          ? { ...item, quantity: Math.min(item.quantity + 1, item.stock) }
+          : item,
+      ),
+    );
+  }, []);
+
+  const decrementQuantity = useCallback((productId: string) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === productId
+          ? { ...item, quantity: Math.max(1, item.quantity - 1) }
+          : item,
+      ),
+    );
+  }, []);
+
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price.amount * item.quantity, 0), [cart]);
   const tax = useMemo(() => subtotal * TAX_RATE, [subtotal]);
   const shipping = useMemo(() => 0, []);
   const discount = useMemo(() => 0, []);
   const total = useMemo(() => subtotal + tax + shipping - discount, [subtotal, tax, shipping, discount]);
+  const totalUnits = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
 
   const handleCreateOrder = async () => {
     if (!selectedCustomerId || cart.length === 0) return;
@@ -175,7 +197,7 @@ export function AdminCreateOrderPage() {
   const selectedCustomer = MOCK_CUSTOMERS.find((c) => c.id === selectedCustomerId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 lg:pb-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900">Crear Orden</h1>
         <Link to={ROUTES.ADMIN_ORDERS}>
@@ -257,6 +279,7 @@ export function AdminCreateOrderPage() {
                             size="sm"
                             onClick={() => removeFromCart(item.id)}
                             className="text-error-600 hover:text-error-700 hover:bg-error-50"
+                            aria-label={`Eliminar ${item.name} de la orden`}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M3 6h18" />
@@ -341,6 +364,16 @@ export function AdminCreateOrderPage() {
           </Card>
         </div>
       </div>
+
+      <AdminOrderMiniCart
+        items={cart}
+        totalUnits={totalUnits}
+        totalAmount={total}
+        currency="USD"
+        onIncrement={incrementQuantity}
+        onDecrement={decrementQuantity}
+        onRemove={removeFromCart}
+      />
 
       <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl">
         <div className="space-y-4">
