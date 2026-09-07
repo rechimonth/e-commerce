@@ -13,6 +13,7 @@ import type { AsyncStatus } from '@/types/ui';
 import { getCurrentUserIdToken } from '@/infrastructure/firebase/auth';
 
 const SIMULATED_PAYMENT_DELAY_MS = 400;
+const CHECKOUT_TIMEOUT_MS = 10000;
 
 export interface CheckoutResult {
   readonly status: AsyncStatus;
@@ -31,29 +32,49 @@ export const checkoutService = {
 
       await new Promise<void>((resolve) => setTimeout(resolve, SIMULATED_PAYMENT_DELAY_MS));
 
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          items: cartState.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
-          shippingAddress: data.shippingAddress,
-          billingAddress: data.billingAddress,
-          paymentMethod: data.paymentMethod,
-          notes: data.notes,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), CHECKOUT_TIMEOUT_MS);
 
-      const payload = (await response.json()) as { success?: boolean; orderId?: string; error?: string };
-      if (!response.ok || !payload.success || !payload.orderId) {
-        throw new Error(payload.error ?? 'No pudimos completar el pedido. Intenta nuevamente.');
+      try {
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            items: cartState.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+            shippingAddress: data.shippingAddress,
+            billingAddress: data.billingAddress,
+            paymentMethod: data.paymentMethod,
+            notes: data.notes,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        let payload: { success?: boolean; orderId?: string; error?: string };
+        try {
+          payload = (await response.json()) as { success?: boolean; orderId?: string; error?: string };
+        } catch {
+          throw new Error(`El servidor devolvió una respuesta inválida (${response.status}). Intenta nuevamente.`);
+        }
+
+        if (!response.ok || !payload.success || !payload.orderId) {
+          throw new Error(payload.error ?? 'No pudimos completar el pedido. Intenta nuevamente.');
+        }
+
+        const order = await ordersService.fetchOrder(payload.orderId);
+        if (!order) throw new Error('El pedido se creó pero no pudo recuperarse.');
+        return order;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('La solicitud tardó demasiado. Verifica tu conexión e intenta nuevamente.');
+        }
+        throw error;
       }
-
-      const order = await ordersService.fetchOrder(payload.orderId);
-      if (!order) throw new Error('El pedido se creó pero no pudo recuperarse.');
-      return order;
     });
   },
 };
