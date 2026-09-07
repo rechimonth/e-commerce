@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Price } from '@/components/ui/Price';
 import type { Product } from '@/types/domain';
+import type { CurrencyCode } from '@/types/pricing';
 
 export interface AdminOrderMiniCartItem extends Product {
   readonly quantity: number;
@@ -11,7 +12,7 @@ interface AdminOrderMiniCartProps {
   readonly items: readonly AdminOrderMiniCartItem[];
   readonly totalUnits: number;
   readonly totalAmount: number;
-  readonly currency: string;
+  readonly currency: CurrencyCode;
   readonly onIncrement: (productId: string) => void;
   readonly onDecrement: (productId: string) => void;
   readonly onRemove: (productId: string) => void;
