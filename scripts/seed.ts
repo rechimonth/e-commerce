@@ -1,14 +1,24 @@
 import "dotenv/config";
-import { initializeApp } from "firebase/app";
-import {
-  collection,
-  doc,
-  getFirestore,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 export type CategoryId = "action-figures" | "video-games" | "shoes";
+
+type SeedProduct = {
+  name: string;
+  nameLower: string;
+  imageKey: string;
+  imageUrl: string;
+  description: string;
+  priceCents: number;
+  currency: "USD";
+  category: CategoryId;
+  stock: number;
+  rating: number;
+  reviewCount: number;
+  isActive: boolean;
+  createdBy: string;
+};
 
 const CATALOG: Record<CategoryId, string[]> = {
   shoes: [
@@ -79,82 +89,119 @@ const CATALOG: Record<CategoryId, string[]> = {
   ],
 };
 
-function randomPrice(): number {
-  return Number((80 + Math.random() * 270).toFixed(2));
+function stableHash(value: string): number {
+  return value.split("").reduce((hash, char) => ((hash * 31 + char.charCodeAt(0)) >>> 0), 2166136261);
 }
 
-function randomStock(): number {
-  return Math.floor(Math.random() * 46) + 5;
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-function createDescription(name: string, categoryId: CategoryId): string {
+function priceFor(name: string): number {
+  return 8000 + (stableHash(name) % 27001);
+}
+
+function stockFor(name: string): number {
+  return 5 + (stableHash(`${name}:stock`) % 46);
+}
+
+function createDescription(name: string, category: CategoryId): string {
   const categoryLabel = {
     shoes: "Zapatillas",
     "video-games": "Videojuegos",
     "action-figures": "Figuras de Acción",
-  }[categoryId];
+  }[category];
 
-  return `${name} pertenece a la categoría "${categoryLabel}". Fabricado con materiales de calidad que ofrecen comodidad, durabilidad y un diseño moderno para el uso diario.`;
+  return `${name} pertenece a la categoría ${categoryLabel}. Producto de catálogo preparado para ECOMMERCE AI.`;
 }
 
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-function generatePlaceholderSvg(name: string): string {
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const hue = hash % 360;
-  const color = `hsl(${hue}, 70%, 60%)`;
-  const textColor = `hsl(${hue}, 70%, 20%)`;
+function generatePlaceholderSvg(name: string, category: CategoryId): string {
+  const categoryLabel = {
+    shoes: "ZAPATILLAS",
+    "video-games": "VIDEOJUEGOS",
+    "action-figures": "FIGURAS",
+  }[category];
+  const hue = stableHash(`${category}:${name}`) % 360;
   const initial = name.charAt(0).toUpperCase();
+  const safeName = name.replace(/[&<>"']/g, "");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="hsl(${hue},70%,16%)"/><rect x="24" y="24" width="552" height="552" rx="28" fill="none" stroke="hsl(${hue},85%,65%)" stroke-width="4"/><text x="300" y="270" font-family="Arial,sans-serif" font-size="180" font-weight="700" fill="hsl(${hue},85%,70%)" text-anchor="middle">${initial}</text><text x="300" y="410" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="white" text-anchor="middle">${categoryLabel}</text><text x="300" y="455" font-family="Arial,sans-serif" font-size="18" fill="white" text-anchor="middle">${safeName.slice(0, 34)}</text></svg>`;
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
-    <rect width="300" height="300" fill="${color}"/>
-    <text x="150" y="150" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="${textColor}" text-anchor="middle" dominant-baseline="central">${initial}</text>
-  </svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
 
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+function getFirebaseAdminApp() {
+  const apps = getApps();
+  if (apps.length > 0) return apps[0]!;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      "Faltan FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL o FIREBASE_PRIVATE_KEY. El seeder usa Firebase Admin y no las variables VITE_.",
+    );
+  }
+
+  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+}
+
+function buildProducts(): SeedProduct[] {
+  const createdBy = process.env.SEED_CREATED_BY ?? "seed-script";
+
+  return Object.entries(CATALOG).flatMap(([category, names]) =>
+    names.map((name) => {
+      const categoryId = category as CategoryId;
+      const slug = `${categoryId}-${slugify(name)}`;
+      return {
+        name,
+        nameLower: name.toLowerCase(),
+        imageKey: `seed/${slug}.svg`,
+        imageUrl: generatePlaceholderSvg(name, categoryId),
+        description: createDescription(name, categoryId),
+        priceCents: priceFor(name),
+        currency: "USD",
+        category: categoryId,
+        stock: stockFor(name),
+        rating: 4.5,
+        reviewCount: 0,
+        isActive: true,
+        createdBy,
+      } satisfies SeedProduct;
+    }),
+  );
 }
 
 async function seed(): Promise<void> {
-  const products = Object.entries(CATALOG).flatMap(([categoryId, names]) =>
-    names.map((name) => ({
-      name,
-      nameLower: name.toLowerCase(),
-      image: generatePlaceholderSvg(name),
-      description: createDescription(name, categoryId as CategoryId),
-      price: randomPrice(),
-      stock: randomStock(),
-      categoryId: categoryId as CategoryId,
-    })),
-  );
+  const app = getFirebaseAdminApp();
+  const db = getFirestore(app);
+  const products = buildProducts();
 
-  console.warn(`🌱 Sembrando ${products.length} productos...\n`);
+  console.warn(`🌱 Sembrando ${products.length} productos con Firebase Admin...\n`);
 
   for (const product of products) {
-    const ref = doc(collection(db, "products"));
-    await setDoc(ref, {
+    const id = `${product.category}-${slugify(product.name)}`;
+    const ref = db.collection("products").doc(id);
+
+    await ref.set({
       ...product,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
+
     console.warn(`✔ ${product.name}`);
   }
 
-  console.warn(`\n✅ ${products.length} productos creados correctamente.`);
-  process.exit(0);
+  console.warn(`\n✅ ${products.length} productos creados/actualizados correctamente.`);
 }
 
-seed().catch((error) => {
+seed().catch((error: unknown) => {
   console.error("❌ Error al ejecutar el seeder:");
-  console.error(error);
-  process.exit(1);
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
 });
