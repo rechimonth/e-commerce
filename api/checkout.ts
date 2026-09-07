@@ -1,9 +1,15 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const PAYMENT_METHODS = new Set(['card', 'paypal', 'cash']);
+
+class UnauthorizedCheckoutError extends Error {
+  constructor() {
+    super('Sesión inválida o expirada');
+    this.name = 'UnauthorizedCheckoutError';
+  }
+}
 
 function normalizePrivateKey(value: string): string {
   let key = value.trim();
@@ -48,6 +54,52 @@ function getFirebaseAdminApp() {
   });
 }
 
+/**
+ * Validates a Firebase ID token without loading firebase-admin/auth.
+ * This avoids the jwks-rsa -> jose CommonJS/ESM incompatibility on Vercel.
+ * Firebase's Identity Toolkit API validates the token for the project tied
+ * to the Web API key and returns the authenticated user's Firebase UID.
+ */
+async function verifyFirebaseIdToken(token: string): Promise<{ uid: string }> {
+  const apiKey = process.env.FIREBASE_WEB_API_KEY ?? process.env.VITE_FIREBASE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('Firebase Web API key is not configured');
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
+      },
+    );
+  } catch {
+    throw new Error('No se pudo verificar la sesión con Firebase');
+  }
+
+  const payload = (await response.json().catch(() => null)) as
+    | { users?: Array<{ localId?: string; disabled?: boolean }> }
+    | { error?: { message?: string } }
+    | null;
+
+  if (!response.ok) {
+    throw new UnauthorizedCheckoutError();
+  }
+
+  const user = payload && 'users' in payload ? payload.users?.[0] : undefined;
+
+  if (!user?.localId || user.disabled) {
+    throw new UnauthorizedCheckoutError();
+  }
+
+  return { uid: user.localId };
+}
+
 function jsonError(res: VercelResponse, status: number, error: string) {
   return res.status(status).json({ success: false, error });
 }
@@ -70,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const app = getFirebaseAdminApp();
-    const decoded = await getAuth(app).verifyIdToken(token);
+    const decoded = await verifyFirebaseIdToken(token);
     const body = req.body as Record<string, unknown> | undefined;
     if (!body || !Array.isArray(body.items) || body.items.length === 0) return jsonError(res, 400, 'El carrito está vacío');
     if (!validAddress(body.shippingAddress) || !validAddress(body.billingAddress)) return jsonError(res, 400, 'La dirección de envío no es válida');
@@ -149,6 +201,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ success: true, orderId: orderRef.id });
   } catch (error) {
+    if (error instanceof UnauthorizedCheckoutError) return jsonError(res, 401, error.message);
     console.error('Checkout API Error:', error);
     return res.status(500).json({
       success: false,
