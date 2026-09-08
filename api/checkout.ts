@@ -11,6 +11,13 @@ class UnauthorizedCheckoutError extends Error {
   }
 }
 
+class FirebaseConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FirebaseConfigurationError';
+  }
+}
+
 function normalizePrivateKey(value: string): string {
   let key = value.trim();
 
@@ -31,18 +38,59 @@ function getFirebaseAdminApp() {
   const apps = getApps();
   if (apps.length > 0) return apps[0]!;
 
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
+
+  if (serviceAccountJson) {
+    try {
+      const credentials = JSON.parse(serviceAccountJson) as {
+        project_id?: unknown;
+        client_email?: unknown;
+        private_key?: unknown;
+      };
+
+      const projectId = typeof credentials.project_id === 'string' ? credentials.project_id : '';
+      const clientEmail = typeof credentials.client_email === 'string' ? credentials.client_email : '';
+      const privateKey = typeof credentials.private_key === 'string' ? normalizePrivateKey(credentials.private_key) : '';
+
+      if (!projectId || !clientEmail || !privateKey) {
+        throw new FirebaseConfigurationError('FIREBASE_SERVICE_ACCOUNT_JSON is missing required fields');
+      }
+
+      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
+        throw new FirebaseConfigurationError('FIREBASE_SERVICE_ACCOUNT_JSON contains an invalid private key');
+      }
+
+      return initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+    } catch (error) {
+      if (error instanceof FirebaseConfigurationError) throw error;
+      throw new FirebaseConfigurationError('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
+    }
+  }
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKeyValue = process.env.FIREBASE_PRIVATE_KEY;
 
-  if (!projectId || !clientEmail || !privateKeyValue) {
-    throw new Error('Firebase Admin environment is not configured');
+  const missing = [
+    !projectId ? 'FIREBASE_PROJECT_ID' : null,
+    !clientEmail ? 'FIREBASE_CLIENT_EMAIL' : null,
+    !privateKeyValue ? 'FIREBASE_PRIVATE_KEY' : null,
+  ].filter((value): value is string => Boolean(value));
+
+  if (missing.length > 0) {
+    throw new FirebaseConfigurationError(`Missing Firebase Admin environment variables: ${missing.join(', ')}`);
   }
 
   const privateKey = normalizePrivateKey(privateKeyValue);
 
   if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
-    throw new Error('FIREBASE_PRIVATE_KEY has an invalid format');
+    throw new FirebaseConfigurationError('FIREBASE_PRIVATE_KEY has an invalid format');
   }
 
   return initializeApp({
@@ -64,7 +112,7 @@ async function verifyFirebaseIdToken(token: string): Promise<{ uid: string }> {
   const apiKey = process.env.FIREBASE_WEB_API_KEY ?? process.env.VITE_FIREBASE_API_KEY;
 
   if (!apiKey) {
-    throw new Error('Firebase Web API key is not configured');
+    throw new FirebaseConfigurationError('Firebase Web API key is not configured');
   }
 
   let response: Response;
@@ -202,6 +250,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, orderId: orderRef.id });
   } catch (error) {
     if (error instanceof UnauthorizedCheckoutError) return jsonError(res, 401, error.message);
+    if (error instanceof FirebaseConfigurationError) {
+      console.error('Checkout Firebase configuration error:', error.message);
+      return jsonError(res, 500, 'La configuración de Firebase del servidor está incompleta.');
+    }
     console.error('Checkout API Error:', error);
     return res.status(500).json({
       success: false,
