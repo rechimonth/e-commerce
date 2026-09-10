@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -44,16 +44,13 @@ export function AdminProductsPage() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const fetchProducts = useCallback(async () => {
-    console.log('[AdminProductsPage] Firebase project:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
     setState((prev) => ({ ...prev, status: 'loading', error: null }));
     try {
-      console.log('[AdminProductsPage] Fetching products...');
       const result: PaginatedResult<Product> = await productsService.fetchProductsAdmin({
         search: searchTerm || undefined,
         category: categoryFilter || undefined,
         limit: 20,
       });
-      console.log('[AdminProductsPage] Products loaded:', result.items.length);
       setState({ products: result.items as Product[], status: 'success', error: null, pagination: result.pagination });
     } catch (e) {
       const err: ServiceError = {
@@ -95,11 +92,8 @@ export function AdminProductsPage() {
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(new Set(displayProducts.map((p) => p.id)));
-    } else {
-      setSelectedIds(new Set());
-    }
+    if (checked) setSelectedIds(new Set(displayProducts.map((p) => p.id)));
+    else setSelectedIds(new Set());
   };
 
   const handleSelectOne = (id: string, checked: boolean) => {
@@ -142,6 +136,7 @@ export function AdminProductsPage() {
       setState((prev) => ({ ...prev, error: err }));
     }
   };
+
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     setIsBulkDeleting(true);
@@ -182,195 +177,74 @@ export function AdminProductsPage() {
   };
 
   const displayProducts = state.products?.filter((p) => {
-    const matchesSearch = searchTerm
-      ? p.name.toLowerCase().includes(searchTerm.toLowerCase())
-      : true;
-    const matchesStatus =
-      statusFilter === 'active' ? p.isActive
-      : statusFilter === 'inactive' ? !p.isActive
-      : true;
+    const matchesSearch = searchTerm ? p.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+    const matchesStatus = statusFilter === 'active' ? p.isActive : statusFilter === 'inactive' ? !p.isActive : true;
     return matchesSearch && matchesStatus;
   }) ?? [];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900">Productos</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="cyber-kicker">INVENTORY GRID</p>
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">Productos</h1>
+          <p className="mt-1 text-sm text-slate-400">Gestiona catálogo, stock y disponibilidad desde la consola.</p>
+        </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="md" onClick={handleExport}>
-            Exportar CSV
-          </Button>
-          <Link to={ROUTES.ADMIN_PRODUCT_NEW}>
-            <Button variant="solid" size="md">
-              Nuevo producto
-            </Button>
-          </Link>
+          <Button variant="outline" size="md" onClick={handleExport}>Exportar CSV</Button>
+          <Link to={ROUTES.ADMIN_PRODUCT_NEW}><Button variant="solid" size="md">Nuevo producto</Button></Link>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <Card className="cyber-card p-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_12rem_10rem] md:items-end">
+          <Input placeholder="Buscar productos..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Select label="Categoría" options={[{ value: '', label: 'Todas' }, ...PRODUCT_CATEGORIES.map((cat) => ({ value: cat, label: cat }))]} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as ProductCategory | '')} />
+          <Select label="Estado" options={[{ value: 'all', label: 'Todos' }, { value: 'active', label: 'Activos' }, { value: 'inactive', label: 'Inactivos' }]} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} />
         </div>
-        <div className="w-full sm:w-48">
-          <Select
-            label="Categoría"
-            options={[
-              { value: '', label: 'Todas' },
-              ...PRODUCT_CATEGORIES.map((cat) => ({ value: cat, label: cat })),
-            ]}
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as ProductCategory | '')}
-          />
-        </div>
-        <div className="w-full sm:w-40">
-          <Select
-            label="Estado"
-            options={[
-              { value: 'all', label: 'Todos' },
-              { value: 'active', label: 'Activos' },
-              { value: 'inactive', label: 'Inactivos' },
-            ]}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          />
-        </div>
-      </div>
+      </Card>
 
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-md bg-primary-50 p-3">
-          <span className="text-sm text-neutral-700">{selectedIds.size} seleccionado(s)</span>
-          <Button variant="solid" size="sm" onClick={handleBulkActivate} className="bg-green-600 hover:bg-green-700 text-white">
-            Activar
-          </Button>
-          <Button variant="solid" size="sm" onClick={handleBulkDeactivate} className="bg-amber-500 hover:bg-amber-600 text-white">
-            Desactivar
-          </Button>
-          <Button variant="danger" size="sm" onClick={handleBulkDelete} disabled={isBulkDeleting}>
-            {isBulkDeleting ? 'Eliminando...' : 'Eliminar seleccionados'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
-            Cancelar selección
-          </Button>
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-cyan-300/15 bg-cyan-300/5 p-3">
+          <span className="text-sm font-semibold text-slate-200">{selectedIds.size} seleccionado(s)</span>
+          <Button variant="solid" size="sm" onClick={handleBulkActivate} className="bg-green-600 text-white hover:bg-green-500">Activar</Button>
+          <Button variant="solid" size="sm" onClick={handleBulkDeactivate} className="bg-amber-500 text-slate-950 hover:bg-amber-400">Desactivar</Button>
+          <Button variant="danger" size="sm" onClick={handleBulkDelete} disabled={isBulkDeleting}>{isBulkDeleting ? 'Eliminando...' : 'Eliminar seleccionados'}</Button>
+          <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>Cancelar selección</Button>
         </div>
       )}
 
-      {state.status === 'loading' && (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </div>
-      )}
+      {state.status === 'loading' && <div className="space-y-4">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>}
 
       {state.status === 'error' && state.error && (
-        <Card className="p-8 text-center">
-          <p className="text-error-600">{state.error.message}</p>
-          <button
-            onClick={fetchProducts}
-            className="mt-2 text-sm text-primary-600 hover:underline"
-          >
-            Reintentar
-          </button>
-        </Card>
+        <Card className="cyber-card p-8 text-center"><p className="font-semibold text-red-300">{state.error.message}</p><button onClick={fetchProducts} className="mt-2 text-sm font-semibold text-cyan-300 hover:underline">Reintentar</button></Card>
       )}
 
       {state.status === 'success' && displayProducts.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-neutral-600">No se encontraron productos</p>
-        </Card>
+        <Card className="cyber-card p-8 text-center"><p className="text-slate-400">No se encontraron productos</p></Card>
       ) : (
-        <Card>
+        <Card className="cyber-card p-0">
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">
-                    <input
-                      type="checkbox"
-                      checked={displayProducts.length > 0 && selectedIds.size === displayProducts.length}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-neutral-300"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">
-                    Producto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">
-                    Precio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">
-                    Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">
-                    Categoría
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-200">
+              <thead><tr>
+                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80"><input type="checkbox" checked={displayProducts.length > 0 && selectedIds.size === displayProducts.length} onChange={(e) => handleSelectAll(e.target.checked)} className="rounded border-cyan-300/30 bg-slate-950" /></th>
+                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Producto</th>
+                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Precio</th>
+                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Stock</th>
+                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Categoría</th>
+                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Estado</th>
+                <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-cyan-200/80">Acciones</th>
+              </tr></thead>
+              <tbody className="divide-y divide-cyan-300/10">
                 {displayProducts.map((product) => (
                   <tr key={product.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(product.id)}
-                        onChange={(e) => handleSelectOne(product.id, e.target.checked)}
-                        className="rounded border-neutral-300"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        {(() => { const resolved = resolveProductImage(product); console.log('[AdminProductsPage] Image debug:', product.name, 'imageUrl=', product.image?.url, 'resolved=', resolved); return null; })()}
-                        <img
-                          src={resolveProductImage(product)}
-                          alt={product.image.alt}
-                          className="h-10 w-10 rounded object-cover"
-                         onError={handleProductImageError} />
-                        <span className="text-sm font-medium text-neutral-900">
-                          {product.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Price amount={product.price.amount} currency={product.price.currency} />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                      {product.stock}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                      {product.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={product.isActive ? 'success' : 'default'}>
-                        {product.isActive ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link to={ROUTES.ADMIN_PRODUCT_EDIT(product.id)}>
-                          <Button variant="outline" size="sm">
-                            Editar
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleDeleteClick(product)}
-                        >
-                          Eliminar
-                        </Button>
-                      </div>
-                    </td>
+                    <td className="px-6 py-4"><input type="checkbox" checked={selectedIds.has(product.id)} onChange={(e) => handleSelectOne(product.id, e.target.checked)} className="rounded border-cyan-300/30 bg-slate-950" /></td>
+                    <td className="px-6 py-4"><div className="flex items-center gap-3"><img src={resolveProductImage(product)} alt={product.image.alt} className="h-11 w-11 rounded-lg border border-cyan-300/15 object-cover" onError={handleProductImageError} /><span className="text-sm font-semibold text-slate-100">{product.name}</span></div></td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-200"><Price amount={product.price.amount} currency={product.price.currency} /></td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-300">{product.stock}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-300">{product.category}</td>
+                    <td className="whitespace-nowrap px-6 py-4"><Badge variant={product.isActive ? 'success' : 'default'} size="md" className="font-bold">{product.isActive ? 'Activo' : 'Inactivo'}</Badge></td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right"><div className="flex items-center justify-end gap-2"><Link to={ROUTES.ADMIN_PRODUCT_EDIT(product.id)}><Button variant="outline" size="sm">Editar</Button></Link><Button variant="danger" size="sm" onClick={() => handleDeleteClick(product)}>Eliminar</Button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -379,36 +253,8 @@ export function AdminProductsPage() {
         </Card>
       )}
 
-      <Modal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        title="Confirmar eliminación"
-        description={productToDelete ? `¿Estás seguro de eliminar "${productToDelete.name}"?` : ''}
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-neutral-600">
-            Esta acción no se puede deshacer. El producto será eliminado permanentemente.
-          </p>
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDeleteModalOpen(false)}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </div>
-        </div>
+      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Confirmar eliminación" description={productToDelete ? `¿Estás seguro de eliminar "${productToDelete.name}"?` : ''} size="sm" variant="admin">
+        <div className="space-y-4 pt-2"><p className="text-sm text-slate-300">Esta acción no se puede deshacer. El producto será eliminado permanentemente.</p><div className="flex justify-end gap-3"><Button variant="outline" size="sm" onClick={() => setDeleteModalOpen(false)} disabled={isDeleting}>Cancelar</Button><Button variant="danger" size="sm" onClick={handleConfirmDelete} disabled={isDeleting}>{isDeleting ? 'Eliminando...' : 'Eliminar'}</Button></div></div>
       </Modal>
     </div>
   );
