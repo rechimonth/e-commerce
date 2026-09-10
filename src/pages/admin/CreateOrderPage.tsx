@@ -237,9 +237,7 @@ export function AdminCreateOrderPage() {
               <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-cyan-300/15 bg-slate-950/35 py-12 text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-300/15 bg-cyan-300/5 text-cyan-300">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="8" cy="21" r="1" />
-                    <circle cx="19" cy="21" r="1" />
-                    <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                    <circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                   </svg>
                 </div>
                 <p className="font-semibold text-slate-200">No hay productos seleccionados</p>
@@ -260,26 +258,11 @@ export function AdminCreateOrderPage() {
                   <tbody className="divide-y divide-cyan-300/10">
                     {cart.map((item) => (
                       <tr key={item.id} className="transition-colors hover:bg-cyan-300/[0.03]">
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900">
-                              <img src={item.image.url} alt={item.image.alt} className="h-12 w-12 object-cover" />
-                            </div>
-                            <span className="text-sm font-semibold text-slate-100">{item.name}</span>
-                          </div>
-                        </td>
+                        <td className="px-4 py-4"><div className="flex items-center gap-3"><div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900"><img src={item.image.url} alt={item.image.alt} className="h-12 w-12 object-cover" /></div><span className="text-sm font-semibold text-slate-100">{item.name}</span></div></td>
                         <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-200"><Price amount={item.price.amount} currency={item.price.currency} /></td>
-                        <td className="whitespace-nowrap px-4 py-4">
-                          <Input type="number" min={1} max={item.stock} value={item.quantity} onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)} className="w-20" />
-                        </td>
+                        <td className="whitespace-nowrap px-4 py-4"><Input type="number" min={1} max={item.stock} value={item.quantity} onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)} className="w-20" /></td>
                         <td className="whitespace-nowrap px-4 py-4 text-sm font-bold text-cyan-200"><Price amount={item.price.amount * item.quantity} currency={item.price.currency} /></td>
-                        <td className="whitespace-nowrap px-4 py-4 text-right">
-                          <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.id)} className="text-red-300 hover:bg-red-500/10 hover:text-red-200" aria-label={`Eliminar ${item.name} de la orden`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 2 2 2v2" />
-                            </svg>
-                          </Button>
-                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right"><Button variant="ghost" size="sm" onClick={() => removeFromCart(item.id)} className="text-red-300 hover:bg-red-500/10 hover:text-red-200" aria-label={`Eliminar ${item.name} de la orden`}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 2 2 2v2" /></svg></Button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -291,52 +274,18 @@ export function AdminCreateOrderPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="cyber-card p-6">
-            <p className="cyber-kicker">CUSTOMER</p>
-            <h2 className="mt-1 mb-4 text-lg font-bold text-white">Cliente</h2>
-            <Select label="Seleccionar cliente" options={MOCK_CUSTOMERS.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))} value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} placeholder="Seleccionar cliente..." />
-            {selectedCustomer && (
-              <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3">
-                <p className="text-sm font-bold text-slate-100">{selectedCustomer.name}</p>
-                <p className="text-xs text-slate-400">{selectedCustomer.email}</p>
-              </div>
-            )}
-          </Card>
-
-          <Card className="cyber-card p-6">
-            <p className="cyber-kicker">PAYMENT</p>
-            <h2 className="mt-1 mb-4 text-lg font-bold text-white">Método de Pago</h2>
-            <Select label="Método de pago" options={PAYMENT_METHODS} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} />
-          </Card>
-
-          <Card className="cyber-card p-6">
-            <p className="cyber-kicker">TOTAL</p>
-            <h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div>
-              <div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div>
-              <div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div>
-            </div>
-            <div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedCustomerId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div>
-          </Card>
+          <Card className="cyber-card p-6"><p className="cyber-kicker">CUSTOMER</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Cliente</h2><Select label="Seleccionar cliente" options={MOCK_CUSTOMERS.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))} value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} placeholder="Seleccionar cliente..." />{selectedCustomer && <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3"><p className="text-sm font-bold text-slate-100">{selectedCustomer.name}</p><p className="text-xs text-slate-400">{selectedCustomer.email}</p></div>}</Card>
+          <Card className="cyber-card p-6"><p className="cyber-kicker">PAYMENT</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Método de Pago</h2><Select label="Método de pago" options={PAYMENT_METHODS} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} /></Card>
+          <Card className="cyber-card p-6"><p className="cyber-kicker">TOTAL</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2><div className="space-y-3"><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div><div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div></div><div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedCustomerId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div></Card>
         </div>
       </div>
 
-      <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl">
+      <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl" variant="admin">
         <div className="space-y-4">
           <div className="flex flex-col gap-4 rounded-2xl border border-cyan-300/10 bg-slate-950/45 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0 text-sm font-semibold text-slate-200">Selecciona los productos que deseas agregar a la orden:</p>
             <div className="w-full shrink-0 sm:w-[min(24rem,42%)]">
-              <AdminOrderMiniCart
-                variant="inline"
-                items={cart}
-                totalUnits={totalUnits}
-                totalAmount={total}
-                currency="USD"
-                onIncrement={incrementQuantity}
-                onDecrement={decrementQuantity}
-                onRemove={removeFromCart}
-              />
+              <AdminOrderMiniCart variant="inline" items={cart} totalUnits={totalUnits} totalAmount={total} currency="USD" onIncrement={incrementQuantity} onDecrement={decrementQuantity} onRemove={removeFromCart} />
             </div>
           </div>
 
@@ -347,25 +296,8 @@ export function AdminCreateOrderPage() {
           ) : (
             <div className="max-h-[min(30rem,55vh)] overflow-auto rounded-2xl border border-cyan-300/10 bg-slate-950/25">
               <table className="min-w-full">
-                <thead className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur"><tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Producto</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Precio</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Stock</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-cyan-200/80">Acción</th>
-                </tr></thead>
-                <tbody className="divide-y divide-cyan-300/10">
-                  {catalogProducts.map((product) => {
-                    const isInCart = cart.some((item) => item.id === product.id);
-                    return (
-                      <tr key={product.id} className={isInCart ? 'bg-cyan-300/[0.05]' : 'hover:bg-cyan-300/[0.03]'}>
-                        <td className="px-4 py-4"><div className="flex items-center gap-3"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900"><img src={product.image.url} alt={product.image.alt} className="h-10 w-10 object-cover" /></div><span className="text-sm font-semibold text-slate-100">{product.name}</span></div></td>
-                        <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-200"><Price amount={product.price.amount} currency={product.price.currency} /></td>
-                        <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-300">{product.stock}</td>
-                        <td className="whitespace-nowrap px-4 py-4 text-right"><Button variant={isInCart ? 'outline' : 'solid'} size="sm" onClick={() => addToCart(product)} disabled={product.stock === 0}>{isInCart ? 'Agregar más' : 'Agregar'}</Button></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
+                <thead className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur"><tr><th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Producto</th><th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Precio</th><th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Stock</th><th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-cyan-200/80">Acción</th></tr></thead>
+                <tbody className="divide-y divide-cyan-300/10">{catalogProducts.map((product) => { const isInCart = cart.some((item) => item.id === product.id); return <tr key={product.id} className={isInCart ? 'bg-cyan-300/[0.05]' : 'hover:bg-cyan-300/[0.03]'}><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900"><img src={product.image.url} alt={product.image.alt} className="h-10 w-10 object-cover" /></div><span className="text-sm font-semibold text-slate-100">{product.name}</span></div></td><td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-200"><Price amount={product.price.amount} currency={product.price.currency} /></td><td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-300">{product.stock}</td><td className="whitespace-nowrap px-4 py-4 text-right"><Button variant={isInCart ? 'outline' : 'solid'} size="sm" onClick={() => addToCart(product)} disabled={product.stock === 0}>{isInCart ? 'Agregar más' : 'Agregar'}</Button></td></tr>; })}</tbody>
               </table>
             </div>
           )}
