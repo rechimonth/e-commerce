@@ -73,12 +73,12 @@ function getFirebaseAdminApp() {
     }
   }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.VITE_FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKeyValue = process.env.FIREBASE_PRIVATE_KEY;
 
   const missing = [
-    !projectId ? 'FIREBASE_PROJECT_ID' : null,
+    !projectId ? 'FIREBASE_PROJECT_ID (or VITE_FIREBASE_PROJECT_ID)' : null,
     !clientEmail ? 'FIREBASE_CLIENT_EMAIL' : null,
     !privateKeyValue ? 'FIREBASE_PRIVATE_KEY' : null,
   ].filter((value): value is string => Boolean(value));
@@ -109,12 +109,13 @@ function getFirebaseAdminApp() {
  * to the Web API key and returns the authenticated user's Firebase UID.
  */
 async function verifyFirebaseIdToken(token: string): Promise<{ uid: string }> {
-  const apiKey = process.env.FIREBASE_WEB_API_KEY ?? process.env.VITE_FIREBASE_API_KEY;
+  const configuredApiKey = process.env.FIREBASE_WEB_API_KEY ?? process.env.VITE_FIREBASE_API_KEY;
 
-  if (!apiKey) {
+  if (!configuredApiKey) {
     throw new FirebaseConfigurationError('Firebase Web API key is not configured');
   }
 
+  const apiKey: string = configuredApiKey;
   let response: Response;
 
   try {
