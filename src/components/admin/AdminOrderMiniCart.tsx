@@ -16,6 +16,7 @@ interface AdminOrderMiniCartProps {
   readonly onIncrement: (productId: string) => void;
   readonly onDecrement: (productId: string) => void;
   readonly onRemove: (productId: string) => void;
+  readonly variant?: 'floating' | 'inline';
 }
 
 function MinusIcon() {
@@ -71,15 +72,20 @@ export function AdminOrderMiniCart({
   onIncrement,
   onDecrement,
   onRemove,
+  variant = 'floating',
 }: AdminOrderMiniCartProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const isInline = variant === 'inline';
 
-  if (items.length === 0) return null;
+  const containerClassName = isInline
+    ? 'w-full overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-950/80 text-slate-100 shadow-[0_16px_48px_rgba(0,0,0,0.26)] backdrop-blur-xl'
+    : 'fixed bottom-4 right-4 z-40 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-cyan-400/25 bg-slate-950/95 text-slate-100 shadow-2xl shadow-cyan-950/40 backdrop-blur-md';
 
   return (
-    <aside
-      aria-label="Resumen flotante de la orden"
-      className="fixed bottom-4 right-4 z-40 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-cyan-400/25 bg-slate-950/95 text-slate-100 shadow-2xl shadow-cyan-950/40 backdrop-blur-md"
+    <div
+      aria-label="Resumen de la orden"
+      className={containerClassName}
+      data-testid="admin-order-mini-cart"
     >
       <button
         type="button"
@@ -107,70 +113,76 @@ export function AdminOrderMiniCart({
 
       {isOpen && (
         <div id="admin-order-mini-cart-content" className="bg-slate-950/90">
-          <div className="max-h-72 overflow-y-auto px-3 py-2">
-            <ul className="divide-y divide-cyan-400/10">
-              {items.map((item) => (
-                <li key={item.id} className="flex gap-3 py-3">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-cyan-400/15 bg-slate-900 ring-1 ring-cyan-400/5">
-                    <img src={item.image.url} alt={item.image.alt} className="h-full w-full object-cover" loading="lazy" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-100" title={item.name}>{item.name}</p>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="font-bold text-cyan-300">
-                        <Price amount={item.price.amount * item.quantity} currency={item.price.currency} />
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        <Price amount={item.price.amount} currency={item.price.currency} /> c/u
-                      </span>
+          {items.length > 0 ? (
+            <div className="max-h-72 overflow-y-auto px-3 py-2">
+              <ul className="divide-y divide-cyan-400/10">
+                {items.map((item) => (
+                  <li key={item.id} className="flex gap-3 py-3">
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-cyan-400/15 bg-slate-900 ring-1 ring-cyan-400/5">
+                      <img src={item.image.url} alt={item.image.alt} className="h-full w-full object-cover" loading="lazy" />
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center rounded-lg border border-cyan-400/20 bg-slate-900/80">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDecrement(item.id)}
-                          disabled={item.quantity <= 1}
-                          aria-label={`Reducir cantidad de ${item.name}`}
-                          className="h-9 w-9 p-0 text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200"
-                        >
-                          <MinusIcon />
-                        </Button>
-                        <span className="min-w-8 text-center text-sm font-bold text-slate-100" aria-label={`Cantidad ${item.quantity}`}>
-                          {item.quantity}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-100" title={item.name}>{item.name}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <span className="font-bold text-cyan-300">
+                          <Price amount={item.price.amount * item.quantity} currency={item.price.currency} />
                         </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onIncrement(item.id)}
-                          disabled={item.quantity >= item.stock}
-                          aria-label={`Aumentar cantidad de ${item.name}`}
-                          className="h-9 w-9 p-0 text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200"
-                        >
-                          <PlusIcon />
-                        </Button>
+                        <span className="text-xs text-slate-500">
+                          <Price amount={item.price.amount} currency={item.price.currency} /> c/u
+                        </span>
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onRemove(item.id)}
-                        aria-label={`Eliminar ${item.name} de la orden`}
-                        className="h-9 w-9 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                      >
-                        <TrashIcon />
-                      </Button>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex items-center rounded-lg border border-cyan-400/20 bg-slate-900/80">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDecrement(item.id)}
+                            disabled={item.quantity <= 1}
+                            aria-label={`Reducir cantidad de ${item.name}`}
+                            className="h-9 w-9 p-0 text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200"
+                          >
+                            <MinusIcon />
+                          </Button>
+                          <span className="min-w-8 text-center text-sm font-bold text-slate-100" aria-label={`Cantidad ${item.quantity}`}>
+                            {item.quantity}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onIncrement(item.id)}
+                            disabled={item.quantity >= item.stock}
+                            aria-label={`Aumentar cantidad de ${item.name}`}
+                            className="h-9 w-9 p-0 text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200"
+                          >
+                            <PlusIcon />
+                          </Button>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onRemove(item.id)}
+                          aria-label={`Eliminar ${item.name} de la orden`}
+                          className="h-9 w-9 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="px-4 py-5 text-center text-sm text-slate-400">
+              Todavía no agregaste productos a esta orden.
+            </div>
+          )}
 
           <div className="border-t border-cyan-400/15 bg-slate-900/80 px-4 py-3">
             <div className="flex items-center justify-between gap-4">
@@ -183,7 +195,7 @@ export function AdminOrderMiniCart({
           </div>
         </div>
       )}
-    </aside>
+    </div>
   );
 }
 
