@@ -28,16 +28,8 @@ interface Customer {
 }
 
 const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: 'admin',
-    name: 'ADMIN',
-    email: 'admin@ecommerce.com',
-  },
-  {
-    id: 'customer',
-    name: 'CUSTOMER',
-    email: 'customer@ecommerce.com',
-  },
+  { id: 'admin', name: 'ADMIN', email: 'admin@ecommerce.com' },
+  { id: 'customer', name: 'CUSTOMER', email: 'customer@ecommerce.com' },
 ];
 
 const PAYMENT_METHODS = [
@@ -154,9 +146,9 @@ export function AdminCreateOrderPage() {
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price.amount * item.quantity, 0), [cart]);
   const tax = useMemo(() => subtotal * TAX_RATE, [subtotal]);
-  const shipping = useMemo(() => 0, []);
-  const discount = useMemo(() => 0, []);
-  const total = useMemo(() => subtotal + tax + shipping - discount, [subtotal, tax, shipping, discount]);
+  const shipping = 0;
+  const discount = 0;
+  const total = useMemo(() => subtotal + tax + shipping - discount, [subtotal, tax]);
   const totalUnits = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
 
   const handleCreateOrder = async () => {
@@ -211,21 +203,26 @@ export function AdminCreateOrderPage() {
   const selectedCustomer = MOCK_CUSTOMERS.find((c) => c.id === selectedCustomerId);
 
   return (
-    <div className="space-y-6 pb-28 lg:pb-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900">Crear Orden</h1>
+    <div className="space-y-6 pb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="cyber-kicker">ORDER CONSOLE</p>
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">Crear Orden</h1>
+          <p className="mt-1 text-sm text-slate-400">Configura cliente, productos y pago desde un único flujo.</p>
+        </div>
         <Link to={ROUTES.ADMIN_ORDERS}>
-          <Button variant="outline" size="md">
-            Volver a órdenes
-          </Button>
+          <Button variant="outline" size="md">Volver a órdenes</Button>
         </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-neutral-900">Productos</h2>
+        <div className="space-y-4 lg:col-span-2">
+          <Card className="cyber-card p-6">
+            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="cyber-kicker">ORDER ITEMS</p>
+                <h2 className="mt-1 text-lg font-bold text-white">Productos</h2>
+              </div>
               <Button variant="solid" size="sm" onClick={() => setIsCatalogOpen(true)}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -237,68 +234,49 @@ export function AdminCreateOrderPage() {
             </div>
 
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-cyan-300/15 bg-slate-950/35 py-12 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-300/15 bg-cyan-300/5 text-cyan-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="8" cy="21" r="1" />
                     <circle cx="19" cy="21" r="1" />
                     <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                   </svg>
                 </div>
-                <p className="text-neutral-600">No hay productos seleccionados</p>
-                <p className="mt-1 text-sm text-neutral-500">Haz clic en "Explorar Catálogo" para agregar productos</p>
+                <p className="font-semibold text-slate-200">No hay productos seleccionados</p>
+                <p className="mt-1 text-sm text-slate-400">Abre el catálogo para agregar productos a la orden.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-cyan-300/10">
                 <table className="min-w-full">
-                  <thead>
+                  <thead className="bg-slate-950/80">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Producto</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Precio</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Cantidad</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Subtotal</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase">Acciones</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Producto</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Precio</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Cantidad</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Subtotal</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-cyan-200/80">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-200">
+                  <tbody className="divide-y divide-cyan-300/10">
                     {cart.map((item) => (
-                      <tr key={item.id}>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                      <tr key={item.id} className="transition-colors hover:bg-cyan-300/[0.03]">
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
+                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900">
                               <img src={item.image.url} alt={item.image.alt} className="h-12 w-12 object-cover" />
                             </div>
-                            <span className="text-sm font-medium text-neutral-900">{item.name}</span>
+                            <span className="text-sm font-semibold text-slate-100">{item.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">
-                          <Price amount={item.price.amount} currency={item.price.currency} />
+                        <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-200"><Price amount={item.price.amount} currency={item.price.currency} /></td>
+                        <td className="whitespace-nowrap px-4 py-4">
+                          <Input type="number" min={1} max={item.stock} value={item.quantity} onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)} className="w-20" />
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <Input
-                            type="number"
-                            min={1}
-                            max={item.stock}
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                            className="w-20"
-                          />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                          <Price amount={item.price.amount * item.quantity} currency={item.price.currency} />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFromCart(item.id)}
-                            className="text-error-600 hover:text-error-700 hover:bg-error-50"
-                            aria-label={`Eliminar ${item.name} de la orden`}
-                          >
+                        <td className="whitespace-nowrap px-4 py-4 text-sm font-bold text-cyan-200"><Price amount={item.price.amount * item.quantity} currency={item.price.currency} /></td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right">
+                          <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.id)} className="text-red-300 hover:bg-red-500/10 hover:text-red-200" aria-label={`Eliminar ${item.name} de la orden`}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 6h18" />
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 2 2 2v2" />
                             </svg>
                           </Button>
                         </td>
@@ -308,141 +286,82 @@ export function AdminCreateOrderPage() {
                 </table>
               </div>
             )}
-            {error && <p className="mt-2 text-sm text-error-600">{error}</p>}
+            {error && <p className="mt-3 rounded-xl border border-red-400/20 bg-red-500/5 px-3 py-2 text-sm font-medium text-red-300">{error}</p>}
           </Card>
         </div>
 
         <div className="space-y-4">
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">Cliente</h2>
-            <Select
-              label="Seleccionar cliente"
-              options={MOCK_CUSTOMERS.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))}
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              placeholder="Seleccionar cliente..."
-            />
+          <Card className="cyber-card p-6">
+            <p className="cyber-kicker">CUSTOMER</p>
+            <h2 className="mt-1 mb-4 text-lg font-bold text-white">Cliente</h2>
+            <Select label="Seleccionar cliente" options={MOCK_CUSTOMERS.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))} value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} placeholder="Seleccionar cliente..." />
             {selectedCustomer && (
-              <div className="mt-3 rounded-md bg-neutral-50 p-3">
-                <p className="text-sm font-medium text-neutral-900">{selectedCustomer.name}</p>
-                <p className="text-xs text-neutral-500">{selectedCustomer.email}</p>
+              <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3">
+                <p className="text-sm font-bold text-slate-100">{selectedCustomer.name}</p>
+                <p className="text-xs text-slate-400">{selectedCustomer.email}</p>
               </div>
             )}
           </Card>
 
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">Método de Pago</h2>
-            <Select
-              label="Método de pago"
-              options={PAYMENT_METHODS}
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-            />
+          <Card className="cyber-card p-6">
+            <p className="cyber-kicker">PAYMENT</p>
+            <h2 className="mt-1 mb-4 text-lg font-bold text-white">Método de Pago</h2>
+            <Select label="Método de pago" options={PAYMENT_METHODS} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} />
           </Card>
 
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">Resumen</h2>
+          <Card className="cyber-card p-6">
+            <p className="cyber-kicker">TOTAL</p>
+            <h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-600">Subtotal</span>
-                <span className="font-medium text-neutral-900">
-                  <Price amount={subtotal} currency="USD" />
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-600">Impuestos (21%)</span>
-                <span className="font-medium text-neutral-900">
-                  <Price amount={tax} currency="USD" />
-                </span>
-              </div>
-              <div className="border-t border-neutral-200 pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-neutral-900">Total</span>
-                  <span className="text-xl font-bold text-primary-600">
-                    <Price amount={total} currency="USD" />
-                  </span>
-                </div>
-              </div>
+              <div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div>
+              <div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div>
+              <div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div>
             </div>
-            <div className="mt-6">
-              <Button
-                variant="solid"
-                size="lg"
-                className="w-full"
-                disabled={cart.length === 0 || !selectedCustomerId || isSubmitting}
-                onClick={handleCreateOrder}
-              >
-                {isSubmitting ? 'Creando...' : 'Crear Orden'}
-              </Button>
-            </div>
+            <div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedCustomerId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div>
           </Card>
         </div>
       </div>
 
-      <AdminOrderMiniCart
-        items={cart}
-        totalUnits={totalUnits}
-        totalAmount={total}
-        currency="USD"
-        onIncrement={incrementQuantity}
-        onDecrement={decrementQuantity}
-        onRemove={removeFromCart}
-      />
-
       <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl">
         <div className="space-y-4">
-          <p className="text-sm text-neutral-600">Selecciona los productos que deseas agregar a la orden:</p>
-          <div className="w-full">
-            <Select
-              label="Categoría"
-              options={CATEGORY_FILTERS}
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value as CategoryFilter)}
-              placeholder="Filtrar por categoría..."
-            />
-          </div>
-          {isLoadingCatalog ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-sm text-neutral-500">Cargando productos...</p>
+          <div className="flex flex-col gap-4 rounded-2xl border border-cyan-300/10 bg-slate-950/45 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="min-w-0 text-sm font-semibold text-slate-200">Selecciona los productos que deseas agregar a la orden:</p>
+            <div className="w-full shrink-0 sm:w-[min(24rem,42%)]">
+              <AdminOrderMiniCart
+                variant="inline"
+                items={cart}
+                totalUnits={totalUnits}
+                totalAmount={total}
+                currency="USD"
+                onIncrement={incrementQuantity}
+                onDecrement={decrementQuantity}
+                onRemove={removeFromCart}
+              />
             </div>
+          </div>
+
+          <div className="w-full"><Select label="Categoría" options={CATEGORY_FILTERS} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as CategoryFilter)} placeholder="Filtrar por categoría..." /></div>
+
+          {isLoadingCatalog ? (
+            <div className="flex items-center justify-center rounded-2xl border border-cyan-300/10 bg-slate-950/30 py-12"><p className="text-sm font-medium text-slate-400">Cargando productos...</p></div>
           ) : (
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[min(30rem,55vh)] overflow-auto rounded-2xl border border-cyan-300/10 bg-slate-950/25">
               <table className="min-w-full">
-                <thead className="sticky top-0 bg-white">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Producto</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Precio</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Stock</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200">
+                <thead className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur"><tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Producto</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Precio</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Stock</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-cyan-200/80">Acción</th>
+                </tr></thead>
+                <tbody className="divide-y divide-cyan-300/10">
                   {catalogProducts.map((product) => {
                     const isInCart = cart.some((item) => item.id === product.id);
                     return (
-                      <tr key={product.id} className={isInCart ? 'bg-primary-50/50' : ''}>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
-                              <img src={product.image.url} alt={product.image.alt} className="h-10 w-10 object-cover" />
-                            </div>
-                            <span className="text-sm font-medium text-neutral-900">{product.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">
-                          <Price amount={product.price.amount} currency={product.price.currency} />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600">{product.stock}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-right">
-                          <Button
-                            variant={isInCart ? 'outline' : 'solid'}
-                            size="sm"
-                            onClick={() => addToCart(product)}
-                            disabled={product.stock === 0}
-                          >
-                            {isInCart ? 'Agregar más' : 'Agregar'}
-                          </Button>
-                        </td>
+                      <tr key={product.id} className={isInCart ? 'bg-cyan-300/[0.05]' : 'hover:bg-cyan-300/[0.03]'}>
+                        <td className="px-4 py-4"><div className="flex items-center gap-3"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900"><img src={product.image.url} alt={product.image.alt} className="h-10 w-10 object-cover" /></div><span className="text-sm font-semibold text-slate-100">{product.name}</span></div></td>
+                        <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-200"><Price amount={product.price.amount} currency={product.price.currency} /></td>
+                        <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-300">{product.stock}</td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right"><Button variant={isInCart ? 'outline' : 'solid'} size="sm" onClick={() => addToCart(product)} disabled={product.stock === 0}>{isInCart ? 'Agregar más' : 'Agregar'}</Button></td>
                       </tr>
                     );
                   })}
