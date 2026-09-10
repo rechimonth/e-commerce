@@ -8,6 +8,7 @@
   --cyber-bg: #05060d;
   --cyber-cyan: #22d3ee;
   --cyber-pink: #f472b6;
+  --cyber-purple: #a78bfa;
 }
 
 html { background: var(--cyber-bg); color-scheme: dark; }
@@ -23,17 +24,75 @@ body {
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 ::selection { background: rgba(34, 211, 238, 0.3); color: white; }
 
-::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #05060d; }
 ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #22d3ee, #a78bfa, #f472b6); border-radius: 999px; border: 2px solid #05060d; }
 
 .font-display { font-family: 'Orbitron', system-ui, sans-serif; }
 .cyber-app-shell { position: relative; min-height: 100vh; overflow-x: hidden; background: transparent; }
-.cyber-grid { pointer-events: none; position: fixed; inset: 0; z-index: 0; opacity: 0.3; background-image: linear-gradient(rgba(34, 211, 238, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.055) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black, transparent 90%); }
+.cyber-grid { pointer-events: none; position: fixed; inset: 0; z-index: 0; opacity: 0.28; background-image: linear-gradient(rgba(34, 211, 238, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.055) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black, transparent 90%); }
 
 @layer components {
   .cyber-panel { @apply border border-cyan-300/20 bg-slate-950/70 backdrop-blur-xl; box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.03), 0 18px 60px rgba(0, 0, 0, 0.35); }
-  .cyber-kicker { @apply font-display text-xs font-bold uppercase tracking-[0.28em] text-cyan-300; }
+  .cyber-card { @apply border border-cyan-300/15 bg-slate-950/65 text-slate-100 backdrop-blur-xl; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255,255,255,0.025); }
+  .cyber-kicker { @apply font-display text-[0.68rem] font-bold uppercase tracking-[0.28em] text-cyan-300; }
+}
+
+/* Admin-only visual system: a darker operations-console layer that leaves the storefront styles intact. */
+.admin-theme {
+  color: #e2e8f0;
+  isolation: isolate;
+}
+
+.admin-theme h1,
+.admin-theme h2,
+.admin-theme h3 { color: #f8fafc; }
+
+.admin-theme .bg-white,
+.admin-theme .bg-neutral-50,
+.admin-theme .bg-neutral-100 { background-color: rgba(9, 13, 27, 0.9) !important; }
+.admin-theme .bg-neutral-200 { background-color: rgba(148, 163, 184, 0.12) !important; }
+
+.admin-theme .text-neutral-900,
+.admin-theme .text-neutral-800,
+.admin-theme .text-neutral-700 { color: #f1f5f9 !important; }
+.admin-theme .text-neutral-600 { color: #cbd5e1 !important; }
+.admin-theme .text-neutral-500,
+.admin-theme .text-neutral-400 { color: #94a3b8 !important; }
+
+.admin-theme .border-neutral-300,
+.admin-theme .border-neutral-200,
+.admin-theme .border-neutral-100 { border-color: rgba(148, 163, 184, 0.18) !important; }
+.admin-theme .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(148, 163, 184, 0.12) !important; }
+
+.admin-theme table thead { background: rgba(15, 23, 42, 0.92); }
+.admin-theme table tbody tr { transition: background-color 160ms ease, box-shadow 160ms ease; }
+.admin-theme table tbody tr:hover { background: rgba(34, 211, 238, 0.035); box-shadow: inset 2px 0 0 rgba(34, 211, 238, 0.42); }
+.admin-theme th { color: #a5f3fc !important; letter-spacing: 0.08em; }
+
+.admin-theme input,
+.admin-theme select,
+.admin-theme textarea { background-color: rgba(2, 6, 23, 0.72) !important; color: #f8fafc !important; border-color: rgba(34, 211, 238, 0.18) !important; }
+.admin-theme input::placeholder,
+.admin-theme textarea::placeholder { color: #64748b !important; }
+.admin-theme select option { background: #0b1020; color: #f8fafc; }
+
+.admin-theme .text-success-700 { color: #86efac !important; }
+.admin-theme .text-warning-700 { color: #facc15 !important; }
+.admin-theme .text-error-700 { color: #fca5a5 !important; }
+.admin-theme .text-blue-700 { color: #93c5fd !important; }
+.admin-theme .bg-success-500\/10 { background-color: rgba(34, 197, 94, 0.12) !important; }
+.admin-theme .bg-warning-500\/10 { background-color: rgba(234, 179, 8, 0.12) !important; }
+.admin-theme .bg-error-500\/10 { background-color: rgba(239, 68, 68, 0.12) !important; }
+.admin-theme .bg-blue-50 { background-color: rgba(59, 130, 246, 0.12) !important; }
+
+.admin-theme .shadow-sm,
+.admin-theme .shadow-xl,
+.admin-theme .shadow-2xl { box-shadow: 0 12px 42px rgba(0, 0, 0, 0.26) !important; }
+.admin-theme .rounded-lg { border-radius: 0.85rem; }
+
+@media (max-width: 767px) {
+  .admin-theme main { padding-bottom: 5rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
