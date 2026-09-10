@@ -87,7 +87,7 @@ function getFirebaseAdminApp() {
     throw new FirebaseConfigurationError(`Missing Firebase Admin environment variables: ${missing.join(', ')}`);
   }
 
-  const privateKey = normalizePrivateKey(privateKeyValue);
+  const privateKey = normalizePrivateKey(privateKeyValue ?? '');
 
   if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
     throw new FirebaseConfigurationError('FIREBASE_PRIVATE_KEY has an invalid format');
@@ -115,12 +115,11 @@ async function verifyFirebaseIdToken(token: string): Promise<{ uid: string }> {
     throw new FirebaseConfigurationError('Firebase Web API key is not configured');
   }
 
-  const apiKey: string = configuredApiKey;
   let response: Response;
 
   try {
     response = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(configuredApiKey)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
