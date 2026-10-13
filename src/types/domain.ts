@@ -26,6 +26,7 @@ export interface Product {
   readonly price: Money;
   readonly category: ProductCategory;
   readonly image: ProductImage;
+  readonly images?: readonly ProductImage[];
   readonly stock: number;
   readonly rating: number;
   readonly reviewCount: number;
@@ -44,6 +45,7 @@ export interface ProductDTO {
   readonly category: ProductCategory;
   readonly imageKey: string;
   readonly imageUrl: string;
+  readonly images?: readonly ProductImage[];
   readonly stock: number;
   readonly rating: number;
   readonly reviewCount: number;

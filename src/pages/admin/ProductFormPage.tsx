@@ -23,6 +23,7 @@ interface ProductFormState {
   stock: string;
   imageKey: string;
   imageUrl: string;
+  images: { url: string; key: string; alt: string }[];
   isActive: boolean;
 }
 
@@ -45,6 +46,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
     stock: '',
     imageKey: '',
     imageUrl: '',
+    images: [],
     isActive: true,
   });
   const [loading, setLoading] = useState(false);
@@ -66,6 +68,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
           stock: String(product.stock),
           imageKey: product.image.key,
           imageUrl: product.image.url,
+          images: [...(product.images?.length ? product.images : product.image.url ? [product.image] : [])],
           isActive: product.isActive,
         });
       }
@@ -85,8 +88,13 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
     void loadProduct();
   }, [loadProduct]);
 
-  const handleImageUploaded = (url: string, key: string) => {
-    setForm((prev) => ({ ...prev, imageUrl: url, imageKey: key }));
+  const handleImagesUploaded = (images: readonly { url: string; key: string; alt: string }[]) => {
+    setForm((prev) => ({
+      ...prev,
+      images: [...images],
+      imageUrl: images[0]?.url ?? '',
+      imageKey: images[0]?.key ?? '',
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,6 +115,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
           category: form.category,
           imageUrl: form.imageUrl,
           imageKey: form.imageKey,
+          images: form.images,
           stock: parseInt(form.stock, 10),
           isActive: form.isActive,
         });
@@ -119,6 +128,7 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
           category: form.category,
           imageUrl: form.imageUrl,
           imageKey: form.imageKey,
+          images: form.images,
           stock: parseInt(form.stock, 10),
           isActive: form.isActive,
           createdBy: user?.uid ?? '',
@@ -242,8 +252,8 @@ export function AdminProductFormPage({ productId }: AdminProductFormPageProps) {
 
             <div className="md:col-span-2">
               <ImageUploader
-                imageUrl={form.imageUrl}
-                onImageUploaded={handleImageUploaded}
+                images={form.images}
+                onImagesUploaded={handleImagesUploaded}
                 disabled={isSubmitting}
               />
             </div>

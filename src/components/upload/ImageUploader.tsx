@@ -2,29 +2,34 @@ import { useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { useUpload } from '@/hooks/useUpload';
+import type { ProductImage } from '@/types/domain';
 
 interface ImageUploaderProps {
-  readonly imageUrl: string;
-  readonly onImageUploaded: (url: string, key: string) => void;
+  readonly images: readonly ProductImage[];
+  readonly onImagesUploaded: (images: readonly ProductImage[]) => void;
   readonly disabled?: boolean;
 }
 
 export function ImageUploader({
-  imageUrl,
-  onImageUploaded,
+  images,
+  onImagesUploaded,
   disabled = false,
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { status, error, progress, uploadFile, reset } = useUpload();
+  const { status, error, progress, uploadFile } = useUpload();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
 
     try {
-      const result = await uploadFile(file, 'products');
-      if (result) {
-        onImageUploaded(result.publicUrl, result.key);
+      const uploadedImages = [...images];
+      for (const file of files) {
+        const result = await uploadFile(file, 'products');
+        if (!result) break;
+        const image = { url: result.publicUrl, key: result.key, alt: file.name };
+        uploadedImages.push(image);
+        onImagesUploaded(uploadedImages);
       }
     } catch {
       // El hook ya captura el error
@@ -37,14 +42,39 @@ export function ImageUploader({
 
   return (
     <div className="space-y-3">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        onChange={handleFileChange}
-        disabled={disabled || status === 'loading'}
-        className="block w-full text-sm text-neutral-500 file:mr-4 file:rounded-md file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 disabled:opacity-50"
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          onChange={handleFileChange}
+          disabled={disabled || status === 'loading'}
+          className="sr-only"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled || status === 'loading'}
+        >
+          Seleccionar archivos
+        </Button>
+        {images.length > 0 && (
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1" aria-label="Imágenes del producto">
+            {images.map((image) => (
+              <img
+                key={image.key || image.url}
+                src={image.url}
+                alt={image.alt}
+                title={image.alt}
+                className="h-12 w-12 shrink-0 rounded-md border border-neutral-200 object-cover"
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {status === 'loading' && (
         <div className="space-y-2">
@@ -55,26 +85,6 @@ export function ImageUploader({
             />
           </div>
           <p className="text-xs text-neutral-500">Subiendo imagen... {progress}%</p>
-        </div>
-      )}
-
-      {status === 'success' && imageUrl && (
-        <div className="space-y-2">
-          <img
-            src={imageUrl}
-            alt="Preview"
-            className="h-32 w-32 rounded-md border border-neutral-200 object-cover"
-          />
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={reset}
-            >
-              Cambiar imagen
-            </Button>
-          </div>
         </div>
       )}
 

@@ -148,6 +148,7 @@ function docToProduct(docSnap: QueryDocumentSnapshot<DocumentData>): ProductDTO 
     category: data.category ?? 'action-figures',
     imageKey: data.imageKey ?? data.image_key ?? (typeof data.image === 'object' && data.image ? data.image.key : '') ?? '',
     imageUrl: data.imageUrl ?? data.image_url ?? (typeof data.image === 'string' ? data.image : data.image?.url) ?? '',
+    images: Array.isArray(data.images) ? data.images : undefined,
     stock: data.stock ?? 0,
     rating: data.rating ?? 0,
     reviewCount: data.reviewCount ?? data.review_count ?? 0,

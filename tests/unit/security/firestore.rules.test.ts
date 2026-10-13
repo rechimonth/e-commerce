@@ -172,6 +172,16 @@ MaybeDescribe('Firestore Security Rules', () => {
       await assertSucceeds(db.doc('users/customer-1').get());
     });
 
+    it('admin can list user profiles, including the admin profile', async () => {
+      const db = adminEnv().firestore();
+      await assertSucceeds(db.collection('users').orderBy('createdAt', 'desc').get());
+    });
+
+    it('customer cannot list user profiles', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.collection('users').get());
+    });
+
     it('customer can create own profile with role=customer', async () => {
       const db = testEnv.authenticatedContext('new-user').firestore();
       await assertSucceeds(db.doc('users/new-user').set(customer1Profile));
@@ -312,6 +322,25 @@ MaybeDescribe('Firestore Security Rules', () => {
     it('admin can update order totals', async () => {
       const db = adminEnv().firestore();
       await assertSucceeds(db.doc('orders/order-1').update({ totalCents: 9999 }));
+    });
+  });
+
+  // ─── Settings ─────────────────────────────────────────────────────────
+
+  describe('settings/{settingId}', () => {
+    it('admin can save store settings', async () => {
+      const db = adminEnv().firestore();
+      await assertSucceeds(db.doc('settings/store').set({ name: 'Mi Tienda', updatedAt: Date.now() }));
+    });
+
+    it('customer cannot save store settings', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('settings/store').set({ name: 'Tienda falsa', updatedAt: Date.now() }));
+    });
+
+    it('admin cannot write unrelated settings documents', async () => {
+      const db = adminEnv().firestore();
+      await assertFails(db.doc('settings/other').set({ name: 'Other', updatedAt: Date.now() }));
     });
   });
 

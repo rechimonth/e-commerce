@@ -14,7 +14,8 @@ const DEFAULT_LIMIT = 20;
 function toProduct(dto: ProductDTO): Product {
   const createdAtMs = typeof dto.createdAt === 'object' && dto.createdAt !== null ? dto.createdAt.seconds * 1000 + dto.createdAt.nanoseconds / 1e6 : Date.now();
   const updatedAtMs = typeof dto.updatedAt === 'object' && dto.updatedAt !== null ? dto.updatedAt.seconds * 1000 + dto.updatedAt.nanoseconds / 1e6 : Date.now();
-  return { id: dto.id, name: dto.name, description: dto.description, price: { amount: dto.priceCents, currency: dto.currency }, category: dto.category, image: { url: dto.imageUrl, alt: dto.name, key: dto.imageKey }, stock: dto.stock, rating: dto.rating, reviewCount: dto.reviewCount, isActive: dto.isActive, createdAt: new Date(createdAtMs), updatedAt: new Date(updatedAtMs), createdBy: dto.createdBy };
+  const image = { url: dto.imageUrl, alt: dto.name, key: dto.imageKey };
+  return { id: dto.id, name: dto.name, description: dto.description, price: { amount: dto.priceCents, currency: dto.currency }, category: dto.category, image, images: dto.images ?? (dto.imageUrl ? [image] : []), stock: dto.stock, rating: dto.rating, reviewCount: dto.reviewCount, isActive: dto.isActive, createdAt: new Date(createdAtMs), updatedAt: new Date(updatedAtMs), createdBy: dto.createdBy };
 }
 export const productsService = {
   async fetchProducts(params: FetchProductsParams = {}): Promise<ProductsResult> { return firebaseTryCatch(async () => { const { search, category, limit = DEFAULT_LIMIT } = params; const activeProducts = await getProducts({ category, isActive: true, limit }); const allItems = activeProducts.map(toProduct); const filtered = search ? allItems.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())) : allItems; return { items: filtered, pagination: { page: 1, limit, total: filtered.length, hasNext: filtered.length >= limit, hasPrev: false } }; }); },

@@ -60,6 +60,7 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(uid) && !exists(/databases/$(database)/documents/users/$(uid)) && userAllowedFields()
         && request.resource.data.uid == uid && request.resource.data.role == 'customer';
       allow update: if (isAdmin() && userAllowedFields() && request.resource.data.uid == uid && request.resource.data.createdAt == resource.data.createdAt)
@@ -83,6 +84,13 @@ service cloud.firestore {
         && request.resource.data.status == 'pending';
       allow update: if (isAdmin() && orderAllowedFields()) || (isOrderOwner() && orderCustomerUpdatableFields());
       allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get, list: if isAdmin();
+      allow create, update: if isAdmin() && settingId == 'store'
+        && request.resource.data.keys().hasOnly(['name', 'updatedAt'])
+        && request.resource.data.name is string;
     }
 
     match /{document=**} {

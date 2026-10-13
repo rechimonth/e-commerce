@@ -280,7 +280,7 @@ export function AdminCreateOrderPage() {
         </div>
       </div>
 
-      <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="xl" variant="admin">
+      <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="lg" variant="admin">
         <div className="space-y-4">
           <div className="flex flex-col gap-4 rounded-2xl border border-cyan-300/10 bg-slate-950/45 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0 text-sm font-semibold text-slate-200">Selecciona los productos que deseas agregar a la orden:</p>
@@ -294,7 +294,7 @@ export function AdminCreateOrderPage() {
           {isLoadingCatalog ? (
             <div className="flex items-center justify-center rounded-2xl border border-cyan-300/10 bg-slate-950/30 py-12"><p className="text-sm font-medium text-slate-400">Cargando productos...</p></div>
           ) : (
-            <div className="max-h-[min(30rem,55vh)] overflow-auto rounded-2xl border border-cyan-300/10 bg-slate-950/25">
+            <div className="max-h-[min(24rem,45dvh)] overflow-auto rounded-2xl border border-cyan-300/10 bg-slate-950/25">
               <table className="min-w-full">
                 <thead className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur"><tr><th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Producto</th><th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Precio</th><th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-cyan-200/80">Stock</th><th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-cyan-200/80">Acción</th></tr></thead>
                 <tbody className="divide-y divide-cyan-300/10">{catalogProducts.map((product) => { const isInCart = cart.some((item) => item.id === product.id); return <tr key={product.id} className={isInCart ? 'bg-cyan-300/[0.05]' : 'hover:bg-cyan-300/[0.03]'}><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-900"><img src={product.image.url} alt={product.image.alt} className="h-10 w-10 object-cover" /></div><span className="text-sm font-semibold text-slate-100">{product.name}</span></div></td><td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-200"><Price amount={product.price.amount} currency={product.price.currency} /></td><td className="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-300">{product.stock}</td><td className="whitespace-nowrap px-4 py-4 text-right"><Button variant={isInCart ? 'outline' : 'solid'} size="sm" onClick={() => addToCart(product)} disabled={product.stock === 0}>{isInCart ? 'Agregar más' : 'Agregar'}</Button></td></tr>; })}</tbody>
