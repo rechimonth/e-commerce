@@ -17,6 +17,9 @@ import {
   query,
   where,
   orderBy,
+  documentId,
+  startAfter,
+  type QueryConstraint,
   limit as firestoreLimit,
   serverTimestamp,
   type Timestamp,
@@ -108,6 +111,44 @@ export async function getProducts(filters?: ProductFilters): Promise<ProductDTO[
 
     const snapshot = await getDocs(q);
     return snapshot.docs.map((doc) => docToProduct(doc));
+  });
+}
+
+export interface ProductPageFilters extends ProductFilters {
+  readonly cursor?: string | null;
+}
+
+export interface ProductPageDTO {
+  readonly items: ProductDTO[];
+  readonly nextCursor: string | null;
+  readonly hasNext: boolean;
+}
+
+export async function getProductsPage(filters: ProductPageFilters = {}): Promise<ProductPageDTO> {
+  return firebaseTryCatch(async () => {
+    const db = getFirebaseDb();
+    const safeLimit = Number.isSafeInteger(filters.limit)
+      ? Math.max(1, Math.min(filters.limit ?? 20, 100))
+      : 20;
+    const constraints: QueryConstraint[] = [];
+    if (filters.category) constraints.push(where('category', '==', filters.category));
+    if (filters.isActive !== undefined) constraints.push(where('isActive', '==', filters.isActive));
+    constraints.push(orderBy(documentId(), 'asc'));
+
+    let q = query(collection(db, 'products'), ...constraints);
+    if (filters.cursor) {
+      const cursorSnapshot = await getDoc(doc(db, 'products', filters.cursor));
+      if (cursorSnapshot.exists()) q = query(q, startAfter(cursorSnapshot));
+    }
+    q = query(q, firestoreLimit(safeLimit + 1));
+    const snapshot = await getDocs(q);
+    const hasNext = snapshot.docs.length > safeLimit;
+    const pageDocs = snapshot.docs.slice(0, safeLimit);
+    return {
+      items: pageDocs.map((productDoc) => docToProduct(productDoc)),
+      nextCursor: hasNext && pageDocs.length > 0 ? pageDocs[pageDocs.length - 1].id : null,
+      hasNext,
+    };
   });
 }
 
