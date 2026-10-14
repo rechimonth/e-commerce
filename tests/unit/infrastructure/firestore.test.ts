@@ -88,6 +88,7 @@ const mocks = vi.hoisted(() => {
     where: vi.fn((field, op, value) => ({ _where: { field, op, value } })),
     orderBy: vi.fn((field, dir) => ({ _orderBy: { field, dir } })),
     limit: vi.fn((n) => ({ _limit: n })),
+    startAfter: vi.fn((snapshot) => ({ _startAfter: snapshot })),
     serverTimestamp: vi.fn(() => ({ _serverTimestamp: true })),
     Timestamp: {
       fromMillis: vi.fn((ms: number) => ({ _type: 'Timestamp', _ms: ms })),
@@ -184,6 +185,24 @@ describe('Firebase firestore', () => {
     await getProducts({ isActive: true });
 
     expect(mocks.firestoreStubs.where).toHaveBeenCalledWith('isActive', '==', true);
+  });
+
+  it('getProductsPage returns a cursor when more products are available', async () => {
+    const { getProductsPage } = await setupFirestore();
+    mocks.firestoreStubs.getDocs.mockResolvedValue(
+      mocks.makeQuerySnap([
+        { id: 'p1', data: mocks.mockProductData },
+        { id: 'p2', data: mocks.mockProductData },
+        { id: 'p3', data: mocks.mockProductData },
+      ]),
+    );
+
+    const page = await getProductsPage({ limit: 2, isActive: true });
+
+    expect(page.items.map((product) => product.id)).toEqual(['p1', 'p2']);
+    expect(page.nextCursor).toBe('p2');
+    expect(page.hasNext).toBe(true);
+    expect(mocks.firestoreStubs.limit).toHaveBeenCalledWith(3);
   });
 
   it('getProduct returns null when doc does not exist', async () => {
