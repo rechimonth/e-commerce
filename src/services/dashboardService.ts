@@ -29,6 +29,7 @@ export const dashboardService = {
       let processingCount = 0;
       let completedCount = 0;
       let cancelledCount = 0;
+      // Revenue is reported only for completed orders and only in USD; never add currencies together.
       let totalRevenueCents = 0;
 
       const recentOrders = orders
@@ -55,7 +56,9 @@ export const dashboardService = {
         else if (status === 'processing') processingCount += 1;
         else if (status === 'completed') completedCount += 1;
         else if (status === 'cancelled') cancelledCount += 1;
-        totalRevenueCents += order.totalCents;
+        if (status === 'completed' && order.currency === CURRENCY && Number.isSafeInteger(order.totalCents) && order.totalCents >= 0) {
+          totalRevenueCents += order.totalCents;
+        }
       }
 
       return {
