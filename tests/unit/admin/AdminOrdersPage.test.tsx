@@ -43,6 +43,6 @@ describe('AdminOrdersPage', () => {
     await waitFor(() => expect(screen.getByText(/order-1/i)).toBeInTheDocument());
     const row = screen.getByText(/order-1/i).closest('tr'); if (!row) throw new Error('Row not found');
     await userEvent.selectOptions(within(row).getByRole('combobox'), 'processing');
-    expect(ordersService.updateOrderStatus).toHaveBeenCalledWith('order-1', 'processing', 'admin-1');
+    expect(ordersService.updateOrderStatus).toHaveBeenCalledWith('order-1', 'processing');
   });
 });
