@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContext';
 import type { AuthContextValue } from '@/contexts/AuthContext';
 import { CartProvider } from '@/store/cart/CartProvider';
@@ -32,12 +32,14 @@ vi.mock('@/services/ordersService', () => ({
 
 function CartHarness() {
   const { addItem, totalItems } = useCart();
+  const navigate = useNavigate();
 
   return (
     <div>
       <button type="button" onClick={() => addItem(productFixture, 1)}>
         Agregar producto de prueba
       </button>
+      <button type="button" onClick={() => navigate(ROUTES.CHECKOUT)}>Ir al checkout</button>
       <output aria-label="Cantidad de artículos" data-testid="cart-count">
         {totalItems}
       </output>
@@ -97,7 +99,7 @@ describe('Flujo de integración carrito → checkout → confirmación', () => {
 
     // CheckoutPage is entered through the router so this test exercises the real
     // cart provider and form; only the remote checkout/Firestore boundary is mocked.
-    window.history.pushState({}, '', ROUTES.CHECKOUT);
+    await user.click(screen.getByRole('button', { name: 'Ir al checkout' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: /completa tu pedido/i })).toBeInTheDocument());
 
     await user.type(screen.getByLabelText('Calle y número'), '123 Main Street');
