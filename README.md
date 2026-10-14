@@ -504,7 +504,7 @@ curl -fsS https://e-commerce-mauve-one-98.vercel.app/api/health
 
 ```bash
 git status --short
-git add <archivos-modificados>
+git add -p
 git commit -m "fix: describe el cambio"
 git push origin main
 ```
@@ -608,20 +608,17 @@ La bitácora en docs/ai-notes.md reúne consultas y decisiones de planificación
 
 ## 📝 Bitácora de IA
 
-La bitácora completa se encuentra en [docs/ai-notes.md](docs/ai-notes.md).
+La consigna pide que el README contenga al menos cinco momentos de uso de IA y explique el prompt, el aprendizaje y la decisión resultante. Esta tabla resume cinco prompts documentados en [docs/ai-notes.md](docs/ai-notes.md). Las entradas #1–#5 incluyen prompts citados en esa bitácora; los archivos enlazados son evidencias del trabajo técnico relacionado, no una transcripción independiente de toda la conversación.
 
-Los temas documentados incluyen:
+| Momento | Prompt documentado | Aprendizaje y decisión tomada | Evidencia técnica |
+|---|---|---|---|
+| 1. Diagnóstico de la suite de tests | “Make the full Vitest test suite pass by resolving conflicts between global test mocks and local infrastructure test mocks, fixing invalid component props, and ensuring tests that render `AuthProvider` have the necessary Firebase infrastructure mocks.” | Aprendí que los mocks globales de módulos internos pueden sobrescribir mocks locales. Decisión: mantener los mocks específicos de Firebase en los tests que los necesitan y dejar en el setup global solo dependencias externas estables. | `src/test/setup.ts`, `tests/unit/infrastructure/auth.test.ts`, `firestore.test.ts`, `config.test.ts` |
+| 2. Consistencia de iconos de navegación | “Reemplazar emojis por iconos SVG en OrderStatusBadge y navegación admin. No crear archivos separados, usar SVG inline en cada componente.” | Aprendí que SVG inline permite un estilo consistente sin instalar una biblioteca adicional. Decisión: unificar la navegación y los estados visuales con iconos SVG y mantenerlos cerca de sus componentes. | `src/components/admin/AdminLayout.tsx`, `src/components/ui/OrderStatusBadge.tsx`, `src/pages/admin/DashboardPage.tsx` |
+| 3. IDs accesibles y estables en formularios | “Estabilizar IDs de Input, Select, Textarea y Checkbox con useId(). No cambiar interfaces ni exports.” | Aprendí que `useId()` debe invocarse incondicionalmente y en el mismo orden en cada render. Decisión: generar siempre un ID estable y permitir que la prop `id` lo sobrescriba. | `src/components/ui/Input.tsx`, `Select.tsx`, `Textarea.tsx`, `Checkbox.tsx` |
+| 4. Revisión de componentes base | “Mejorar estilos visuales de componentes base: Button, Input, Card, Badge, Alert. No cambiar interfaces, props ni exports. Solo modificar className strings.” | La revisión se centró en jerarquía visual, foco, espaciado, bordes y transiciones. Decisión: tratar los componentes base como un sistema compartido y revisar sus consumidores al introducir variantes visuales. | `src/components/ui/Button.tsx`, `Input.tsx`, `Card.tsx`, `Badge.tsx`, `Alert.tsx` |
+| 5. Componentes compuestos y estados | “Mejorar componentes compuestos y estados. No cambiar interfaces ni exports. Usar el componente Button en EmptyState y ErrorState. Reemplazar inline styles de Skeleton por Tailwind.” | Aprendí que `animate-pulse` basta para el skeleton y que reutilizar `Button` evita controles visualmente inconsistentes. Decisión: centralizar acciones comunes y usar estados visuales responsivos reutilizables. | `src/components/ui/ProductCard.tsx`, `Modal.tsx`, `QuantitySelector.tsx`, `SearchInput.tsx`, `CategoryFilter.tsx`, `Skeleton.tsx`, `EmptyState.tsx`, `ErrorState.tsx` |
 
-- Planificación y preparación de fixtures/wrappers de testing.
-- Code review y decisiones de componentes UI.
-- Resolución de problemas con IDs en formularios.
-- Mejoras de componentes base y compuestos.
-- Ajustes de documentación y estructura.
-- Generación y validación de pruebas de seguridad Firestore.
-
-Para la defensa, usa las entradas del documento y explica el problema original, las alternativas consideradas, qué aprendiste y cuál fue la decisión final.
-
----
+La [bitácora ampliada](docs/ai-notes.md) documenta los problemas, los prompts, lo aprendido, las decisiones aceptadas/rechazadas y los artefactos para ocho intervenciones. Para la defensa, prepara una explicación propia de cada decisión; la tabla no reemplaza la verificación ni la comprensión del código.
 
 ## 👨‍💻 Autor
 

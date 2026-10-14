@@ -1,11 +1,11 @@
 # Bitácora de IA — E-Commerce
 
-> **Nota sobre trazabilidad**: Este proyecto no tiene repositorio Git inicializado (`git log` falla con "not a git repository"). Por lo tanto, no existen commits firmados que permitan verificar interacciones anteriores con IA por sí mismos. Esta bitácora se construye exclusivamente a partir de:
+> **Nota sobre trazabilidad**: esta bitácora se redactó a partir de una sesión del **15/8/2026** en la que la copia local examinada aparentemente no tenía metadatos Git disponibles (`git log` devolvía "not a git repository"). El repositorio remoto actual sí conserva un historial de commits, pero ese historial posterior no verifica retroactivamente cada conversación con IA. Por eso, las entradas distinguen entre prompts citados en la bitácora, prompts inferidos a partir de los artefactos y evidencias técnicas enlazadas.
 >
-> - Artefactos verificables dentro del repo (`.kilo/plans/fix-test-suite.md`, timestamps de archivos, fixtures, tests).
-> - La sesión actual del **15/8/2026**, cuyos cambios están documentados en los archivos modificados y validados con `npm run lint` / `npm run build`.
+> - Artefactos y tests citados: `.kilo/plans/fix-test-suite.md`, `src/test/`, `tests/` y los componentes mencionados en cada intervención.
+> - Sesiones/fechas anotadas en la bitácora: 13–15/8/2026.
 >
-> No se inventan prompts, commits ni resultados. Cuando no hay evidencia directa, se indica explícitamente.
+> No se presentan prompts inferidos como citas literales ni se inventan resultados de pruebas. Cuando la evidencia es indirecta, se señala explícitamente.
 
 ---
 
