@@ -78,8 +78,8 @@ describe('productsService', () => {
   });
 
   it('fetchProducts filters by category', async () => {
-    const { getProducts } = await import('@/infrastructure/firebase/firestore');
-    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
+    const { getProductsPage } = await import('@/infrastructure/firebase/firestore');
+    (getProductsPage as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockProducts, nextCursor: null, hasNext: false });
 
     await productsService.fetchProducts({ category: 'action-figures' });
 
@@ -92,8 +92,8 @@ describe('productsService', () => {
   });
 
   it('fetchProducts filters by search term (client-side)', async () => {
-    const { getProducts } = await import('@/infrastructure/firebase/firestore');
-    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
+    const { getProductsPage } = await import('@/infrastructure/firebase/firestore');
+    (getProductsPage as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockProducts, nextCursor: null, hasNext: false });
 
     const result = await productsService.fetchProducts({ search: 'iPhone' });
 
@@ -102,8 +102,8 @@ describe('productsService', () => {
   });
 
   it('fetchProducts returns empty for non-matching search', async () => {
-    const { getProducts } = await import('@/infrastructure/firebase/firestore');
-    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
+    const { getProductsPage } = await import('@/infrastructure/firebase/firestore');
+    (getProductsPage as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockProducts, nextCursor: null, hasNext: false });
 
     const result = await productsService.fetchProducts({ search: 'xyz' });
 
