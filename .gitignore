@@ -12,4 +12,5 @@ coverage/
 
 .vercel
 .env*
+!.env.example
 proyecto.md
