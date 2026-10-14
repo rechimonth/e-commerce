@@ -23,6 +23,7 @@ interface AdminProductsPageState {
   status: AsyncStatus;
   error: ServiceError | null;
   pagination: PaginatedResult<Product>['pagination'] | null;
+  nextCursor: string | null;
 }
 
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -33,8 +34,12 @@ export function AdminProductsPage() {
     status: 'loading',
     error: null,
     pagination: null,
+    nextCursor: null,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [pageCursors, setPageCursors] = useState<(string | null)[]>([null]);
+  const pageIndex = pageCursors.length - 1;
+  const currentCursor = pageCursors[pageIndex] ?? null;
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | ''>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -50,21 +55,27 @@ export function AdminProductsPage() {
         search: searchTerm || undefined,
         category: categoryFilter || undefined,
         limit: 20,
+        cursor: currentCursor,
+        page: pageIndex + 1,
       });
-      setState({ products: result.items as Product[], status: 'success', error: null, pagination: result.pagination });
+      setState({ products: result.items as Product[], status: 'success', error: null, pagination: result.pagination, nextCursor: result.nextCursor });
     } catch (e) {
       const err: ServiceError = {
         code: 'INTERNAL_ERROR',
         message: e instanceof Error ? e.message : 'Error al cargar productos',
         details: { error: e instanceof Error ? e.message : String(e) },
       };
-      setState({ products: null, status: 'error', error: err, pagination: null });
+      setState({ products: null, status: 'error', error: err, pagination: null, nextCursor: null });
     }
-  }, [searchTerm, categoryFilter]);
+  }, [searchTerm, categoryFilter, currentCursor, pageIndex]);
 
   useEffect(() => {
     void fetchProducts();
   }, [fetchProducts]);
+
+  useEffect(() => {
+    setPageCursors([null]);
+  }, [searchTerm, categoryFilter, statusFilter]);
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
@@ -251,6 +262,14 @@ export function AdminProductsPage() {
             </table>
           </div>
         </Card>
+      )}
+
+      {state.status === 'success' && (state.pagination?.hasPrev || state.pagination?.hasNext) && (
+        <nav className="flex items-center justify-center gap-4" aria-label="Paginación de productos">
+          <Button variant="outline" size="sm" disabled={!state.pagination?.hasPrev || state.status === 'loading'} onClick={() => setPageCursors((previous) => previous.length > 1 ? previous.slice(0, -1) : previous)}>Anterior</Button>
+          <span className="text-sm text-slate-400">Página {pageIndex + 1}</span>
+          <Button variant="outline" size="sm" disabled={!state.nextCursor || state.status === 'loading'} onClick={() => { if (state.nextCursor) setPageCursors((previous) => [...previous, state.nextCursor]); }}>Siguiente</Button>
+        </nav>
       )}
 
       <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Confirmar eliminación" description={productToDelete ? `¿Estás seguro de eliminar "${productToDelete.name}"?` : ''} size="sm" variant="admin">
