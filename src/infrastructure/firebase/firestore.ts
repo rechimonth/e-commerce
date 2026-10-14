@@ -17,7 +17,6 @@ import {
   query,
   where,
   orderBy,
-  documentId,
   startAfter,
   type QueryConstraint,
   limit as firestoreLimit,
@@ -133,7 +132,7 @@ export async function getProductsPage(filters: ProductPageFilters = {}): Promise
     const constraints: QueryConstraint[] = [];
     if (filters.category) constraints.push(where('category', '==', filters.category));
     if (filters.isActive !== undefined) constraints.push(where('isActive', '==', filters.isActive));
-    constraints.push(orderBy(documentId(), 'asc'));
+    constraints.push(orderBy('createdAt', 'desc'));
 
     let q = query(collection(db, 'products'), ...constraints);
     if (filters.cursor) {
