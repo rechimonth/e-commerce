@@ -21,6 +21,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - name: Firestore security rules
         run: npx --yes firebase-tools emulators:exec --only firestore --project e-commerce-ai-test "npm run test:rules"
       - run: npm run build
