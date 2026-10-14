@@ -14,8 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install --include=dev
+      - run: npm ci
       - run: npm run lint
-      - run: npm test -- --run
+      - run: npm test
+      - name: Firestore security rules
+        run: npx --yes firebase-tools emulators:exec --only firestore --project e-commerce-ai-test "npm run test:rules"
       - run: npm run build
       - run: npm run typecheck:api
