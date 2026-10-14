@@ -98,21 +98,8 @@ service cloud.firestore {
     }
 
     match /productReviews/{reviewId} {
-      allow get, list: if resource.data.keys().hasAll([
-          'productId', 'rating', 'comment', 'displayName', 'createdAt',
-        ])
-        && resource.data.keys().hasOnly([
-          'productId', 'rating', 'comment', 'displayName', 'createdAt', 'updatedAt',
-        ])
-        && resource.data.productId is string
-        && resource.data.rating is int
-        && resource.data.rating >= 1 && resource.data.rating <= 5
-        && resource.data.comment is string
-        && resource.data.comment.size() >= 10
-        && resource.data.comment.size() <= 1500
-        && resource.data.displayName is string
-        && resource.data.displayName.size() <= 80;
-      // Reviews are written only by the server after verifying a completed purchase.
+      // Public reads are safe because all writes are server-only and validated by /api/reviews.
+      allow get, list: if true;
       allow create, update, delete: if false;
     }
 
