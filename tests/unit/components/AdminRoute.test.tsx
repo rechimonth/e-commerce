@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -27,6 +29,7 @@ describe('AdminRoute', () => {
       signOut: async () => {},
       refreshUserProfile: async () => {},
       clearError: () => {},
+      getIdToken: async () => 'test-token',
     });
 
     const router = createMemoryRouter(
@@ -51,6 +54,7 @@ describe('AdminRoute', () => {
       signOut: async () => {},
       refreshUserProfile: async () => {},
       clearError: () => {},
+      getIdToken: async () => 'test-token',
     });
 
     const router = createMemoryRouter(
@@ -78,6 +82,7 @@ describe('AdminRoute', () => {
       signOut: async () => {},
       refreshUserProfile: async () => {},
       clearError: () => {},
+      getIdToken: async () => 'test-token',
     });
 
     const router = createMemoryRouter(
@@ -105,6 +110,7 @@ describe('AdminRoute', () => {
       signOut: async () => {},
       refreshUserProfile: async () => {},
       clearError: () => {},
+      getIdToken: async () => 'test-token',
     });
 
     const router = createMemoryRouter(
