@@ -14,7 +14,6 @@ import {
   updateDoc,
   deleteDoc,
   addDoc,
-  setDoc,
   query,
   where,
   orderBy,
@@ -195,30 +194,6 @@ function docToProduct(docSnap: QueryDocumentSnapshot<DocumentData>): ProductDTO 
 export interface OrderFilters {
   readonly status?: OrderStatus;
   readonly limit?: number;
-}
-
-export async function createOrder(
-  order: Omit<OrderDTO, 'id' | 'status' | 'statusHistory'>,
-): Promise<OrderDTO> {
-  return firebaseTryCatch(async () => {
-    const db = getFirebaseDb();
-    const now = serverTimestamp();
-    const docRef = doc(collection(db, 'orders'));
-    const items = order.items.map((item) => ({ ...item, orderId: docRef.id }));
-    await setDoc(docRef, {
-      ...order,
-      items,
-      id: docRef.id,
-      status: 'pending',
-      statusHistory: [],
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) throw new Error('Order not found after creation');
-    return snapToOrder(docSnap);
-  });
 }
 
 export async function getUserOrders(userId: string): Promise<OrderDTO[]> {
