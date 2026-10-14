@@ -160,6 +160,8 @@ describe('useProducts', () => {
         category: 'action-figures',
         limit: 20,
         search: undefined,
+        cursor: null,
+        page: 1,
       });
     });
   });
