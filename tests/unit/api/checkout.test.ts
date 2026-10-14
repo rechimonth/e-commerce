@@ -76,6 +76,8 @@ function validBody(overrides: Record<string, unknown> = {}) {
 describe('POST /api/checkout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('FIREBASE_WEB_API_KEY', 'test-firebase-web-api-key');
+    vi.stubEnv('VITE_FIREBASE_API_KEY', 'test-firebase-web-api-key');
     mocks.callerUid = 'customer-1';
     mocks.users.clear();
     mocks.products.clear();
