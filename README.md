@@ -2,59 +2,63 @@
 
 ![ECOMMERCE AI](https://img.shields.io/badge/ECOMMERCE_AI-React%2018%20%2B%20TypeScript%20%2B%20Vite-blue)
 ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-orange)
-![AWS S3](https://img.shields.io/badge/AWS%20S3-Presigned%20URLs-green)
+![AWS S3](https://img.shields.io/badge/AWS%20S3-Presigned%20POST-green)
 ![Vercel](https://img.shields.io/badge/Vercel-Serverless%20Functions-black)
 
-Una tienda online sencilla donde los usuarios pueden buscar productos, agregarlos al carrito y realizar compras, mientras que los administradores gestionan el catálogo y las órdenes desde un panel protegido.
+Aplicación SPA de e-commerce para retail. Los clientes consultan el catálogo, administran su carrito y realizan un checkout simulado; los administradores gestionan productos, órdenes y contenido desde un panel protegido.
+
+- **Producción:** https://e-commerce-mauve-one-98.vercel.app/
+- **Repositorio:** https://github.com/rechimonth/e-commerce
+- **Rama:** main
+- **Stack:** React 18, TypeScript, Vite, Firebase Authentication, Firestore, AWS S3 y Vercel Functions.
 
 ---
 
 ## 📋 Sobre el proyecto
 
-ECOMMERCE AI es una aplicación web desarrollada para un cliente del sector retail. La idea es tener una tienda online funcional con dos roles:
+ECOMMERCE AI responde al proyecto integrador de una plataforma de comercio electrónico con dos roles diferenciados:
 
-- **Cliente**: navega el catálogo, usa el carrito y hace compras.
-- **Administrador**: crea y edita productos, ve todas las órdenes y cambia sus estados.
+- **Cliente (customer):** navega el catálogo, administra el carrito, confirma compras y consulta sus órdenes.
+- **Administrador (admin):** mantiene el catálogo, sube imágenes, consulta órdenes y gestiona su estado.
 
-La aplicación está pensada para ser mantenible y escalable sin necesidad de administrar servidores propios.
+El checkout simula el pago; no procesa cargos reales con una pasarela.
 
 ---
 
 ## 🎯 Objetivo
 
-- Aplicar una arquitectura por capas en React para que cada parte tenga una responsabilidad clara.
-- Usar Firebase para autenticación y base de datos en tiempo real.
-- Guardar imágenes de productos en AWS S3 sin exponer credenciales en el frontend.
-- Probar componentes y lógica de negocio con Vitest y React Testing Library.
-- Documentar el proceso de desarrollo y las decisiones técnicas en una bitácora de IA.
+- Separar UI, lógica de negocio, servicios e infraestructura.
+- Usar Firebase Authentication para identidad y Firestore para perfiles, productos, órdenes y reseñas.
+- Subir imágenes a S3 con una política temporal firmada generada por una Vercel Function.
+- Proteger operaciones según rol tanto en rutas frontend como en el backend y las reglas de Firestore.
+- Validar cambios con ESLint, TypeScript, Vitest, React Testing Library y pruebas de reglas con Firebase Emulator.
+- Documentar instalación, decisiones y uso de IA sin incluir secretos.
 
 ---
 
 ## 🛒 ¿Qué puedo hacer?
 
 ### Como cliente
-1. Registrarse o iniciar sesión con email/contraseña o Google.
-2. Navegar el catálogo de productos.
-3. Buscar productos por nombre.
-4. Filtrar productos por categoría.
-5. Ver el detalle de un producto.
-6. Agregar productos al carrito.
-7. Modificar cantidades o eliminar productos del carrito.
-8. Realizar el checkout con datos de envío y pago simulado.
-9. Ver el historial de órdenes.
-10. Ver el detalle de una orden, incluyendo seguimiento de envío y archivos adjuntos.
-11. Cancelar una orden si todavía está en estado `pending`.
+
+1. Registrarse o iniciar sesión con email/contraseña; el inicio con Google está integrado.
+2. Explorar, buscar y filtrar productos por categoría.
+3. Ver detalles y reseñas de productos.
+4. Agregar productos al carrito, modificar cantidades y eliminarlos.
+5. Confirmar un checkout con datos de envío y método de pago simulado.
+6. Consultar el historial y detalle de sus órdenes.
+7. Cancelar una orden que todavía esté en estado pending, cuando se cumplan las validaciones del servidor.
+8. Consultar seguimiento y descargar adjuntos mediante URLs temporales autorizadas.
 
 ### Como administrador
-1. Acceder a un panel administrativo protegido por rol.
-2. Ver un dashboard con métricas generales.
-3. Crear, editar y eliminar productos.
-4. Subir imágenes de productos a AWS S3.
-5. Ver todas las órdenes del sistema.
-6. Filtrar órdenes por estado.
-7. Cambiar el estado de una orden.
-8. Gestionar usuarios y categorías.
-9. Ver archivos subidos y analytics básico.
+
+1. Acceder al panel protegido por rol.
+2. Consultar el dashboard.
+3. Crear, editar, activar/desactivar y eliminar productos.
+4. Subir imágenes de productos a S3.
+5. Consultar y filtrar órdenes.
+6. Actualizar estados y datos de seguimiento.
+7. Crear órdenes para un cliente desde el flujo administrativo.
+8. Gestionar usuarios/categorías y consultar las páginas de analytics, auditoría y configuración disponibles.
 
 ---
 
@@ -71,114 +75,130 @@ La aplicación está pensada para ser mantenible y escalable sin necesidad de ad
 ## ✨ Funcionalidades
 
 ### Cliente
-- Registro y login con email/password y Google.
-- Persistencia de sesión al recargar la página.
-- Catálogo de productos desde Firestore.
-- Búsqueda por nombre con debounce.
-- Filtro por categoría.
-- Carrito con Context API y useReducer.
-- Checkout con pago simulado.
-- Creación de órdenes en Firestore.
-- Historial y detalle de órdenes.
-- Cancelación de órdenes en estado `pending`.
-- Visualización de tracking y adjuntos en órdenes.
+
+- Registro, inicio/cierre de sesión y persistencia de sesión con Firebase Auth.
+- Catálogo Firestore con filtros, búsqueda con debounce, detalle y paginación.
+- Carrito global con Context API + useReducer.
+- Checkout simulado con validación del lado del servidor, revalidación de precios y actualización de stock.
+- Historial, detalle y cancelación permitida de órdenes.
+- Reseñas limitadas a clientes que hayan comprado el producto en una orden completada.
+- Estados de carga, vacíos y errores visibles.
 
 ### Administrador
-- Acceso protegido por rol.
-- Dashboard con métricas.
-- CRUD completo de productos.
-- Upload de imágenes mediante presigned URLs.
-- Gestión de órdenes con filtros por estado.
-- Cambio de estado de órdenes.
-- Gestión de usuarios y categorías.
-- Sección de uploads/media.
-- Páginas de Analytics, Auditoría y Configuración.
+
+- Rutas protegidas por rol y comprobaciones de rol en operaciones privilegiadas.
+- CRUD de productos con paginación.
+- Subida de imágenes mediante presigned POST a S3.
+- Gestión de órdenes y actualización de estado/seguimiento mediante API serverless.
+- Adjuntos privados de órdenes con descarga firmada de duración limitada.
+- Dashboard y vistas administrativas complementarias.
+
+### Seguridad y consistencia de negocio
+
+- La creación de órdenes se realiza a través de una función de servidor; las reglas de Firestore deniegan la creación directa desde el cliente.
+- El servidor revalida datos del pedido y gestiona stock en una transacción.
+- La cancelación verifica propietario y estado, y repone stock dentro de una transacción.
+- Las reseñas se escriben desde el backend; el cliente no puede escribir directamente en las colecciones de reseñas.
+- Las credenciales de AWS nunca deben llevar el prefijo VITE_ ni exponerse en el bundle del navegador.
 
 ---
 
 ## 🧩 Cómo funciona
 
-La aplicación está dividida en tres partes principales:
+La solución se divide en tres capas principales:
 
-1. **Frontend**: React + TypeScript + Vite. El usuario interactúa con páginas y componentes reutilizables.
-2. **Backend como servicio**: Firebase maneja la autenticación y Firestore guarda productos, órdenes y perfiles.
-3. **Serverless**: Vercel Functions genera URLs temporales para subir imágenes a AWS S3 sin exponer credenciales.
+1. **Frontend:** React + TypeScript + Vite para páginas, rutas, componentes y estado global.
+2. **BaaS:** Firebase Authentication gestiona identidad y Firestore persiste perfiles, productos, órdenes y reseñas.
+3. **Backend serverless:** Vercel Functions valida tokens/roles y realiza operaciones privilegiadas, incluida la firma de solicitudes S3.
 
-El flujo típico de compra:
-- El usuario inicia sesión.
-- Agrega productos al carrito.
-- Confirma el checkout y se crea una orden en Firestore.
-- El carrito se limpia automáticamente.
-- El usuario puede consultar sus órdenes.
+Flujo de compra:
 
-El flujo de imágenes:
-- El admin solicita una URL de subida a `/api/upload`.
-- La función verifica que sea admin, genera una presigned URL de S3 y registra el archivo en Firestore.
-- El admin sube el archivo directamente a S3 usando esa URL temporal.
+1. El cliente se autentica y agrega productos al carrito.
+2. El frontend envía los productos solicitados al endpoint de checkout con su token Firebase.
+3. El backend valida identidad, datos, productos, precios y stock.
+4. La orden se guarda en Firestore mediante una transacción.
+5. El carrito se limpia cuando el checkout finaliza correctamente; si falla, se muestra un error.
+
+Flujo de imágenes de producto:
+
+1. Un administrador autenticado selecciona la imagen en el panel.
+2. El frontend envía nombre, MIME type, tamaño y token Firebase a POST /api/upload.
+3. La función valida el token, consulta el perfil y exige rol admin.
+4. La función crea una presigned POST con clave aleatoria, tipo de contenido permitido y límite de 5 MB.
+5. El navegador envía el archivo y los campos firmados directamente a S3.
+6. La UI recibe la clave y URL de producto; al guardar el formulario, imageKey, imageUrl e imágenes asociadas se persisten en el documento del producto en Firestore.
+
+La función /api/upload no guarda por sí sola el documento del producto: la persistencia de metadatos ocurre cuando se guarda el producto desde el panel.
 
 ---
 
 ## 🏗️ Arquitectura
 
-El proyecto sigue una separación por capas:
+- src/pages: pantallas de cliente y administración.
+- src/components: componentes reutilizables de UI y layout.
+- src/hooks: lógica reutilizable de autenticación, carrito, órdenes, productos y uploads.
+- src/contexts: contexto de autenticación.
+- src/store/cart: carrito con Context API + reducer.
+- src/services: casos de uso para productos, checkout, órdenes y uploads.
+- src/infrastructure/firebase: adaptadores y acceso a Firebase/Firestore.
+- src/types: tipos e interfaces del dominio y API.
+- src/utils: utilidades puras.
+- server: inicialización server-only de Firebase Admin.
+- api: Vercel Serverless Functions.
+- tests: pruebas unitarias, de integración y seguridad.
 
-- `src/pages`: pantallas o vistas de la aplicación.
-- `src/components`: componentes reutilizables de UI y layout.
-- `src/hooks`: lógica reutilizable conectada a contexts o servicios.
-- `src/contexts`: estado global de autenticación.
-- `src/store/cart`: estado global del carrito con Context API + useReducer.
-- `src/services`: lógica de aplicación para checkout, órdenes, productos, etc.
-- `src/infrastructure`: conexión con Firebase, mappers y configuración.
-- `src/types`: interfaces y tipos de TypeScript.
-- `src/utils`: funciones puras auxiliares.
-- `api`: Vercel Serverless Functions.
-
-Esta separación permite encontrar la lógica de negocio sin tener que revisar componentes de UI.
+La lógica de negocio no debe depender directamente de la presentación. Las operaciones privilegiadas se mantienen en el backend o en reglas de Firestore, no solamente en los controles de la interfaz.
 
 ---
 
 ## 📁 Estructura del proyecto
 
-```
+~~~
 src/
 ├── app/                    # Enrutamiento y providers globales
 ├── components/
-│   ├── admin/             # Layout del panel administrativo
-│   ├── auth/              # Protección de rutas
-│   ├── cart/              # Componentes del carrito
-│   ├── catalog/           # Listado, búsqueda y filtros
-│   ├── common/            # Spinners y utilidades
-│   ├── layout/            # Header y estructura general
-│   ├── ui/                # Botones, inputs, cards, badges, modales
-│   └── upload/            # Upload de imágenes
-├── config/                # Configuración de Firebase
-├── constants/             # Rutas, checkout, categorías
-├── contexts/              # AuthContext
-├── hooks/                 # useCart, useAuth, useCheckout, useOrders, useProducts
-├── infrastructure/
-│   └── firebase/          # Auth, Firestore, adapters, configuración
-├── pages/
-│   ├── admin/             # Dashboard, Products, Orders, Users, Categories, Uploads, Analytics, Audit, Settings
-│   └── ...                # Home, Catalog, ProductDetail, Cart, Checkout, Orders, OrderDetail, Login, Register
-├── services/              # checkoutService, ordersService, productsService, dashboardService
-├── store/cart/            # CartProvider, reducer, persistencia
-├── styles/                # Estilos globales
-├── test/                  # Fixtures, mocks, setup, renderWithProviders
-├── types/                 # Interfaces de dominio, order, pricing, cart, auth, api
-└── utils/                 # cartUtils, export
+│   ├── admin/              # Layout y componentes administrativos
+│   ├── auth/               # Protección de rutas por autenticación/rol
+│   ├── cart/               # Componentes del carrito
+│   ├── catalog/            # Catálogo, búsqueda y filtros
+│   ├── common/             # Estados de carga, vacíos y errores
+│   ├── layout/             # Header y estructura general
+│   ├── ui/                 # Controles reutilizables
+│   └── upload/             # Selector y preview de imágenes
+├── config/                 # Configuración de Firebase
+├── constants/              # Rutas y constantes
+├── contexts/               # Contexto de autenticación
+├── hooks/                  # Hooks de aplicación
+├── infrastructure/firebase/# Adaptadores Auth y Firestore
+├── pages/                  # Páginas de cliente y admin
+├── services/               # Servicios de dominio
+├── store/cart/             # Reducer y provider del carrito
+├── test/                   # Setup, fixtures, mocks y providers
+├── types/                  # Tipos del dominio
+└── utils/                  # Funciones auxiliares
 
 api/
-├── upload.ts              # Vercel Function para presigned URLs S3
-└── health.ts              # Health check
+├── checkout.ts             # Creación validada de órdenes
+├── cancel-order.ts         # Cancelación y reposición de stock
+├── update-order-status.ts  # Actualización administrativa de órdenes
+├── upload.ts               # Presigned POST para S3
+├── order-attachment.ts     # Descarga autorizada de adjuntos
+├── reviews.ts              # Escritura validada de reseñas
+└── health.ts               # Health check
+
+server/
+└── firebaseAdmin.ts        # Inicializador de Firebase Admin para servidor
 
 tests/
-├── integration/           # Flujos completos
-└── unit/                  # Componentes, hooks, services, seguridad
+├── integration/            # Flujos de usuario
+└── unit/                   # Hooks, servicios, UI, API y seguridad
 
-firestore.rules            # Reglas de seguridad
-firestore.indexes.json     # Índices compuestos
-vercel.json                # Configuración de deploy
-```
+firestore.rules             # Reglas de acceso a Firestore
+firestore.indexes.json      # Índices compuestos
+firebase.json               # Configuración del emulador
+vercel.json                 # Hosting, SPA y cabeceras HTTP
+.env.example                # Nombres de variables, sin secretos
+~~~
 
 ---
 
@@ -187,304 +207,390 @@ vercel.json                # Configuración de deploy
 | Tecnología | Uso |
 |---|---|
 | React 18 | Interfaz de usuario |
-| TypeScript | Tipado estricto |
-| Vite | Build y desarrollo |
+| TypeScript | Tipado estático |
+| Vite | Desarrollo y build del frontend |
 | React Router | Navegación |
-| TailwindCSS | Estilos |
-| Context API + useReducer | Estado global del carrito |
-| Firebase Auth | Registro, login y roles |
-| Firestore | Base de datos en tiempo real |
-| AWS S3 | Almacenamiento de imágenes |
-| Vercel Serverless Functions | Backend sin servidor |
-| Vitest | Tests |
-| React Testing Library | Tests de componentes |
-| ESLint + Prettier | Calidad de código |
+| Tailwind CSS 4 | Estilos responsivos |
+| Context API + useReducer | Estado del carrito |
+| Firebase Authentication | Identidad de usuario |
+| Cloud Firestore | Productos, perfiles, órdenes y reseñas |
+| Firebase Admin SDK | Validación y operaciones privilegiadas del backend |
+| AWS SDK for JavaScript v3 + S3 | Subida de archivos y URLs firmadas |
+| Vercel Serverless Functions | Endpoints de backend |
+| Vitest + React Testing Library | Pruebas unitarias e integración |
+| Firebase Emulator + Rules Unit Testing | Pruebas de reglas de seguridad |
+| ESLint | Calidad estática del código |
 
 ---
 
 ## 🔐 Seguridad
 
-- Las credenciales de Firebase y AWS se manejan exclusivamente por variables de entorno.
-- El archivo `.env` está ignorado por Git.
-- `.env.example` contiene los nombres de las variables sin valores reales.
-- Las credenciales de AWS solo existen en las Vercel Functions; nunca se envían al frontend.
-- Las rutas de administración están protegidas por rol.
-- Firestore tiene reglas de seguridad que validan roles y pertenencia de datos desde el servidor.
+- .env, .env.local y otros archivos locales de entorno deben permanecer ignorados por Git.
+- .env.example contiene nombres de variables y valores vacíos/de ejemplo, nunca secretos.
+- Las credenciales AWS se usan únicamente en funciones serverless.
+- El endpoint de upload exige un token Firebase válido y un perfil users/{uid} con role: "admin".
+- Las reglas de Firestore impiden que un usuario se otorgue el rol admin al registrarse; el alta normal crea perfiles customer.
+- El cliente solo puede leer/actualizar sus propios datos permitidos y sus órdenes; las operaciones de administración se validan con rol.
+- La creación directa de órdenes desde el navegador está denegada por reglas; se usa la función de checkout.
+- Los adjuntos de órdenes se sirven mediante URLs firmadas temporales después de comprobar pertenencia o rol admin.
+- vercel.json configura CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy y Permissions-Policy.
+
+**Importante:** la protección de rutas en el frontend mejora la experiencia, pero no sustituye la validación del servidor ni las reglas de Firestore.
 
 ---
 
 ## 🔥 Firebase
 
-Firebase se usa para tres cosas principales:
+Firebase se usa para:
 
-1. **Authentication**: login con email/contraseña y Google, logout y persistencia de sesión.
-2. **Firestore**: guarda productos, órdenes, perfiles de usuario y registros de uploads.
-3. **Roles**: cada usuario tiene un documento en `users/{uid}` con un campo `role` (`customer` o `admin`).
+1. **Authentication:** email/contraseña, inicio con Google, cierre de sesión y persistencia.
+2. **Firestore:** perfiles, catálogo, órdenes, reseñas y metadatos asociados.
+3. **Roles:** cada usuario tiene un documento users/{uid} con campo role (customer o admin).
 
-El flujo de autenticación:
-- El usuario se registra o inicia sesión.
-- Firebase Auth devuelve un usuario autenticado.
-- La aplicación lee el documento de perfil en Firestore para obtener el rol.
-- Ese rol se guarda en el contexto de autenticación y se usa para proteger rutas y reglas.
+El flujo de registro crea el perfil con rol customer; las reglas no permiten que el usuario elija admin al crear su propio perfil. Para conceder acceso administrativo, un operador autorizado debe asignar ese rol de forma segura en Firestore.
+
+Las reglas están en firestore.rules. Los cambios de reglas e índices se pueden publicar con:
+
+~~~
+npx firebase-tools deploy --only firestore:rules,firestore:indexes
+~~~
+
+Antes de publicar reglas, ejecutar las pruebas con el emulador como se indica en la sección Tests.
 
 ---
 
 ## ☁️ AWS / S3
 
-Las imágenes de productos se guardan en AWS S3.
+El código utiliza una **presigned POST** (no PUT) generada por api/upload.ts.
 
-El flujo es el siguiente:
-1. El administrador elige una imagen desde el panel.
-2. El frontend llama a `/api/upload` con el token de Firebase.
-3. La Vercel Function verifica que el usuario sea admin, consulta Firebase Admin y genera una URL temporal firmada para subir a S3.
-4. El frontend sube el archivo directamente a S3 usando esa URL.
-5. La función guarda el registro en Firestore y lo asocia al producto o a la orden.
+- Expiración de la política firmada: 300 segundos.
+- Tamaño máximo validado: 5 MB.
+- Formatos de imagen admitidos: JPEG, PNG, WebP y GIF.
+- PDF admitido solo para adjuntos de órdenes.
+- La extensión y el MIME type deben coincidir.
+- Las claves de objeto se generan en el servidor bajo products/ o orders/; el cliente no elige una ruta arbitraria.
+- Los adjuntos de órdenes se descargan con una URL firmada temporal y comprobación de permisos.
 
-De esta forma, las credenciales de AWS nunca salen del servidor.
+### Configuración obligatoria del bucket
+
+Para que el flujo funcione desde un navegador, **CORS del bucket debe permitir el origen de la aplicación y el método POST**. Configura una regla equivalente a esta en S3 y adapta los orígenes al dominio real:
+
+~~~json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD", "POST"],
+    "AllowedOrigins": [
+      "https://e-commerce-mauve-one-98.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000"
+    ],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+~~~
+
+Los dominios de preview de Vercel deben añadirse explícitamente si se van a usar para probar uploads.
+
+### Lectura de imágenes y privacidad
+
+El código persiste una URL HTTPS directa de S3 para las imágenes de productos. Esa URL solo será visible para el público si el bucket/política permite lectura de los objetos bajo products/*. Si se opta por lectura pública, limita la política exclusivamente a ese prefijo y no habilites lectura pública para orders/*. Los adjuntos de órdenes deben permanecer privados y descargarse a través de /api/order-attachment.
+
+No publiques claves AWS en el repositorio ni en variables VITE_*. Usa una credencial IAM dedicada, con permisos mínimos para el bucket y los objetos necesarios. Después de una exposición accidental, revoca la clave afectada y crea una nueva.
+
+Más detalle técnico: [docs/UPLOAD_FLOW.md](docs/UPLOAD_FLOW.md).
 
 ---
 
 ## 🚀 Instalación
 
+### Requisitos previos
+
+- Git.
+- Node.js **24.x** (versión declarada en package.json).
+- npm incluido con Node.js.
+- Proyecto Firebase con Authentication y Firestore habilitados.
+- Bucket S3 y credenciales IAM con permisos limitados.
+- Vercel CLI para ejecutar localmente las funciones serverless.
+
+Comprueba las versiones:
+
+~~~
+node --version
+npm --version
+~~~
+
 ### 1. Clonar el repositorio
 
-```bash
+~~~
 git clone https://github.com/rechimonth/e-commerce.git
 cd e-commerce
-```
+git switch main
+~~~
 
 ### 2. Instalar dependencias
 
-```bash
-npm install
-```
+~~~
+npm ci
+~~~
+
+Si npm informa una inconsistencia del lockfile, revisa el cambio y vuelve a generar el lockfile deliberadamente; no borres archivos de lock automáticamente.
 
 ### 3. Configurar variables de entorno
 
-Crear un archivo `.env` en la raíz con las variables que aparecen en `.env.example`.
+Copia el archivo de ejemplo.
 
-Variables frontend:
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
+**Linux/macOS**
+~~~
+cp .env.example .env
+~~~
 
-Variables server-only (solo para Vercel Functions):
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_S3_BUCKET`
-- `AWS_REGION`
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
-- `ALLOWED_ORIGINS`
+**Windows PowerShell**
+~~~
+Copy-Item .env.example .env
+~~~
 
-### 4. Ejecutar en desarrollo
+Completa las variables locales con credenciales propias. No copies secretos a GitHub ni a este README.
 
-```bash
+### 4. Ejecutar solo el frontend
+
+~~~
 npm run dev
-```
+~~~
 
-Luego abrir `http://localhost:5173`.
+Abre la URL que indique Vite, normalmente http://localhost:5173. Este comando sirve el frontend; para probar las rutas /api/* también debes iniciar Vercel localmente.
 
-### 5. Validar el proyecto
+### 5. Ejecutar frontend + funciones serverless
 
-```bash
+Instala la CLI si no la tienes:
+
+~~~
+npm install --global vercel
+~~~
+
+Vincula el proyecto cuando la CLI lo solicite (elige el proyecto existente e-commerce, no crees otro) y ejecuta:
+
+~~~
+vercel dev
+~~~
+
+Vercel local sirve la SPA y las funciones de api/. Asegúrate de que las variables server-only estén disponibles en el entorno local. No uses credenciales compartidas en chats o logs; genera credenciales nuevas si corresponde.
+
+### 6. Configurar Firebase
+
+En Firebase Console:
+
+1. Habilita los proveedores de Authentication que se vayan a utilizar (Email/Password y Google).
+2. Crea/selecciona la base de datos Firestore.
+3. Autoriza el dominio local y el dominio de producción en Authentication → Settings → Authorized domains.
+4. Publica reglas e índices cuando las pruebas locales estén aprobadas.
+
+Para ejecutar el emulador de reglas, instala/usa Firebase CLI y sigue la sección Tests.
+
+### 7. Configurar AWS S3
+
+1. Crea o selecciona el bucket en la región correcta.
+2. Configura CORS según la sección AWS/S3.
+3. Decide explícitamente cómo se leerán las imágenes de producto. Si se usa URL directa, permite lectura solo para products/*; deja orders/* privado.
+4. Crea una credencial IAM dedicada con permisos mínimos de subida/lectura necesarios.
+5. Guarda credenciales únicamente en variables server-only del entorno local y de Vercel.
+
+### 8. Validar localmente
+
+~~~
 npm run lint
+npm test
 npm run build
-npm run test
-```
+npm run typecheck:api
+~~~
 
-Para probar las reglas de Firestore es necesario tener el Firebase Emulator corriendo.
+Para las pruebas de reglas, consulta la sección Tests.
 
 ---
 
 ## 🔑 Variables de entorno
 
-| Variable | Uso |
-|---|---|
-| `VITE_FIREBASE_API_KEY` | Configuración pública de Firebase |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Dominio de autenticación |
-| `VITE_FIREBASE_PROJECT_ID` | ID del proyecto Firebase |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Bucket de Firebase Storage |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | ID de mensajería |
-| `VITE_FIREBASE_APP_ID` | ID de la app Firebase |
-| `AWS_ACCESS_KEY_ID` | Credencial AWS para Vercel Functions |
-| `AWS_SECRET_ACCESS_KEY` | Credencial AWS para Vercel Functions |
-| `AWS_S3_BUCKET` | Nombre del bucket S3 |
-| `AWS_REGION` | Región de AWS |
-| `FIREBASE_PROJECT_ID` | Proyecto Firebase para Admin SDK |
-| `FIREBASE_CLIENT_EMAIL` | Cuenta de servicio Firebase |
-| `FIREBASE_PRIVATE_KEY` | Llave privada de servicio Firebase |
-| `ALLOWED_ORIGINS` | Orígenes permitidos para CORS en `/api/upload` |
+Usa los nombres siguientes. No rellenes el archivo de ejemplo con valores secretos.
+
+| Variable | Uso | Dónde |
+|---|---|---|
+| VITE_FIREBASE_API_KEY | Configuración pública de Firebase Web | Frontend |
+| VITE_FIREBASE_AUTH_DOMAIN | Dominio Auth | Frontend |
+| VITE_FIREBASE_PROJECT_ID | ID del proyecto Firebase | Frontend |
+| VITE_FIREBASE_STORAGE_BUCKET | Configuración del bucket Firebase Storage | Frontend |
+| VITE_FIREBASE_MESSAGING_SENDER_ID | ID de mensajería | Frontend |
+| VITE_FIREBASE_APP_ID | ID de la aplicación Firebase | Frontend |
+| AWS_ACCESS_KEY_ID | Credencial AWS del backend | Solo servidor |
+| AWS_SECRET_ACCESS_KEY | Secreto AWS del backend | Solo servidor |
+| AWS_S3_BUCKET | Nombre del bucket S3 | Solo servidor |
+| AWS_REGION | Región del bucket S3, por ejemplo sa-east-1 | Solo servidor |
+| FIREBASE_SERVICE_ACCOUNT_JSON | Cuenta de servicio JSON completa; opción preferida para Firebase Admin | Solo servidor |
+| FIREBASE_PROJECT_ID | ID de Firebase Admin si se usan variables separadas | Solo servidor |
+| FIREBASE_CLIENT_EMAIL | Email de la cuenta de servicio | Solo servidor |
+| FIREBASE_PRIVATE_KEY | Clave privada de la cuenta de servicio | Solo servidor |
+| FIREBASE_WEB_API_KEY | API key Web usada por endpoints que validan tokens con Identity Toolkit; puede recurrir a VITE_FIREBASE_API_KEY | Servidor |
+| ALLOWED_ORIGINS | Orígenes permitidos por la función upload, separados por coma | Solo servidor |
+
+En Vercel, configura variables server-only para Production, Preview y/o Development según los entornos que uses. Después de cambiar variables, crea un nuevo deployment para que el runtime las reciba. ALLOWED_ORIGINS controla CORS de la API; la configuración CORS de S3 es independiente.
 
 ---
 
 ## 🧪 Tests
 
-La suite usa Vitest y React Testing Library.
+Ejecuta la validación principal:
 
-```bash
-npm run test
-```
+~~~
+npm run lint
+npm test
+npm run build
+npm run typecheck:api
+~~~
 
-Firebase y AWS se mockean en los tests unitarios para evitar dependencias externas. Los tests cubren:
+Las pruebas unitarias y de integración usan Vitest y React Testing Library. Firebase/AWS se mockean cuando corresponde para que la suite no dependa de servicios reales.
 
-- Reducer del carrito.
-- Custom hooks (`useCart`, `useAuth`, `useCheckout`, `useOrders`).
-- Componentes de UI y páginas.
-- Flujos de integración.
-- Reglas de Firestore.
+Para probar las reglas de Firestore:
+
+1. Asegúrate de tener Java instalado (lo requiere el emulador).
+2. Ejecuta las reglas con Firebase Emulator:
+
+~~~
+npx firebase-tools emulators:exec --only firestore "npm run test:rules"
+~~~
+
+Los tests de seguridad cubren accesos de usuarios autenticados/no autenticados, separación de roles, datos de productos y órdenes. El CI también ejecuta el emulador, el build y el typecheck de API.
+
+**Estado verificado del CI:** la ejecución [38576685895](https://github.com/rechimonth/e-commerce/actions/runs/38576685895) finalizó en verde para el commit 477d0f3e: lint, tests, reglas de Firestore, build y typecheck de API. Esto no sustituye una prueba end-to-end autenticada contra Firebase y AWS reales.
+
+El script npm run test:coverage existe, pero antes de usarlo verifica que el proveedor de cobertura de Vitest esté instalado y fijado en el lockfile. No se presenta una cifra de cobertura sin un informe generado.
 
 ---
 
 ## 🌐 Deploy
 
-La aplicación está diseñada para deployarse en Vercel con integración continua desde GitHub.
+El despliegue se realiza en Vercel con integración GitHub.
 
-Configuración:
-- `vercel.json` define el directorio de salida `dist` y el rewrite SPA hacia `index.html`.
-- Las variables de entorno se configuran en Vercel Project Settings.
-- El build de producción corre `tsc --noEmit` y `vite build`.
+- vercel.json define dist como directorio de salida, el rewrite de SPA y cabeceras de seguridad.
+- Las funciones serverless están en api/.
+- Las variables de entorno se configuran en Project Settings de Vercel.
+- El build de frontend ejecuta tsc --noEmit -p tsconfig.app.json y vite build.
+- npm run typecheck:api verifica los tipos de las funciones serverless.
 
 URL de producción:
+
 https://e-commerce-mauve-one-98.vercel.app/
+
+Último despliegue de producción verificado durante esta revisión: estado READY, commit 477d0f3e1b50d80b11940431233f926cf1f00c43. [Ver deployment en Vercel](https://vercel.com/rechimonths-projects/e-commerce/FGbRQYQdfcjB36jV9E4vQ3h29CX5).
 
 ---
 
 ## 📊 Cumplimiento de Proyecto 5
 
-A continuación se compara el estado real del proyecto contra los requisitos del documento del proyecto.
+La tabla distingue entre implementación observada en el repositorio y pruebas reales de servicios externos. Un check de código no significa que se haya ejecutado un flujo real en producción.
 
 ### Requisitos funcionales
 
-| Requisito | Estado | Evidencia |
+| Requisito | Estado de código | Evidencia principal |
 |---|---|---|
-| Registro con email/password | ✅ | `src/pages/RegisterPage.tsx`, `AuthProvider.tsx` |
-| Login con Google | ✅ | `AuthProvider.tsx` incluye `signInWithGoogle` |
-| Logout | ✅ | `AuthProvider.tsx` incluye `handleSignOut` |
-| Diferenciación de roles customer/admin | ✅ | Roles almacenados en Firestore y validados en frontend y reglas |
-| Persistencia de sesión | ✅ | `observeAuthState` en `AuthProvider.tsx` |
-| Listar productos desde Firestore | ✅ | `CatalogPage.tsx`, `useProducts.ts` |
-| Filtrar por categoría | ✅ | `ProductFilters.tsx`, `CatalogPage.tsx` |
-| Búsqueda por nombre con debounce | ✅ | `ProductSearch.tsx`, `useDebounce.ts` |
-| Ver detalle de producto | ✅ | `ProductDetailPage.tsx` |
-| Agregar productos al carrito | ✅ | `CartProvider.tsx`, `ProductCard.tsx` |
-| Eliminar productos del carrito | ✅ | `CartPage.tsx`, `cartReducer` |
-| Actualizar cantidad | ✅ | `QuantitySelector.tsx`, `cartReducer` |
-| Calcular total automáticamente | ✅ | `cartUtils.ts` |
-| Persistir carrito en Context | ✅ | `CartProvider.tsx` con persistencia local |
-| Flujo de checkout | ✅ | `CheckoutPage.tsx`, `checkoutService.ts` |
-| Checkout de pago simulado | ✅ | `SIMULATED_PAYMENT_DELAY_MS` en `checkoutService.ts` |
-| Crear orden en Firestore con estados | ✅ | `ordersService.ts`, `OrderStatus` con `pending/processing/completed/cancelled` |
-| Historial de órdenes del usuario | ✅ | `OrdersPage.tsx` |
-| Ver detalle de órdenes pasadas | ✅ | `OrderDetailPage.tsx` |
-| CRUD completo de productos | ✅ | `ProductsPage.tsx`, `ProductFormPage.tsx`, `productsService.ts` |
-| Upload de imágenes a AWS S3 | ✅ | `api/upload.ts`, `AdminOrderDetailPage.tsx` |
-| Ver todas las órdenes | ✅ | `AdminOrdersPage.tsx` |
-| Filtrar órdenes por estado | ✅ | `AdminOrdersPage.tsx` |
-| Cambiar estado de órdenes | ✅ | `AdminOrderDetailPage.tsx` |
-| Layout diferenciado del panel | ✅ | `AdminLayout.tsx` |
-| Mobile-first / UI responsiva | ✅ | Tailwind con breakpoints `sm:`, `md:`, `lg:` |
-| Spinners / skeletons | ✅ | `LoadingState.tsx`, `Skeleton.tsx` |
-| Mensajes cuando no hay datos | ✅ | `EmptyState.tsx` |
-| Manejo visual de errores | ✅ | `ErrorState.tsx` |
-| Componentes reutilizables | ✅ | `Button`, `Input`, `Card`, `Badge`, `Modal`, etc. |
-| Validación de formularios | ✅ | `CheckoutPage.tsx`, `ProductFormPage.tsx` |
-| Wrapper de providers para tests | ✅ | `src/test/renderWithProviders.tsx` |
-| Tests de custom hooks aislados | ✅ | `tests/unit/hooks/*` |
-| Tests de cartReducer | ✅ | `tests/unit/reducers/cartReducer.test.ts` |
-| Tests de integración | ✅ | `tests/integration/*` |
-| Mockear Firebase y AWS | ✅ | `src/test/setup.ts`, `src/test/mocks/*` |
-| Deploy en Vercel con CI | ✅ | `vercel.json`, integración con GitHub |
-| URL pública funcional | ✅ | `https://e-commerce-mauve-one-98.vercel.app/` |
-| Variables de entorno en Vercel | ✅ | Documentadas en `.env.example` y README |
-| Build de producción optimizado | ✅ | `npm run build` verificado |
-| `.env` en `.gitignore` | ✅ | `.gitignore` incluye `.env`, `.env.local`, `.env*.local` |
-| Commits sin variables de entorno | ✅ | No hay archivos `.env` en el repositorio |
-| Validación de roles en frontend | ✅ | `AdminRoute.tsx`, `ProtectedRoute.tsx` |
-| Reglas de seguridad Firestore | ✅ | `firestore.rules` con `isAdmin()`, `isOwner()`, `isOrderOwner()` |
+| Registro email/contraseña y login/logout | Implementado | src/contexts/AuthProvider.tsx, src/infrastructure/firebase/auth.ts |
+| Login con Google | Implementado en código | Auth provider |
+| Roles customer/admin | Implementado | Perfil Firestore, rutas protegidas y reglas |
+| Persistencia de sesión | Implementado | Auth provider |
+| Catálogo, categoría, búsqueda y detalle | Implementado | Pages, hooks y services |
+| Carrito y cálculo de total | Implementado | src/store/cart, utilidades y tests |
+| Checkout simulado y creación de orden | Implementado en backend | api/checkout.ts |
+| Historial y detalle de órdenes | Implementado | Páginas de órdenes |
+| Cancelación y reposición de stock | Implementado en backend | api/cancel-order.ts |
+| CRUD de productos | Implementado en código | src/services/productsService.ts, reglas Firestore |
+| Subida de imagen a S3 | Implementación presente; falta validación real del bucket | api/upload.ts, src/services/uploadService.ts |
+| Adjuntos de órdenes | Implementado en código | api/order-attachment.ts |
+| Reseñas tras compra completada | Implementado en backend | api/reviews.ts |
+| Rutas admin protegidas | Implementado y con tests | AdminRoute.tsx, tests de acceso |
+| Reglas de seguridad Firestore | Tests CI en verde | firestore.rules, tests de reglas |
+| Responsive, estados de carga y error | Implementado | Componentes comunes y páginas |
 
 ### Requisitos técnicos
 
 | Requisito | Estado | Evidencia |
 |---|---|---|
-| React 18 | ✅ | `package.json` |
-| TypeScript | ✅ | `package.json` |
-| Vite | ✅ | `package.json` |
-| React Router | ✅ | `package.json` |
-| TailwindCSS | ✅ | `package.json`, `tailwind.config.ts` |
-| Context API | ✅ | `AuthContext`, `CartContext` |
-| Firebase Auth | ✅ | `src/infrastructure/firebase/auth.ts` |
-| Firestore | ✅ | `src/infrastructure/firebase/firestore.ts` |
-| AWS S3 | ✅ | `api/upload.ts` |
-| Vercel Serverless Functions | ✅ | `api/upload.ts`, `api/health.ts` |
-| Vitest | ✅ | `package.json` |
-| React Testing Library | ✅ | `package.json` |
+| React 18 + TypeScript + Vite | Configurado | package.json |
+| React Router y Tailwind | Configurado | Dependencias y componentes |
+| Context API + useReducer | Implementado | Auth context y cart reducer |
+| Firebase Auth/Firestore | Implementado en código | src/infrastructure/firebase |
+| AWS S3 con presigned POST | Implementado en código | api/upload.ts |
+| Vercel Functions | Implementado | api/ |
+| Vitest / React Testing Library | Configurado y ejecutado por CI | package.json |
+| Pruebas de reglas Firestore | CI en verde | Firebase Emulator |
 
 ### Requisitos de documentación
 
 | Requisito | Estado | Evidencia |
 |---|---|---|
-| README profesional | ✅ | Este archivo |
-| Decisiones arquitectónicas | ✅ | Sección `🧩 Cómo funciona` y `🏗️ Arquitectura` |
-| Instrucciones de instalación | ✅ | Sección `🚀 Instalación` |
-| Variables de entorno | ✅ | Sección `🔑 Variables de entorno` |
-| URL de producción | ✅ | Sección `🌐 Deploy` |
-| Flujo de upload S3 | ✅ | Sección `☁️ AWS / S3` |
-| Bitácora de IA | ✅ | Sección `📝 Bitácora de IA` |
+| README con instalación y configuración | Documentado | Este archivo |
+| Variables sin secretos | Documentadas | .env.example |
+| Flujo de upload S3 | Documentado | Sección AWS/S3 y docs/UPLOAD_FLOW.md |
+| Bitácora de IA | Documentada en archivo separado | docs/ai-notes.md |
+| URL de producción | Documentada | Sección Deploy |
 
 ---
 
-## ⚠️ Problemas conocidos
+## ⚠️ Problemas conocidos y verificaciones pendientes
 
-- Algunas funcionalidades dependen de que Firebase y AWS estén configurados correctamente mediante variables de entorno.
-- El deploy en Vercel requiere que las variables de entorno estén creadas en Project Settings; si falta alguna, la función `/api/upload` falla.
-- Las reglas de Firestore y los índices compuestos deben publicarse con `firebase deploy --only firestore:rules,firestore:indexes`.
-- El proyecto se ve en blanco si el build en Vercel usa una versión de TypeScript incompatible con los tipos de `firebase-admin`; se recomienda revisar el type-check antes de deployar.
+1. **S3 no se puede declarar validado end-to-end solo por el código.** Falta comprobar con una sesión admin real que el bucket acepte el POST firmado, que su CORS permita el dominio y que las imágenes de products/* sean legibles mediante la URL guardada. La API genera una presigned POST, el frontend la usa correctamente y el producto persiste URL/clave al guardar.
+2. **Credenciales:** si alguna clave AWS se compartió fuera del gestor de secretos, revócala y crea otra. No reutilices claves publicadas en conversaciones o logs.
+3. **Roles reales:** las pruebas automatizadas verifican rutas y reglas, pero la comprobación de las cuentas concretas de producción requiere iniciar sesión con esas cuentas en el navegador y ejecutar operaciones reales. No se documentan contraseñas en este archivo.
+4. **Cobertura:** verifica el proveedor @vitest/coverage-v8 y el lockfile antes de usar npm run test:coverage.
+5. **CORS:** hay dos configuraciones separadas: ALLOWED_ORIGINS para la API de Vercel y CORS en el bucket S3.
+6. **Reglas e índices:** después de modificar firestore.rules o firestore.indexes.json, hay que desplegarlos en el proyecto Firebase correcto.
 
 ---
 
 ## 🎓 Para presentar el proyecto
 
 ### Problema que resuelve
-Es una tienda online simple donde un cliente puede comprar productos y un administrador puede gestionar el catálogo y las órdenes, sin necesidad de mantener servidores propios.
+
+Permite comprar productos online y administrar catálogo y órdenes sin desplegar un servidor tradicional propio.
 
 ### Tecnologías
-React 18 + TypeScript + Vite en el frontend; Firebase Auth + Firestore en la nube; AWS S3 para imágenes; Vercel para deploy y funciones serverless.
+
+React 18 + TypeScript + Vite; Firebase Authentication + Firestore; AWS S3; Vercel Functions; Vitest y React Testing Library.
 
 ### Cómo funciona el carrito
-El carrito usa Context API + useReducer. Cada acción (agregar, eliminar, cambiar cantidad, limpiar) pasa por un reducer puro que devuelve un nuevo estado. Eso hace que el carrito sea predecible y fácil de testear.
+
+Context API mantiene el estado global y useReducer centraliza acciones como agregar, eliminar, cambiar cantidades y limpiar. El reducer es una función predecible que se puede probar sin montar la aplicación completa.
 
 ### Cómo funciona el checkout
-El usuario confirma el carrito, se simula un pago y se crea una orden en Firestore. Si algo falla, el carrito no se limpia y el usuario ve un mensaje de error.
 
-### Cómo funcionan las órdenes
-Cada orden tiene un estado (`pending`, `processing`, `completed`, `cancelled`) y un historial de cambios. El cliente ve sus propias órdenes; el admin ve todas y puede cambiar estados.
+El navegador manda el carrito y el token al backend. El servidor valida el usuario, los productos, precios y stock antes de crear la orden. El pago es simulado, no se realiza un cargo real.
+
+### Cómo funcionan los roles
+
+Las rutas frontend separan la experiencia de cliente y administrador. Las operaciones críticas también verifican rol del lado del servidor y/o reglas de Firestore; no se confía únicamente en esconder botones.
 
 ### Cómo se manejan las imágenes
-El admin sube imágenes desde el panel. Una Vercel Function genera una URL temporal de S3, el archivo se sube directamente desde el navegador y el registro se guarda en Firestore. Las credenciales de AWS nunca salen del servidor.
+
+La función /api/upload valida al administrador y genera una presigned POST de cinco minutos. El navegador sube el archivo directamente a S3. Al guardar el producto, Firestore conserva la URL y la clave del objeto. Para que la URL directa se vea en el catálogo, la lectura pública debe limitarse a products/*; los adjuntos de órdenes se mantienen privados y usan URLs de descarga firmadas.
 
 ### Uso de IA
-Durante el desarrollo se usó IA para planificar la arquitectura, revisar código, validar decisiones técnicas, generar tests y resolver problemas específicos. La bitácora completa está en `docs/ai-notes.md`.
+
+La bitácora en docs/ai-notes.md reúne consultas y decisiones de planificación, revisión de código, decisiones técnicas, generación de pruebas y resolución de problemas. Debe explicarse qué se aprendió y por qué se adoptó cada decisión, no solo afirmar que se generó código.
 
 ---
 
 ## 📝 Bitácora de IA
 
-La bitácora completa se encuentra en [`docs/ai-notes.md`](docs/ai-notes.md).
+La bitácora completa se encuentra en [docs/ai-notes.md](docs/ai-notes.md).
 
-Resumen de entradas documentadas:
-- Planificación y generación de fixtures/wrappers de testing.
-- Code review para reemplazar emojis por iconos SVG.
-- Resolución de problemas con IDs inestables en formularios.
-- Mejora visual de componentes base y compuestos.
-- Renombre del proyecto y ajustes de documentación.
-- Generación de tests de seguridad Firestore.
+Los temas documentados incluyen:
 
-Cada entrada incluye el prompt o problema planteado, la respuesta obtenida, lo que se aprendió y la decisión final tomada.
+- Planificación y preparación de fixtures/wrappers de testing.
+- Code review y decisiones de componentes UI.
+- Resolución de problemas con IDs en formularios.
+- Mejoras de componentes base y compuestos.
+- Ajustes de documentación y estructura.
+- Generación y validación de pruebas de seguridad Firestore.
+
+Para la defensa, usa las entradas del documento y explica el problema original, las alternativas consideradas, qué aprendiste y cuál fue la decisión final.
 
 ---
 
