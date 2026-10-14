@@ -4,6 +4,7 @@ import type { ProductDTO } from '@/types/domain';
 
 vi.mock('@/infrastructure/firebase/firestore', () => ({
   getProducts: vi.fn(),
+  getProductsPage: vi.fn(),
   getProduct: vi.fn(),
 }));
 
@@ -55,14 +56,16 @@ describe('productsService', () => {
   });
 
   it('fetchProducts returns mapped Product entities', async () => {
-    const { getProducts } = await import('@/infrastructure/firebase/firestore');
-    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
+    const { getProductsPage } = await import('@/infrastructure/firebase/firestore');
+    (getProductsPage as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockProducts, nextCursor: null, hasNext: false });
 
     const result = await productsService.fetchProducts();
 
-    expect(getProducts).toHaveBeenCalledWith({
+    expect(getProductsPage).toHaveBeenCalledWith({
+      category: undefined,
       isActive: true,
       limit: 20,
+      cursor: undefined,
     });
     expect(result.items).toHaveLength(2);
     expect(result.items[0]!.id).toBe('1');
@@ -80,10 +83,11 @@ describe('productsService', () => {
 
     await productsService.fetchProducts({ category: 'action-figures' });
 
-    expect(getProducts).toHaveBeenCalledWith({
+    expect(getProductsPage).toHaveBeenCalledWith({
       category: 'action-figures',
       isActive: true,
       limit: 20,
+      cursor: undefined,
     });
   });
 
