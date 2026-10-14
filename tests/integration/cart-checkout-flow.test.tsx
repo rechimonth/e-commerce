@@ -131,7 +131,7 @@ describe('Flujo de integración carrito → checkout → confirmación', () => {
     renderCheckoutFlow();
 
     await user.click(screen.getByRole('button', { name: 'Agregar producto de prueba' }));
-    window.history.pushState({}, '', ROUTES.CHECKOUT);
+    await user.click(screen.getByRole('button', { name: 'Ir al checkout' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: /completa tu pedido/i })).toBeInTheDocument());
 
     await user.type(screen.getByLabelText('Calle y número'), '123 Main Street');
