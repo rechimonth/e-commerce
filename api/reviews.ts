@@ -36,13 +36,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return jsonError(res, 400, 'La reseña debe incluir producto, una puntuación de 1 a 5 y un comentario de 10 a 1500 caracteres');
   }
 
+  const productId = body.productId.trim();
+  const rating = body.rating;
+  const comment = body.comment.trim();
+
   try {
     const app = getFirebaseAdminApp();
     const decoded = await getAuth(app).verifyIdToken(authorization.slice(7).trim());
     const firestore = getFirestore(app);
-    const productRef = firestore.collection('products').doc(body.productId);
+    const productRef = firestore.collection('products').doc(productId);
     const profileRef = firestore.collection('users').doc(decoded.uid);
-    const ownerRef = firestore.collection('reviewOwners').doc(`${body.productId}_${decoded.uid}`);
+    const ownerRef = firestore.collection('reviewOwners').doc(`${productId}_${decoded.uid}`);
 
     const [productSnapshot, profileSnapshot, completedOrders] = await Promise.all([
       productRef.get(),
@@ -59,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const hasPurchased = completedOrders.docs.some((order) => {
       const items = order.data().items;
-      return Array.isArray(items) && items.some((item: { productId?: unknown }) => item?.productId === body.productId);
+      return Array.isArray(items) && items.some((item: { productId?: unknown }) => item?.productId === productId);
     });
     if (!hasPurchased) return jsonError(res, 403, 'Solo puedes reseñar productos de órdenes completadas');
 
@@ -97,19 +101,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const nextCount = previousRating === null ? oldCount + 1 : Math.max(1, oldCount);
-      const ratingSum = oldRating * oldCount - (previousRating ?? 0) + body.rating;
+      const ratingSum = oldRating * oldCount - (previousRating ?? 0) + rating;
       const nextRating = Math.round((ratingSum / nextCount) * 100) / 100;
       transaction.set(reviewRef, {
-        productId: body.productId,
-        rating: body.rating,
-        comment: body.comment.trim(),
+        productId: productId,
+        rating: rating,
+        comment: comment,
         displayName: displayName || 'Cliente',
         createdAt: previousRating === null ? now : (ownerSnapshot.data()?.createdAt ?? now),
         updatedAt: now,
       }, { merge: true });
       transaction.set(ownerRef, {
         reviewId: reviewRef.id,
-        createdAt: ownerSnapshot.exists() ? (ownerSnapshot.data()?.createdAt ?? now) : now,
+        createdAt: ownerSnapshot.exists ? (ownerSnapshot.data()?.createdAt ?? now) : now,
       }, { merge: true });
       transaction.update(productRef, {
         rating: nextRating,
