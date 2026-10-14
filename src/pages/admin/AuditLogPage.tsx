@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { auditService } from '@/services/auditService';
+import type { AuditEntry } from '@/services/auditService';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
-
-interface AuditEntry {
-  readonly id: string;
-  readonly action: string;
-  readonly user: string;
-  readonly timestamp: Date;
-  readonly details: string;
-}
 
 export function AuditLogPage() {
   const [status, setStatus] = useState<AsyncStatus>('loading');
@@ -18,33 +12,29 @@ export function AuditLogPage() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchLogs = async () => {
       setStatus('loading');
       setError(null);
       try {
-        const { getFirebaseDb } = await import('@/infrastructure/firebase/config');
-        const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
-        const db = getFirebaseDb();
-        const q = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(50));
-        const snapshot = await getDocs(q);
-        const entries = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            action: data.action ?? 'unknown',
-            user: data.user ?? 'system',
-            timestamp: new Date(data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now()),
-            details: data.details ?? '',
-          } as AuditEntry;
-        });
-        setLogs(entries);
-        setStatus('success');
+        const entries = await auditService.fetchRecentEntries();
+        if (isMounted) {
+          setLogs(entries);
+          setStatus('success');
+        }
       } catch (e) {
-        setError({ code: 'INTERNAL_ERROR', message: e instanceof Error ? e.message : 'Error al cargar logs' });
+        if (!isMounted) return;
+        setError({
+          code: 'INTERNAL_ERROR',
+          message: e instanceof Error ? e.message : 'Error al cargar registros de auditoría',
+        });
         setStatus('error');
       }
     };
+
     void fetchLogs();
+    return () => { isMounted = false; };
   }, []);
 
   if (status === 'loading') {
@@ -89,7 +79,7 @@ export function AuditLogPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{log.action}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{log.user}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                      {log.timestamp.toLocaleDateString('es-ES')}
+                      {log.timestamp > 0 ? new Date(log.timestamp).toLocaleString('es-AR') : '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{log.details}</td>
                   </tr>
