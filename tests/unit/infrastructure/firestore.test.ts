@@ -270,31 +270,10 @@ describe('Firebase firestore', () => {
 
   /* ----------------------- ORDER FUNCTIONS ----------------------- */
 
-  it('createOrder calls addDoc and returns OrderDTO with pending status', async () => {
-    const { createOrder } = await setupFirestore();
-    mocks.firestoreStubs.addDoc.mockResolvedValue({ id: 'order-1' });
-    mocks.firestoreStubs.getDoc.mockResolvedValue(
-      mocks.makeDocSnap('order-1', mocks.mockOrderData),
-    );
-
-    const result = await createOrder({
-      userId: 'user-1',
-      items: [],
-      subtotalCents: 10000,
-      taxCents: 700,
-      shippingCents: 0,
-      discountCents: 0,
-      totalCents: 10700,
-      currency: 'USD' as const,
-      shippingAddress: mocks.mockOrderData.shippingAddress,
-      billingAddress: mocks.mockOrderData.billingAddress,
-      paymentMethod: 'card' as const,
-      notes: 'Test order',
-    });
-
-    expect(mocks.firestoreStubs.setDoc).toHaveBeenCalled();
-    expect(result.id).toBe('order-1');
-    expect(result.status).toBe('pending');
+  it('does not expose client-side order creation', async () => {
+    const firestore = await setupFirestore();
+    expect('createOrder' in firestore).toBe(false);
+    expect(mocks.firestoreStubs.setDoc).not.toHaveBeenCalled();
   });
 
   it('getUserOrders queries by userId and returns OrderDTO array', async () => {
