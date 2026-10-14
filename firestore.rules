@@ -87,6 +87,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+
+    match /carts/{uid} {
+      function validCart(data) {
+        return data.keys().hasOnly(['version', 'items', 'discount', 'lastUpdated'])
+          && data.version == 1
+          && data.items is list
+          && data.items.size() <= 100
+          && data.discount is map
+          && data.discount.keys().hasOnly(['amount', 'currency'])
+          && data.discount.amount is number
+          && data.discount.amount >= 0
+          && data.discount.currency in ['USD', 'MXN', 'EUR', 'GBP', 'CAD']
+          && data.lastUpdated is string
+          && data.lastUpdated.size() <= 64;
+      }
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create, update: if isOwner(uid) && validCart(request.resource.data);
+      allow delete: if isOwner(uid);
+    }
+
     match /orders/{orderId} {
       allow get: if isAdmin() || isOrderOwner();
       allow list: if isAdmin() || isOrderOwner();

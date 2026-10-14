@@ -461,6 +461,36 @@ MaybeDescribe('Firestore Security Rules', () => {
     });
   });
 
+
+  // ─── Per-user cart persistence ───────────────────────────────────────
+
+  describe('carts/{uid}', () => {
+    const validCart = {
+      version: 1,
+      items: [],
+      discount: { amount: 0, currency: 'USD' },
+      lastUpdated: new Date(1700000000000).toISOString(),
+    };
+
+    it('customer can save and read their own cloud cart', async () => {
+      const db = customer1Env().firestore();
+      await assertSucceeds(db.doc('carts/customer-1').set(validCart));
+      await assertSucceeds(db.doc('carts/customer-1').get());
+    });
+
+    it('customer cannot read or overwrite another user cart', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('carts/admin-1').get());
+      await assertFails(db.doc('carts/admin-1').set(validCart));
+    });
+
+    it('rejects malformed cart documents and unknown fields', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('carts/customer-1').set({ ...validCart, version: 99 }));
+      await assertFails(db.doc('carts/customer-1').set({ ...validCart, secret: 'not-allowed' }));
+    });
+  });
+
   // ─── Cross-user security ──────────────────────────────────────
 
   describe('cross-user access prevention', () => {

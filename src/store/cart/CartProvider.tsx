@@ -7,7 +7,7 @@
  *
  * NO usa React Context directamente en consumidores — ellos usan useCart().
  */
-import { useReducer, useEffect, useMemo, useCallback, useContext } from 'react';
+import { useReducer, useEffect, useMemo, useCallback, useContext, useState } from 'react';
 import { cartReducer, createInitialCartState } from '@/utils/cart/cartUtils';
 import {
   loadCartFromStorage,
@@ -17,6 +17,7 @@ import {
 } from '@/store/cart/persistence';
 import { CartContext } from '@/store/cart/CartContext';
 import { AuthContext } from '@/contexts/AuthContext';
+import { loadCartFromCloud, saveCartToCloud } from '@/store/cart/cloudPersistence';
 import type { CartState } from '@/types/cart';
 import type { Product } from '@/types/domain';
 import type { ReactNode } from 'react';
@@ -26,8 +27,31 @@ function initCartState(storageKey: string): CartState {
   return restored ?? createInitialCartState();
 }
 
-function CartStateProvider({ children, storageKey }: { children: ReactNode; storageKey: string }) {
+function CartStateProvider({ children, storageKey, userId }: { children: ReactNode; storageKey: string; userId?: string }) {
   const [state, dispatch] = useReducer(cartReducer, storageKey, initCartState);
+  const [cloudReady, setCloudReady] = useState(!userId);
+
+  useEffect(() => {
+    if (!userId) {
+      setCloudReady(true);
+      return;
+    }
+
+    let active = true;
+    setCloudReady(false);
+    void loadCartFromCloud(userId)
+      .then((cloudState) => {
+        if (active && cloudState) dispatch({ type: 'HYDRATE', state: cloudState });
+      })
+      .catch(() => {
+        // Keep the per-user local cache available if Firestore is temporarily unreachable.
+      })
+      .finally(() => {
+        if (active) setCloudReady(true);
+      });
+
+    return () => { active = false; };
+  }, [userId]);
 
   useEffect(() => {
     if (state.items.length > 0) {
@@ -35,7 +59,13 @@ function CartStateProvider({ children, storageKey }: { children: ReactNode; stor
     } else {
       clearCartFromStorage(storageKey);
     }
-  }, [state, storageKey]);
+
+    if (userId && cloudReady) {
+      void saveCartToCloud(userId, state).catch(() => {
+        // localStorage remains the offline fallback; the next state change retries sync.
+      });
+    }
+  }, [state, storageKey, userId, cloudReady]);
 
   const addItem = useCallback((product: Product, quantity: number = 1) => {
     dispatch({ type: 'ADD_ITEM', product, quantity });
@@ -71,9 +101,10 @@ function CartStateProvider({ children, storageKey }: { children: ReactNode; stor
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const auth = useContext(AuthContext);
-  const storageKey = getCartStorageKey(auth?.user?.uid);
+  const userId = auth?.user?.uid;
+  const storageKey = getCartStorageKey(userId);
   return (
-    <CartStateProvider key={storageKey} storageKey={storageKey}>
+    <CartStateProvider key={storageKey} storageKey={storageKey} userId={userId}>
       {children}
     </CartStateProvider>
   );

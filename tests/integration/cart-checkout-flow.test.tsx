@@ -16,6 +16,11 @@ const mocks = vi.hoisted(() => ({
   fetchOrder: vi.fn(),
 }));
 
+vi.mock('@/store/cart/cloudPersistence', () => ({
+  loadCartFromCloud: vi.fn().mockResolvedValue(null),
+  saveCartToCloud: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/services/checkoutService', () => ({
   checkoutService: { processCheckout: mocks.processCheckout },
 }));
