@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../../tailwind.config.ts";
 
 :root {
   --cyber-bg: #05060d;
@@ -35,7 +34,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 @layer components {
   .cyber-panel { @apply border border-cyan-300/20 bg-slate-950/70 backdrop-blur-xl; box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.03), 0 18px 60px rgba(0, 0, 0, 0.35); }
   .cyber-card { @apply border border-cyan-300/15 bg-slate-950/65 text-slate-100 backdrop-blur-xl; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255,255,255,0.025); }
-  .cyber-kicker { @apply font-display text-[0.68rem] font-bold uppercase tracking-[0.28em] text-cyan-300; }
+  .cyber-kicker { @apply text-[0.68rem] font-bold uppercase tracking-[0.28em] text-cyan-300; font-family: 'Orbitron', system-ui, sans-serif; }
 }
 
 /* Admin-only visual system: a darker operations-console layer that leaves the storefront styles intact. */

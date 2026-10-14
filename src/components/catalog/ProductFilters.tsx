@@ -15,7 +15,7 @@ export interface ProductFiltersProps {
 }
 
 const DEFAULT_CATEGORIES: readonly CategoryOption[] = [
-  { id: 'action-figures', label: 'Figuras de Acción' },
+  { id: 'action-figures', label: 'Figuras de Accion' },
   { id: 'video-games', label: 'Videojuegos' },
   { id: 'shoes', label: 'Zapatillas' },
 ];
