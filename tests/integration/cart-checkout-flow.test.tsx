@@ -31,7 +31,7 @@ vi.mock('@/services/ordersService', () => ({
 }));
 
 function CartHarness() {
-  const { addItem, totalItems } = useCart();
+  const { addItem, totalItems, items } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -40,6 +40,9 @@ function CartHarness() {
         Agregar producto de prueba
       </button>
       <button type="button" onClick={() => navigate(ROUTES.CHECKOUT)}>Ir al checkout</button>
+      <ul aria-label="Productos del carrito">
+        {items.map((item) => <li key={item.productId}>{item.name}</li>)}
+      </ul>
       <output aria-label="Cantidad de artículos" data-testid="cart-count">
         {totalItems}
       </output>
