@@ -3,6 +3,16 @@ import { getAdminError, requireAdmin } from '../../server/adminAuthorization.js'
 
 type Role = 'admin' | 'customer';
 
+interface AdminUserRecord {
+  readonly uid: string;
+  readonly email: string | null;
+  readonly displayName: string | null;
+  readonly photoURL: string | null;
+  readonly role: Role;
+  readonly createdAt: number;
+  readonly lastLoginAt: number;
+}
+
 function timestampToMillis(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (value instanceof Date) return value.getTime();
@@ -32,29 +42,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { firestore } = await requireAdmin(req);
     const roleParam = typeof req.query.role === 'string' ? req.query.role : 'all';
-    if (roleParam !== 'all' && roleParam !== 'customer') {
-      return jsonError(res, 400, 'role must be all or customer');
+    if (roleParam !== 'all' && roleParam !== 'customer' && roleParam !== 'admin') {
+      return jsonError(res, 400, 'role must be all, admin, or customer');
     }
 
     const limit = positiveLimit(req.query.limit);
     const collection = firestore.collection('users');
-    const snapshot = roleParam === 'customer'
-      ? await collection.where('role', '==', 'customer').limit(limit).get()
-      : await collection.limit(limit).get();
+    const snapshot = roleParam === 'all'
+      ? await collection.limit(limit).get()
+      : await collection.where('role', '==', roleParam).limit(limit).get();
 
-    const users = snapshot.docs.map((document) => {
+    // Keep only supported application roles and collapse duplicate Firestore
+    // profile documents that share the same normalized email. When duplicates
+    // exist, prefer the most recently created profile.
+    const usersByEmail = new Map<string, AdminUserRecord>();
+    const usersWithoutEmail: AdminUserRecord[] = [];
+
+    for (const document of snapshot.docs) {
       const data = document.data();
-      const role: Role = data.role === 'admin' ? 'admin' : 'customer';
-      return {
+      if (data.role !== 'admin' && data.role !== 'customer') continue;
+
+      const normalizedEmail = typeof data.email === 'string'
+        ? data.email.trim().toLowerCase()
+        : '';
+      const user: AdminUserRecord = {
         uid: document.id,
-        email: typeof data.email === 'string' ? data.email : null,
+        email: normalizedEmail || null,
         displayName: typeof data.displayName === 'string' ? data.displayName : null,
         photoURL: typeof data.photoURL === 'string' ? data.photoURL : null,
-        role,
+        role: data.role as Role,
         createdAt: timestampToMillis(data.createdAt),
         lastLoginAt: timestampToMillis(data.lastLoginAt),
       };
-    }).sort((a, b) => b.createdAt - a.createdAt);
+
+      if (!normalizedEmail) {
+        usersWithoutEmail.push(user);
+        continue;
+      }
+
+      const current = usersByEmail.get(normalizedEmail);
+      if (!current || user.createdAt > current.createdAt) {
+        usersByEmail.set(normalizedEmail, user);
+      }
+    }
+
+    const users = [...usersByEmail.values(), ...usersWithoutEmail]
+      .sort((a, b) => b.createdAt - a.createdAt);
 
     return res.status(200).json({
       success: true,

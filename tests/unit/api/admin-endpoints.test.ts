@@ -22,7 +22,6 @@ vi.mock('../../../server/adminAuthorization.js', () => {
 
 import { AdminAuthorizationError, requireAdmin } from '../../../server/adminAuthorization.js';
 import usersHandler from '../../../api/admin/users.js';
-import auditLogsHandler from '../../../api/admin/audit-logs.js';
 
 const requireAdminMock = vi.mocked(requireAdmin);
 
@@ -56,10 +55,8 @@ function makeResponse() {
 
 function makeFirestore({
   users = [],
-  logs = [],
 }: {
   users?: Array<{ id: string; data: () => Record<string, unknown> }>;
-  logs?: Array<{ id: string; data: () => Record<string, unknown> }>;
 } = {}) {
   const userQuery = {
     where: vi.fn(),
@@ -69,18 +66,10 @@ function makeFirestore({
   userQuery.where.mockReturnValue(userQuery);
   userQuery.limit.mockReturnValue(userQuery);
 
-  const auditQuery = {
-    orderBy: vi.fn(),
-    limit: vi.fn(),
-    get: vi.fn().mockResolvedValue({ docs: logs }),
-  };
-  auditQuery.orderBy.mockReturnValue(auditQuery);
-  auditQuery.limit.mockReturnValue(auditQuery);
-
   const firestore = {
-    collection: vi.fn((name: string) => name === 'users' ? userQuery : auditQuery),
+    collection: vi.fn(() => userQuery),
   };
-  return { firestore, userQuery, auditQuery };
+  return { firestore, userQuery };
 }
 
 describe('admin data APIs', () => {
@@ -95,17 +84,63 @@ describe('admin data APIs', () => {
     expect(requireAdminMock).not.toHaveBeenCalled();
   });
 
-  it('returns only customer profiles for the customer selector', async () => {
+  it('returns supported roles once per normalized email for the selector', async () => {
     const { firestore, userQuery } = makeFirestore({
-      users: [{
-        id: 'customer-1',
-        data: () => ({
-          email: 'customer@example.com',
-          displayName: 'Cliente de prueba',
+      users: [
+        { id: 'customer-old', data: () => ({
+          email: 'customer@ecommerce.com',
+          displayName: 'Cliente duplicado antiguo',
           role: 'customer',
-          createdAt: { toMillis: () => 1700000000000 },
-        }),
-      }],
+          createdAt: { toMillis: () => 1000 },
+        }) },
+        { id: 'admin-1', data: () => ({
+          email: 'admin@ecommerce.com',
+          displayName: 'Admin',
+          role: 'admin',
+          createdAt: { toMillis: () => 1500 },
+        }) },
+        { id: 'customer-new', data: () => ({
+          email: ' CUSTOMER@ECOMMERCE.COM ',
+          displayName: 'Cliente',
+          role: 'customer',
+          createdAt: { toMillis: () => 2000 },
+        }) },
+        { id: 'unsupported-1', data: () => ({
+          email: 'unsupported@ecommerce.com',
+          displayName: 'Unsupported',
+          role: 'owner',
+          createdAt: { toMillis: () => 3000 },
+        }) },
+      ],
+    });
+    requireAdminMock.mockResolvedValue({ uid: 'admin-1', firestore } as never);
+
+    const response = makeResponse();
+    await usersHandler(makeRequest('GET', { role: 'all', limit: '200' }), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(userQuery.where).not.toHaveBeenCalled();
+    expect(userQuery.limit).toHaveBeenCalledWith(200);
+    expect(response.body).toMatchObject({
+      success: true,
+      data: {
+        count: 2,
+        users: [
+          { uid: 'customer-new', email: 'customer@ecommerce.com', role: 'customer' },
+          { uid: 'admin-1', email: 'admin@ecommerce.com', role: 'admin' },
+        ],
+      },
+    });
+  });
+
+  it('filters the user query when a single supported role is requested', async () => {
+    const { firestore, userQuery } = makeFirestore({
+      users: [{ id: 'customer-1', data: () => ({
+        email: 'customer@ecommerce.com',
+        displayName: 'Cliente',
+        role: 'customer',
+        createdAt: { toMillis: () => 1700000000000 },
+      }) }],
     });
     requireAdminMock.mockResolvedValue({ uid: 'admin-1', firestore } as never);
 
@@ -114,17 +149,10 @@ describe('admin data APIs', () => {
 
     expect(response.statusCode).toBe(200);
     expect(userQuery.where).toHaveBeenCalledWith('role', '==', 'customer');
-    expect(userQuery.limit).toHaveBeenCalledWith(200);
     expect(response.body).toMatchObject({
       success: true,
       data: {
-        users: [{
-          uid: 'customer-1',
-          email: 'customer@example.com',
-          displayName: 'Cliente de prueba',
-          role: 'customer',
-          createdAt: 1700000000000,
-        }],
+        users: [{ uid: 'customer-1', email: 'customer@ecommerce.com', role: 'customer' }],
         count: 1,
       },
     });
@@ -139,48 +167,4 @@ describe('admin data APIs', () => {
     expect(response.statusCode).toBe(403);
   });
 
-  it('returns recent audit records from the protected endpoint', async () => {
-    const { firestore, auditQuery } = makeFirestore({
-      logs: [{
-        id: 'audit-1',
-        data: () => ({
-          action: 'product.updated',
-          user: 'admin-1',
-          timestamp: { toMillis: () => 1700000000000 },
-          details: 'Updated product',
-        }),
-      }],
-    });
-    requireAdminMock.mockResolvedValue({ uid: 'admin-1', firestore } as never);
-
-    const response = makeResponse();
-    await auditLogsHandler(makeRequest(), response);
-
-    expect(response.statusCode).toBe(200);
-    expect(auditQuery.orderBy).toHaveBeenCalledWith('timestamp', 'desc');
-    expect(auditQuery.limit).toHaveBeenCalledWith(50);
-    expect(response.body).toMatchObject({
-      success: true,
-      data: {
-        logs: [{
-          id: 'audit-1',
-          action: 'product.updated',
-          user: 'admin-1',
-          timestamp: 1700000000000,
-          details: 'Updated product',
-        }],
-        count: 1,
-      },
-    });
-  });
-
-  it('does not return audit records when admin authorization fails', async () => {
-    requireAdminMock.mockRejectedValue(new AdminAuthorizationError(401, 'Authentication required'));
-    const response = makeResponse();
-
-    await auditLogsHandler(makeRequest('GET', {}, ''), response);
-
-    expect(response.statusCode).toBe(401);
-    expect(response.body).toMatchObject({ success: false });
-  });
 });

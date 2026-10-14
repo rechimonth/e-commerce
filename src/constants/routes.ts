@@ -23,7 +23,6 @@ export const ROUTES = {
   ADMIN_CATEGORY_NEW: '/admin/categories/new',
   ADMIN_CATEGORY_EDIT: (id: string) => `/admin/categories/${id}/edit`,
   ADMIN_ANALYTICS: '/admin/analytics',
-  ADMIN_AUDIT: '/admin/audit',
   ADMIN_SETTINGS: '/admin/settings',
   NOT_FOUND: '/404',
   UNAUTHORIZED: '/403',

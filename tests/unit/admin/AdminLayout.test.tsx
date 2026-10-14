@@ -47,7 +47,7 @@ describe('AdminLayout', () => {
     expect(screen.getByTestId('nav-link-categorías')).toHaveTextContent('Categorías');
     expect(screen.getByTestId('nav-link-media')).toHaveTextContent('Media');
     expect(screen.getByTestId('nav-link-analytics')).toHaveTextContent('Analytics');
-    expect(screen.getByTestId('nav-link-auditoría')).toHaveTextContent('Auditoría');
+    expect(screen.queryByTestId('nav-link-auditoría')).not.toBeInTheDocument();
     expect(screen.getByTestId('nav-link-configuración')).toHaveTextContent('Configuración');
   });
 

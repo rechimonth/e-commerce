@@ -34,7 +34,6 @@ const AdminCategoriesPage = lazy(() => import('@/pages/admin/CategoriesPage'));
 const AdminCategoryFormPage = lazy(() => import('@/pages/admin/CategoryFormPage'));
 const AdminUploadsPage = lazy(() => import('@/pages/admin/UploadsPage'));
 const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AnalyticsPage'));
-const AdminAuditLogPage = lazy(() => import('@/pages/admin/AuditLogPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 
 function App() {
@@ -73,7 +72,6 @@ function App() {
                 <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
                 <Route path="uploads" element={<AdminUploadsPage />} />
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="audit" element={<AdminAuditLogPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
 

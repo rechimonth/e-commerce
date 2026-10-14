@@ -108,13 +108,6 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Audit records may be read by admins only. Writes are server-only so a
-    // browser client cannot forge, edit, or delete audit history.
-    match /auditLogs/{logId} {
-      allow get, list: if isAdmin();
-      allow create, update, delete: if false;
-    }
-
     match /settings/{settingId} {
       allow get, list: if isAdmin();
       allow create, update: if isAdmin() && settingId == 'store'

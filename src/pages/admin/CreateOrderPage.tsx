@@ -22,10 +22,11 @@ interface CartItem extends Product {
   readonly quantity: number;
 }
 
-interface Customer {
+interface OrderRecipient {
   readonly id: string;
   readonly name: string;
   readonly email: string;
+  readonly role: 'admin' | 'customer';
 }
 
 const PAYMENT_METHODS = [
@@ -54,9 +55,9 @@ export function AdminCreateOrderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+  const [selectedRecipientId, setSelectedRecipientId] = useState('');
+  const [orderRecipients, setOrderRecipients] = useState<OrderRecipient[]>([]);
+  const [isLoadingRecipients, setIsLoadingRecipients] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,23 +68,24 @@ export function AdminCreateOrderPage() {
 
   useEffect(() => {
     let isMounted = true;
-    setIsLoadingCustomers(true);
-    usersService.fetchCustomers()
+    setIsLoadingRecipients(true);
+    usersService.fetchOrderRecipients()
       .then((profiles) => {
         if (!isMounted) return;
-        setCustomers(profiles.map((profile) => ({
+        setOrderRecipients(profiles.map((profile) => ({
           id: profile.uid,
           name: profile.displayName,
           email: profile.email,
+          role: profile.role,
         })));
       })
       .catch(() => {
         if (!isMounted) return;
-        setCustomers([]);
+        setOrderRecipients([]);
         setError('No se pudieron cargar los clientes. Verifica tu sesión de administrador.');
       })
       .finally(() => {
-        if (isMounted) setIsLoadingCustomers(false);
+        if (isMounted) setIsLoadingRecipients(false);
       });
     return () => { isMounted = false; };
   }, []);
@@ -173,7 +175,7 @@ export function AdminCreateOrderPage() {
   const totalUnits = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
 
   const handleCreateOrder = async () => {
-    if (!selectedCustomerId || cart.length === 0) return;
+    if (!selectedRecipientId || cart.length === 0) return;
     if (!user) {
       setError('No hay sesión activa. Inicia sesión nuevamente.');
       return;
@@ -200,14 +202,14 @@ export function AdminCreateOrderPage() {
         totalPrice: { amount: total, currency: 'USD' },
         lastUpdated: new Date(),
       };
-      const order = await checkoutService.processCheckout(checkoutData, cartState, user.uid, selectedCustomerId);
+      const order = await checkoutService.processCheckout(checkoutData, cartState, user.uid, selectedRecipientId);
       if (!order) {
         setError('No pudimos crear la orden. Intenta nuevamente.');
         return;
       }
       alert('Orden creada exitosamente: ' + order.id);
       setCart([]);
-      setSelectedCustomerId('');
+      setSelectedRecipientId('');
       setPaymentMethod('card');
       setSelectedCategory('');
       setIsCatalogOpen(false);
@@ -221,7 +223,7 @@ export function AdminCreateOrderPage() {
     }
   };
 
-  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  const selectedRecipient = orderRecipients.find((c) => c.id === selectedRecipientId);
 
   return (
     <div className="space-y-6 pb-8">
@@ -295,9 +297,9 @@ export function AdminCreateOrderPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="cyber-card p-6"><p className="cyber-kicker">CUSTOMER</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Cliente</h2><Select label="Seleccionar cliente" options={customers.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))} value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} placeholder={isLoadingCustomers ? "Cargando clientes..." : "Seleccionar cliente..."} disabled={isLoadingCustomers || customers.length === 0} />{!isLoadingCustomers && customers.length === 0 && <p className="mt-2 text-xs text-amber-300">No hay clientes disponibles para seleccionar.</p>}{selectedCustomer && <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3"><p className="text-sm font-bold text-slate-100">{selectedCustomer.name}</p><p className="text-xs text-slate-400">{selectedCustomer.email}</p></div>}</Card>
+          <Card className="cyber-card p-6"><p className="cyber-kicker">ORDER RECIPIENT</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Usuario destino</h2><Select label="Seleccionar usuario" options={orderRecipients.map((recipient) => ({ value: recipient.id, label: `${recipient.role === 'admin' ? 'Administrador' : 'Cliente'} — ${recipient.name} (${recipient.email})` }))} value={selectedRecipientId} onChange={(e) => setSelectedRecipientId(e.target.value)} placeholder={isLoadingRecipients ? "Cargando usuarios..." : "Seleccionar usuario..."} disabled={isLoadingRecipients || orderRecipients.length === 0} />{!isLoadingRecipients && orderRecipients.length === 0 && <p className="mt-2 text-xs text-amber-300">No hay usuarios disponibles para seleccionar.</p>}{selectedRecipient && <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3"><p className="text-sm font-bold text-slate-100">{selectedRecipient.name}</p><p className="text-xs text-slate-400">{selectedRecipient.email}</p></div>}</Card>
           <Card className="cyber-card p-6"><p className="cyber-kicker">PAYMENT</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Método de Pago</h2><Select label="Método de pago" options={PAYMENT_METHODS} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} /></Card>
-          <Card className="cyber-card p-6"><p className="cyber-kicker">TOTAL</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2><div className="space-y-3"><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div><div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div></div><div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedCustomerId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div></Card>
+          <Card className="cyber-card p-6"><p className="cyber-kicker">TOTAL</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2><div className="space-y-3"><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div><div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div></div><div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedRecipientId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div></Card>
         </div>
       </div>
 
