@@ -179,6 +179,27 @@ describe('AuthProvider', () => {
     expect(screen.getByTestId('role-state').textContent).toBe('unauthenticated');
   });
 
+  it('reports when an authenticated account has no Firestore profile', async () => {
+    vi.mocked(signInWithEmail).mockResolvedValue({ uid: 'test-uid' } as never);
+    vi.mocked(getUserProfile).mockResolvedValue(null);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    const callback = vi.mocked(observeAuthState).mock.calls[0]![0]!;
+    callback(null);
+    await screen.findByText('sign-in').then((btn) => btn.click());
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error').textContent).toContain('No encontramos el perfil');
+    });
+    expect(screen.getByTestId('role-state').textContent).toBe('unauthenticated');
+    expect(screen.getByTestId('user-uid').textContent).toBe('null');
+  });
+
   it('signOut clears user and sets unauthenticated', async () => {
     render(
       <AuthProvider>

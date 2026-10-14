@@ -36,7 +36,7 @@ export default {
         },
         success: { 500: '#10b981' },
         warning: { 500: '#f59e0b' },
-        error: { 500: '#ef4444' },
+        error: { 500: '#ef4444', 700: '#b91c1c' },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

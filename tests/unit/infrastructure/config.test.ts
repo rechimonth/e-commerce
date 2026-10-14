@@ -172,6 +172,15 @@ describe('mapFirebaseError', () => {
     expect(result.code).toBe('UNAUTHORIZED');
   });
 
+  it('maps auth/invalid-credential to UNAUTHORIZED', async () => {
+    const { mapFirebaseError } = await import('@/infrastructure/firebase/config');
+    const result = mapFirebaseError({
+      code: 'auth/invalid-credential',
+      message: 'Invalid login credentials',
+    });
+    expect(result.code).toBe('UNAUTHORIZED');
+  });
+
   it('maps firestore/permission-denied to FORBIDDEN', async () => {
     const { mapFirebaseError } = await import('@/infrastructure/firebase/config');
     const result = mapFirebaseError({

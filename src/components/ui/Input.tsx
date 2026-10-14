@@ -17,7 +17,7 @@ export function Input({ label, error, helperText, icon, className = '', id, ...r
 
   return (
     <div className="w-full">
-      {label && <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-slate-300">{label}</label>}
+      {label && <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-neutral-700">{label}</label>}
       <div className="relative">
         {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400">{icon}</span>}
         <input id={inputId} className={`${inputClasses} ${icon ? 'pl-10' : ''}`} aria-invalid={error ? 'true' : undefined} aria-describedby={error ? errorId : helperText ? helperId : undefined} {...rest} />

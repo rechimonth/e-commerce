@@ -95,8 +95,10 @@ export class FirebaseInfraError extends Error {
  */
 const FIREBASE_ERROR_MAP: Readonly<Record<string, ServiceErrorCode>> = {
   'auth/invalid-email': 'VALIDATION_ERROR',
-  'auth/user-not-found': 'NOT_FOUND',
+  'auth/user-not-found': 'UNAUTHORIZED',
   'auth/wrong-password': 'UNAUTHORIZED',
+  'auth/invalid-credential': 'UNAUTHORIZED',
+  'auth/invalid-login-credentials': 'UNAUTHORIZED',
   'auth/email-already-in-use': 'CONFLICT',
   'auth/weak-password': 'VALIDATION_ERROR',
   'auth/popup-closed-by-user': 'VALIDATION_ERROR',

@@ -34,6 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(domainUser);
         setRoleState(profile.role === 'admin' ? 'admin' : 'customer');
       } else {
+        setError({
+          code: 'NOT_FOUND',
+          message: 'No encontramos el perfil de esta cuenta en la base de datos.',
+        });
+        setUser(null);
         setRoleState('unauthenticated');
       }
     } catch (e: unknown) {
