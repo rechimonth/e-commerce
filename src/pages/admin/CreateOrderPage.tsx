@@ -13,6 +13,7 @@ import { checkoutService } from '@/services/checkoutService';
 import type { CheckoutData } from '@/types/order';
 import type { CartState } from '@/types/cart';
 import { useAuth } from '@/hooks/useAuth';
+import { usersService } from '@/services/usersService';
 
 type PaymentMethod = 'card' | 'paypal' | 'cash';
 type CategoryFilter = '' | 'action-figures' | 'video-games' | 'shoes';
@@ -26,11 +27,6 @@ interface Customer {
   readonly name: string;
   readonly email: string;
 }
-
-const MOCK_CUSTOMERS: Customer[] = [
-  { id: 'admin', name: 'ADMIN', email: 'admin@ecommerce.com' },
-  { id: 'customer', name: 'CUSTOMER', email: 'customer@ecommerce.com' },
-];
 
 const PAYMENT_METHODS = [
   { value: 'card', label: 'Tarjeta de crédito/débito' },
@@ -59,6 +55,8 @@ export function AdminCreateOrderPage() {
   const { user } = useAuth();
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,6 +64,29 @@ export function AdminCreateOrderPage() {
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingCustomers(true);
+    usersService.fetchCustomers()
+      .then((profiles) => {
+        if (!isMounted) return;
+        setCustomers(profiles.map((profile) => ({
+          id: profile.uid,
+          name: profile.displayName,
+          email: profile.email,
+        })));
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCustomers([]);
+        setError('No se pudieron cargar los clientes. Verifica tu sesión de administrador.');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingCustomers(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     if (!isCatalogOpen) return;
@@ -200,7 +221,7 @@ export function AdminCreateOrderPage() {
     }
   };
 
-  const selectedCustomer = MOCK_CUSTOMERS.find((c) => c.id === selectedCustomerId);
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
 
   return (
     <div className="space-y-6 pb-8">
@@ -274,7 +295,7 @@ export function AdminCreateOrderPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="cyber-card p-6"><p className="cyber-kicker">CUSTOMER</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Cliente</h2><Select label="Seleccionar cliente" options={MOCK_CUSTOMERS.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))} value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} placeholder="Seleccionar cliente..." />{selectedCustomer && <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3"><p className="text-sm font-bold text-slate-100">{selectedCustomer.name}</p><p className="text-xs text-slate-400">{selectedCustomer.email}</p></div>}</Card>
+          <Card className="cyber-card p-6"><p className="cyber-kicker">CUSTOMER</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Cliente</h2><Select label="Seleccionar cliente" options={customers.map((c) => ({ value: c.id, label: `${c.name} - ${c.email}` }))} value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} placeholder={isLoadingCustomers ? "Cargando clientes..." : "Seleccionar cliente..."} disabled={isLoadingCustomers || customers.length === 0} />{!isLoadingCustomers && customers.length === 0 && <p className="mt-2 text-xs text-amber-300">No hay clientes disponibles para seleccionar.</p>}{selectedCustomer && <div className="mt-3 rounded-xl border border-cyan-300/10 bg-slate-950/45 p-3"><p className="text-sm font-bold text-slate-100">{selectedCustomer.name}</p><p className="text-xs text-slate-400">{selectedCustomer.email}</p></div>}</Card>
           <Card className="cyber-card p-6"><p className="cyber-kicker">PAYMENT</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Método de Pago</h2><Select label="Método de pago" options={PAYMENT_METHODS} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} /></Card>
           <Card className="cyber-card p-6"><p className="cyber-kicker">TOTAL</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2><div className="space-y-3"><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div><div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div></div><div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedCustomerId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div></Card>
         </div>
