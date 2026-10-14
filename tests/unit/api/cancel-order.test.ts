@@ -13,8 +13,8 @@ vi.mock('firebase-admin/app', () => ({
   getApps: vi.fn(() => [{ name: 'test-app' }]),
   initializeApp: vi.fn(),
 }));
-vi.mock('firebase-admin/auth', () => ({
-  getAuth: vi.fn(() => ({ verifyIdToken: vi.fn(async () => ({ uid: mocks.uid })) })),
+vi.mock('../../../server/firebaseToken.js', () => ({
+  verifyFirebaseIdToken: vi.fn(async () => ({ uid: mocks.uid })),
 }));
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: vi.fn(() => ({ type: 'serverTimestamp' })) },

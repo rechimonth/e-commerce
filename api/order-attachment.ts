@@ -1,7 +1,7 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
-import { getAuth } from 'firebase-admin/auth';
+import { FirebaseTokenError, verifyFirebaseIdToken } from '../server/firebaseToken.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -29,8 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
     const app = getFirebaseAdminApp();
-    const decoded = await getAuth(app).verifyIdToken(authorization.slice(7).trim());
     const firestore = getFirestore(app);
     const [profile, order] = await Promise.all([
       firestore.collection('users').doc(decoded.uid).get(),
@@ -63,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
     return res.status(200).json({ success: true, data: { url, expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS } });
   } catch (error) {
+    if (error instanceof FirebaseTokenError) return jsonError(res, error.status, error.message);
     if (error instanceof FirebaseConfigurationError) {
       console.error('Firebase Admin configuration error:', error.message);
       return jsonError(res, 500, 'Firebase server configuration is incomplete');

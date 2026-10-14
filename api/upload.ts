@@ -1,7 +1,7 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
-import { getAuth } from 'firebase-admin/auth';
+import { FirebaseTokenError, verifyFirebaseIdToken } from '../server/firebaseToken.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -17,8 +17,8 @@ const CONTENT_TYPES_BY_EXTENSION: Readonly<Record<string, string>> = {
 const PRESIGNED_URL_EXPIRY_SECONDS = 300;
 
 async function verifyAdmin(idToken: string): Promise<{ uid: string }> {
+  const decoded = await verifyFirebaseIdToken(idToken);
   const app = getFirebaseAdminApp();
-  const decoded = await getAuth(app).verifyIdToken(idToken);
   const profile = await getFirestore(app).collection('users').doc(decoded.uid).get();
   if (!profile.exists || profile.data()?.role !== 'admin') {
     throw new Error('FORBIDDEN');
@@ -61,6 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await verifyAdmin(token);
   } catch (error) {
     if (error instanceof Error && error.message === 'FORBIDDEN') return jsonError(res, 403, 'Admin role required');
+    if (error instanceof FirebaseTokenError) return jsonError(res, error.status, error.message);
     if (error instanceof FirebaseConfigurationError) {
       console.error('Firebase Admin configuration error:', error.message);
       return jsonError(res, 500, 'Firebase server configuration is incomplete');

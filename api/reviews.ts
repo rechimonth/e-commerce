@@ -1,5 +1,5 @@
 import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
-import { getAuth } from 'firebase-admin/auth';
+import { FirebaseTokenError, verifyFirebaseIdToken } from '../server/firebaseToken.js';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -41,8 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const comment = body.comment.trim();
 
   try {
+    const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
     const app = getFirebaseAdminApp();
-    const decoded = await getAuth(app).verifyIdToken(authorization.slice(7).trim());
     const firestore = getFirestore(app);
     const productRef = firestore.collection('products').doc(productId);
     const profileRef = firestore.collection('users').doc(decoded.uid);
@@ -125,6 +125,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, message: 'Reseña guardada' });
   } catch (error) {
     if (error instanceof ReviewRequestError) return jsonError(res, error.status, error.message);
+    if (error instanceof FirebaseTokenError) {
+      return jsonError(res, error.status, error.status === 401 ? 'La sesión no es válida o ha expirado' : error.message);
+    }
     if (error instanceof FirebaseConfigurationError) {
       console.error('Firebase Admin configuration error:', error.message);
       return jsonError(res, 500, 'La configuración del servidor está incompleta');

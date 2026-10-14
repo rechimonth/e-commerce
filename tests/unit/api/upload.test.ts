@@ -21,8 +21,8 @@ vi.mock('firebase-admin/app', () => ({
   cert: vi.fn(),
 }));
 
-vi.mock('firebase-admin/auth', () => ({
-  getAuth: vi.fn(() => ({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'admin-1' }) })),
+vi.mock('../../../server/firebaseToken.js', () => ({
+  verifyFirebaseIdToken: vi.fn().mockResolvedValue({ uid: 'admin-1' }),
 }));
 
 vi.mock('firebase-admin/firestore', () => {

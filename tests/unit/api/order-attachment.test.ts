@@ -19,8 +19,8 @@ vi.mock('firebase-admin/app', () => ({
   getApps: vi.fn(() => [{ name: 'test-app' }]),
   initializeApp: vi.fn(),
 }));
-vi.mock('firebase-admin/auth', () => ({
-  getAuth: vi.fn(() => ({ verifyIdToken: vi.fn(async () => ({ uid: mocks.callerUid })) })),
+vi.mock('../../../server/firebaseToken.js', () => ({
+  verifyFirebaseIdToken: vi.fn(async () => ({ uid: mocks.callerUid })),
 }));
 vi.mock('firebase-admin/firestore', () => ({
   getFirestore: vi.fn(() => ({
