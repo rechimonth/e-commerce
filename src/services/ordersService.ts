@@ -12,7 +12,6 @@ import {
   getAllOrders as firestoreGetAllOrders,
   getUserOrders as firestoreGetUserOrders,
   getOrder as firestoreGetOrder,
-  createOrder as firestoreCreateOrder,
   updateOrderTracking as firestoreUpdateOrderTracking,
   addOrderAttachment as firestoreAddOrderAttachment,
   removeOrderAttachment as firestoreRemoveOrderAttachment,
@@ -116,12 +115,6 @@ export const ordersService = {
     });
   },
 
-  async createOrder(input: Omit<OrderDTO, 'id' | 'status' | 'statusHistory'>): Promise<Order> {
-    return firebaseTryCatch(async () => {
-      const dto = await firestoreCreateOrder(input);
-      return toOrder(dto);
-    });
-  },
 
   async fetchAllOrders(filters?: { status?: OrderStatus; limit?: number }): Promise<Order[]> {
     return firebaseTryCatch(async () => {
