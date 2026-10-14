@@ -97,6 +97,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /productReviews/{reviewId} {
+      allow get, list: if resource.data.keys().hasOnly([
+          'productId', 'rating', 'comment', 'displayName', 'createdAt', 'updatedAt',
+        ])
+        && resource.data.productId is string
+        && resource.data.rating is int
+        && resource.data.rating >= 1 && resource.data.rating <= 5
+        && resource.data.comment is string
+        && resource.data.comment.size() >= 10
+        && resource.data.comment.size() <= 1500
+        && resource.data.displayName is string
+        && resource.data.displayName.size() <= 80;
+      // Reviews are written only by the server after verifying a completed purchase.
+      allow create, update, delete: if false;
+    }
+
+    match /reviewOwners/{ownerId} {
+      // Private mapping from authenticated reviewer to public review document.
+      allow read, write: if false;
+    }
+
     match /settings/{settingId} {
       allow get, list: if isAdmin();
       allow create, update: if isAdmin() && settingId == 'store'
