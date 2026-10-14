@@ -185,7 +185,7 @@ MaybeDescribe('Firestore Security Rules', () => {
 
     it('customer can create own profile with role=customer', async () => {
       const db = testEnv.authenticatedContext('new-user').firestore();
-      await assertSucceeds(db.doc('users/new-user').set(customer1Profile));
+      await assertSucceeds(db.doc('users/new-user').set({ ...customer1Profile, uid: 'new-user' }));
     });
 
     it('customer cannot set role=admin on creation', async () => {
@@ -393,7 +393,7 @@ MaybeDescribe('Firestore Security Rules', () => {
         status: 'completed',
         statusHistory: [
           ...current.statusHistory,
-          { from: 'pending', to: 'completed', by: 'admin-1', timestamp: serverTimestamp() },
+          { from: 'pending', to: 'completed', by: 'admin-1', timestamp: new Date(1700000001000) },
         ],
         updatedAt: serverTimestamp(),
       }));
