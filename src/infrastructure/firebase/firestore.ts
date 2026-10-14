@@ -145,7 +145,7 @@ export async function getProductsPage(filters: ProductPageFilters = {}): Promise
     const pageDocs = snapshot.docs.slice(0, safeLimit);
     return {
       items: pageDocs.map((productDoc) => docToProduct(productDoc)),
-      nextCursor: hasNext && pageDocs.length > 0 ? pageDocs[pageDocs.length - 1].id : null,
+      nextCursor: hasNext ? (pageDocs[pageDocs.length - 1]?.id ?? null) : null,
       hasNext,
     };
   });
