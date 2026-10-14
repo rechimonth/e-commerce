@@ -23,6 +23,13 @@ const mockAuthValue: AuthContextValue = {
   clearError: () => {},
 };
 
+vi.mock('@/services/reviewsService', () => ({
+  reviewsService: {
+    fetchProductReviews: vi.fn().mockResolvedValue([]),
+    submitProductReview: vi.fn(),
+  },
+}));
+
 vi.mock('@/services/productsService', () => ({
   productsService: {
     fetchProduct: vi.fn(),
