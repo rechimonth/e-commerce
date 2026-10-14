@@ -9,6 +9,8 @@ import { Alert } from '@/components/ui/Alert';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Price } from '@/components/ui/Price';
 import { ordersService } from '@/services/ordersService';
+import { orderAttachmentService } from '@/services/orderAttachmentService';
+import { uploadService } from '@/services/uploadService';
 import { VALID_ORDER_TRANSITIONS, type OrderStatus, type Order } from '@/types/order';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
@@ -70,7 +72,7 @@ export function AdminOrderDetailPage() {
     setUpdateError(null);
     try {
       if (!user) throw new Error('Usuario administrador no autenticado');
-      const updated = await ordersService.updateOrderStatus(order.id, newStatus, user.uid);
+      const updated = await ordersService.updateOrderStatus(order.id, newStatus);
       if (updated) {
         setOrder(updated);
         setStatusSelectValue("");
@@ -107,26 +109,10 @@ export function AdminOrderDetailPage() {
     setIsUploading(true);
     setUploadError(null);
     try {
-      const { getCurrentUserIdToken } = await import('@/infrastructure/firebase/auth');
-      const idToken = await getCurrentUserIdToken();
-      const formData = new FormData();
-      formData.append('fileName', file.name);
-      formData.append('fileType', file.type);
-      formData.append('fileSize', String(file.size));
-      formData.append('prefix', 'orders');
-      formData.append('orderId', order.id);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: formData,
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Error al subir archivo');
+      const uploaded = await uploadService.uploadFile({ file, prefix: 'orders', orderId: order.id });
       const attachment = {
-        key: data.data.key,
-        url: data.data.publicUrl,
+        key: uploaded.key,
+        url: uploaded.publicUrl,
         name: file.name,
         uploadedAt: new Date(),
       };
@@ -137,6 +123,23 @@ export function AdminOrderDetailPage() {
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleOpenAttachment = async (key: string) => {
+    if (!order) return;
+    const tab = window.open('about:blank', '_blank');
+    try {
+      const url = await orderAttachmentService.getDownloadUrl(order.id, key);
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = url;
+      } else {
+        window.location.assign(url);
+      }
+    } catch (e) {
+      tab?.close();
+      setUploadError(e instanceof Error ? e.message : 'No se pudo abrir el archivo');
     }
   };
 
@@ -292,16 +295,14 @@ export function AdminOrderDetailPage() {
             {order.attachments.map((att) => (
               <div key={att.key} className="flex items-center justify-between rounded-md border border-neutral-200 p-3">
                 <div className="flex items-center gap-3">
-                  <img src={att.url} alt={att.name} className="h-10 w-10 rounded object-cover" />
+                  <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 bg-neutral-100 text-xs font-bold text-neutral-600">FILE</div>
                   <div>
                     <p className="text-sm font-medium text-neutral-900">{att.name}</p>
                     <p className="text-xs text-neutral-500">{att.uploadedAt.toLocaleString('es-ES')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={att.url} target="_blank" rel="noreferrer">Abrir</a>
-                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => void handleOpenAttachment(att.key)}>Abrir</Button>
                   <Button variant="danger" size="sm" onClick={() => handleRemoveAttachment(att.key)}>
                     Eliminar
                   </Button>

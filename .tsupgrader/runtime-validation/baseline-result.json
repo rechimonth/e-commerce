@@ -1,0 +1,161 @@
+{
+  "planHash": "ad91ec63543f66c2d5be7e34109707fe46a2927b5341ab77a3c917122f2e5227",
+  "phase": "baseline",
+  "recordedAtUtc": "2026-10-14T06:59:15.0483033Z",
+  "retryCount": 0,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 486426,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "lint-pass",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "npm notice run e-commerce@0.1.0 lint\r\nnpm notice run eslint . --max-warnings=0\r\n",
+        "durationMs": 82547
+      },
+      {
+        "name": "tests-pass",
+        "kind": "process",
+        "verificationMethod": "test-results",
+        "passed": false,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 1,
+        "outputSample": "npm notice run e-commerce@0.1.0 test\r\nnpm notice run vitest run --run\r\n[vite:react-swc] We recommend switching to \u0060@vitejs/plugin-react\u0060 for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown\r\n\r\n\u001B[1m\u001B[7m\u001B[36m RUN \u001B[39m\u001B[27m\u001B[22m \u001B[36mv2.1.9 \u001B[39m\u001B[90mC:/Users/wingz/Documents/e-commerce-ai\u001B[39m\r\n\r\n \u001B[32m\u2713\u001B[39m tests/unit/cart/cartUtils.test.ts \u001B[2m(\u001B[22m\u001B[2m40 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 104\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/infrastructure/firestore.test.ts \u001B[2m(\u001B[22m\u001B[2m17 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 717\u001B[2mms\u001B[22m\u001B[39m\r\n   \u001B[33m\u001B[2m\u2713\u001B[22m\u001B[39m Firebase firestore\u001B[2m \u003E \u001B[22mgetProducts returns mapped ProductDTO array \u001B[33m453\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/infrastructure/auth.test.ts \u001B[2m(\u001B[22m\u001B[2m12 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 391\u001B[2mms\u001B[22m\u001B[39m\r\n\u001B[90mstderr\u001B[2m | tests/unit/contexts/AuthProvider.test.tsx\u001B[2m \u003E \u001B[22m\u001B[2mAuthProvider\u001B[2m \u003E \u001B[22m\u001B[2mstarts in loading state and resolves as unauthenticated (no user)\r\n\u001B[22m\u001B[39mWarning: An update to AuthProvider inside a test was not wrapped in act(...).\r\n\r\nWhen testing, code that causes React state updates should be wrapped into act(...):\r\n\r\nact(() =\u003E {\r\n  /* fire events that update state */\r\n});\r\n/* assert on the output */\r\n\r\nThis ensures that you\u0027re testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act\r\n    at AuthProvider (C:\\Users\\wingz\\Documents\\e-commerce-ai\\src\\contexts\\AuthProvider.tsx:11:25)\r\n\r\n \u001B[32m\u2713\u001B[39m tests/unit/infrastructure/config.test.ts \u001B[2m(\u001B[22m\u001B[2m14 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 140\u001B[2mms\u001B[22m\u001B[39m\r\n\u001B[90mstderr\u001B[2m | tests/unit/contexts/AuthProvider.test.tsx\u001B[2m \u003E \u001B[22m\u001B[2mAuthProvider\u001B[2m \u003E \u001B[22m\u001B[2msets user and role to customer on observeAuthState with profile\r\n\u001B[22m\u001B[39mWarning: An update to AuthProvider inside a test was not wrapped in act(...).\r\n\r\nWhen testing, code that causes React state updates should be wrapped into act(...):\r\n\r\nact(() =\u003E {\r\n  /* fire events that update state */\r\n});\r\n/* assert on the output */\r\n\r\nThis ensures that you\u0027re testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act\r\n    at AuthProvider (C:\\Users\\wingz\\Documents\\e-commerce-ai\\src\\contexts\\AuthProvider.tsx:11:25)\r\nWarning: An update to AuthProvider inside a test was not wrapped in act(...).\r\n\r\nWhen testing, code that causes React state updates should be wrapped into act(...):\r\n\r\nact(() =\u003E {\r\n  /* fire events that update state */\r\n});\r\n/* assert on the output */\r\n\r\nThis ensures that you\u0027re testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act\r\n    at AuthProvider (C:\\Users\\wingz\\Documents\\e-commerce-ai\\src\\contexts\\AuthProvider.tsx:11:25)\r\n\r\n\u001B[90mstderr\u001B[2m | tests/unit/contexts/AuthProvider.test.tsx\u001B[2m \u003E \u001B[22m\u001B[2mAuthProvider\u001B[2m \u003E \u001B[22m\u001B[2msets role to admin on observeAuthState with admin profile\r\n\u001B[22m\u001B[39mWarning: An update to AuthProvider inside a test was not wrapped in act(...).\r\n\r\nWhen testing, code that causes React state updates should be wrapped into act(...):\r\n\r\nact(() =\u003E {\r\n  /* fire events that update state */\r\n});\r\n/* assert on the output */\r\n\r\nThis ensures that you\u0027re testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act\r\n    at AuthProvider (C:\\Users\\wingz\\Documents\\e-commerce-ai\\src\\contexts\\AuthProvider.tsx:11:25)\r\nWarning: An update to AuthProvider inside a test was not wrapped in act(...).\r\n\r\nWhen testing, code that causes React state updates should be wrapped into act(...):\r\n\r\nact(() =\u003E {\r\n  /* fire events that update state */\r\n});\r\n/* assert on the output */\r\n\r\nThis ensures that you\u0027re testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act\r\n    at AuthProvider (C:\\Users\\wingz\\Documents\\e-commerce-ai\\src\\contexts\\AuthProvider.tsx:11:25)\r\n\r\n\u001B[90mstderr\u001B[2m | tests/unit/contexts/AuthProvider.test.tsx\u001B[2m \u003E \u001B[22m\u001B[2mAuthProvider\u001B[2m \u003E \u001B[22m\u001B[2msignIn sets user and role from profile\r\n\u001B[22m\u001B[39mWarni\n\u2026[truncated]",
+        "durationMs": 314375,
+        "testResults": {
+          "testFramework": "vitest",
+          "runnerDetectedFrom": "package_json",
+          "testsTotal": 425,
+          "testsPassed": 424,
+          "testsFailed": 1,
+          "testsSkipped": 0,
+          "parseFailed": false
+        }
+      },
+      {
+        "name": "production-build",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "npm notice run e-commerce@0.1.0 build\r\nnpm notice run tsc --noEmit -p tsconfig.app.json \u0026\u0026 vite build\r\n\u001B[33m(!) Your Vite config uses features that are unsupported by \u0060configLoader: \u0027native\u0027\u0060, which is planned to become the default in a future major version of Vite:\r\n  - \u0060__dirname\u0060 (vite.config.ts:18:20). Use \u0060import.meta.dirname\u0060 instead\r\nSet \u0060VITE_CONFIG_NATIVE_IGNORE_WARNING=true\u0060 to suppress this warning.\u001B[39m\r\n\u001B[36mvite v8.3.4 \u001B[32mbuilding client environment for production...\u001B[36m\u001B[39m\r\ntransforming...\r\n\u2713 133 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                                   1.12 kB \u2502 gzip:   0.51 kB\r\ndist/assets/index-D6keIoMe.css                   75.07 kB \u2502 gzip:  12.47 kB\r\ndist/assets/domain-CKfFujlI.js                    0.06 kB \u2502 gzip:   0.07 kB\r\ndist/assets/order-CFHxXZnm.js                     0.20 kB \u2502 gzip:   0.15 kB\r\ndist/assets/productImage-DAmJ0MU7.js              0.21 kB \u2502 gzip:   0.15 kB\r\ndist/assets/Price-D4Fik4d6.js                     0.31 kB \u2502 gzip:   0.23 kB\r\ndist/assets/orderAttachmentService-BQNzGXrh.js    0.36 kB \u2502 gzip:   0.29 kB\r\ndist/assets/Skeleton-Ba2zXXLv.js                  0.43 kB \u2502 gzip:   0.30 kB\r\ndist/assets/ErrorState-CO4DBZal.js                0.51 kB \u2502 gzip:   0.33 kB\r\ndist/assets/export-D7JZ6565.js                    0.51 kB \u2502 gzip:   0.34 kB\r\ndist/assets/NotFoundPage-Cvzba0Dz.js              0.59 kB \u2502 gzip:   0.36 kB\r\ndist/assets/UnauthorizedPage-CQ8NXgMu.js          0.69 kB \u2502 gzip:   0.39 kB\r\ndist/assets/Card-CXUdOakY.js                      0.70 kB \u2502 gzip:   0.36 kB\r\ndist/assets/rolldown-runtime-hePW80VL.js          0.71 kB \u2502 gzip:   0.42 kB\r\ndist/assets/Badge-DYv-sc0h.js                     0.79 kB \u2502 gzip:   0.43 kB\r\ndist/assets/Alert-CBmRyeWC.js                     0.86 kB \u2502 gzip:   0.41 kB\r\ndist/assets/dashboardService-gOa2xini.js          0.86 kB \u2502 gzip:   0.48 kB\r\ndist/assets/Textarea-rNkMIEvO.js                  1.02 kB \u2502 gzip:   0.55 kB\r\ndist/assets/Select-ylKlrt3N.js                    1.19 kB \u2502 gzip:   0.62 kB\r\ndist/assets/Input-CkZuq5-8.js                     1.34 kB \u2502 gzip:   0.67 kB\r\ndist/assets/checkoutService-BqnVgsxd.js           1.40 kB \u2502 gzip:   0.80 kB\r\ndist/assets/uploadService-Bs_8xfFg.js             1.45 kB \u2502 gzip:   0.84 kB\r\ndist/assets/Button-CkESFCI8.js                    1.71 kB \u2502 gzip:   0.85 kB\r\ndist/assets/productsService-C32BQvCh.js           1.92 kB \u2502 gzip:   0.76 kB\r\ndist/assets/SettingsPage-BwQOteLT.js              2.01 kB \u2502 gzip:   0.96 kB\r\ndist/assets/OrderStatusBadge-BxFRcwOn.js          2.17 kB \u2502 gzip:   0.74 kB\r\ndist/assets/config-Bn0uhl98.js                    2.36 kB \u2502 gzip:   1.15 kB\r\ndist/assets/CategoryFormPage-CMWNmIqf.js          2.57 kB \u2502 gzip:   1.21 kB\r\ndist/assets/Modal-Bj1ZcHTr.js                     2.60 kB \u2502 gzip:   1.25 kB\r\ndist/assets/RegisterPage-DJTThbl8.js              2.84 kB \u2502 gzip:   1.27 kB\r\ndist/assets/UploadsPage-TLYWvOWp.js               2.93 kB \u2502 gzip:   1.05 kB\r\ndist/assets/CategoriesPage-BEpxAHuL.js            3.06 kB \u2502 gzip:   1.20 kB\r\ndist/assets/ordersService-C-1Iuo9D.js             3.16 kB \u2502 gzip:   1.23 kB\r\ndist/assets/LoginPage-Dze4bk0y.js                 3.19 kB \u2502 gzip:   1.53 kB\r\ndist/assets/AuditLogPage-tongiU2p.js              3.30 kB \u2502 gzip:   1.16 kB\r\ndist/assets/OrdersPage-D-A4w9JD.js                3.79 kB \u2502 gzip:   1.66 kB\r\ndist/assets/UserFormPage-Dpg3N8l7.js              3.90 kB \u2502 gzip:   1.51 kB\r\ndist/assets/ProductDetailPage-Dap1-yae.js         4.25 kB \u2502 gzip:   1.78 kB\r\ndist/assets/OrderConfirmationPage-DHxoE6QT.js     4.26 kB \u2502 gzip:   1.62 kB\r\ndist/assets/AnalyticsPage-BUQyCwnf.js             4.36 kB \u2502 gzip:   1.21 kB\r\ndist/assets/UsersPage-DNX5dFnh.js                 4.42 kB \u2502 gzip:   1.64 kB\r\ndist/assets/firestore-CQTcTHjK.js                 4.69 kB \u2502 gzip:   1.56 kB\r\ndist/assets/HomePage-BAJZq65m.js                  4.75 kB \u2502 gzip:   1.70 kB\r\ndist/assets/DashboardPage-CIpSWKMj.js             5.14 kB \u2502 gzip:   1.67 kB\r\ndist/assets/CartPage-BbEwU4rm.js                  5.92 kB \u2502 gzip:   2.03 kB\r\ndist/assets/ProductFormPage-Ch6G6uyd.js   \n\u2026[truncated]",
+        "durationMs": 47798
+      },
+      {
+        "name": "api-typecheck",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "npm notice run e-commerce@0.1.0 typecheck:api\r\nnpm notice run tsc --noEmit -p tsconfig.api.json\r\n",
+        "durationMs": 30547
+      },
+      {
+        "name": "spa-home-responds",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 200\n\u003C!doctype html\u003E\r\n\u003Chtml lang=\u0022es\u0022\u003E\r\n  \u003Chead\u003E\n    \u003Cscript type=\u0022module\u0022\u003Eimport { injectIntoGlobalHook } from \u0022/@react-refresh\u0022;\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () =\u003E {};\nwindow.$RefreshSig$ = () =\u003E (type) =\u003E type;\u003C/script\u003E\n\n    \u003Cscript type=\u0022module\u0022 src=\u0022/@vite/client\u0022\u003E\u003C/script\u003E\n\r\n    \u003Cmeta charset=\u0022UTF-8\u0022 /\u003E\r\n    \u003Clink rel=\u0022icon\u0022 href=\u0022/favicon.svg\u0022 type=\u0022image/svg\u002Bxml\u0022 /\u003E\r\n    \u003Cmeta name=\u0022viewport\u0022 content=\u0022width=device-width, initial-scale=1.0\u0022 /\u003E\r\n    \u003Cmeta name=\u0022theme-color\u0022 content=\u0022#05060d\u0022 /\u003E\r\n    \u003Cmeta name=\u0022description\u0022 content=\u0022ECOMMERCE AI \u2014 videojuegos, figuras de acci\u00F3n y zapatillas.\u0022 /\u003E\r\n    \u003Cmeta name=\u0022color-scheme\u0022 content=\u0022dark\u0022 /\u003E\r\n    \u003Ctitle\u003EECOMMERCE AI | Gaming \u00B7 Collectibles \u00B7 Sneakers\u003C/title\u003E\r\n  \u003C/head\u003E\r\n  \u003Cbody\u003E\r\n    \u003Cdiv id=\u0022root\u0022\u003E\u003C/div\u003E\r\n    \u003Cscript type=\u0022module\u0022 src=\u0022/src/main.tsx\u0022\u003E\u003C/script\u003E\r\n  \u003C/body\u003E\r\n\u003C/html\u003E\r\n\n--- server output ---\nnpm notice run e-commerce@0.1.0 dev\r\nnpm notice run vite --host 127.0.0.1\r\n\u001B[33m(!) Your Vite config uses features that are unsupported by \u0060configLoader: \u0027native\u0027\u0060, which is planned to become the default in a future major version of Vite:\r\n  - \u0060__dirname\u0060 (vite.config.ts:18:20). Use \u0060import.meta.dirname\u0060 instead\r\nSet \u0060VITE_CONFIG_NATIVE_IGNORE_WARNING=true\u0060 to suppress this warning.\u001B[39m\r\n[vite:react-swc] We recommend switching to \u0060@vitejs/plugin-react\u0060 for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown\r\n\r\n  \u001B[32m\u001B[1mVITE\u001B[22m v8.3.4\u001B[39m  \u001B[2mready in \u001B[0m\u001B[1m2491\u001B[22m\u001B[2m\u001B[0m ms\u001B[22m\r\n\r\n  \u001B[32m\u279C\u001B[39m  \u001B[1mLocal\u001B[22m:   \u001B[36mhttp://127.0.0.1:\u001B[1m5173\u001B[22m/\u001B[39m\r\n",
+        "durationMs": 5499
+      }
+    ],
+    "executions": [
+      {
+        "source": "setup[0]",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "ci"
+        ],
+        "cwd": "C:\\Users\\wingz\\Documents\\e-commerce-ai",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "lint-pass",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "C:\\Users\\wingz\\Documents\\e-commerce-ai",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "tests-pass",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "test",
+          "--",
+          "--run"
+        ],
+        "cwd": "C:\\Users\\wingz\\Documents\\e-commerce-ai",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "production-build",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "C:\\Users\\wingz\\Documents\\e-commerce-ai",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "api-typecheck",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "typecheck:api"
+        ],
+        "cwd": "C:\\Users\\wingz\\Documents\\e-commerce-ai",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "spa-home-responds",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "dev",
+          "--",
+          "--host",
+          "127.0.0.1"
+        ],
+        "cwd": "C:\\Users\\wingz\\Documents\\e-commerce-ai",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}

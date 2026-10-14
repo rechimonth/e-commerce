@@ -22,7 +22,12 @@ export interface CheckoutResult {
 }
 
 export const checkoutService = {
-  async processCheckout(data: CheckoutData, cartState: CartState, userId: string): Promise<Order> {
+  async processCheckout(
+    data: CheckoutData,
+    cartState: CartState,
+    userId: string,
+    targetUserId?: string,
+  ): Promise<Order> {
     return firebaseTryCatch(async () => {
       if (!userId) throw new Error('Usuario no autenticado');
       if (cartState.items.length === 0) throw new Error('El carrito está vacío');
@@ -44,6 +49,7 @@ export const checkoutService = {
           },
           body: JSON.stringify({
             items: cartState.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+            ...(targetUserId && targetUserId !== userId ? { targetUserId } : {}),
             shippingAddress: data.shippingAddress,
             billingAddress: data.billingAddress,
             paymentMethod: data.paymentMethod,

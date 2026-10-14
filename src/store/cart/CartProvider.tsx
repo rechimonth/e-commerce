@@ -7,33 +7,35 @@
  *
  * NO usa React Context directamente en consumidores — ellos usan useCart().
  */
-import { useReducer, useEffect, useMemo, useCallback } from 'react';
+import { useReducer, useEffect, useMemo, useCallback, useContext } from 'react';
 import { cartReducer, createInitialCartState } from '@/utils/cart/cartUtils';
 import {
   loadCartFromStorage,
   saveCartToStorage,
   clearCartFromStorage,
+  getCartStorageKey,
 } from '@/store/cart/persistence';
 import { CartContext } from '@/store/cart/CartContext';
+import { AuthContext } from '@/contexts/AuthContext';
 import type { CartState } from '@/types/cart';
 import type { Product } from '@/types/domain';
 import type { ReactNode } from 'react';
 
-function initCartState(): CartState {
-  const restored = loadCartFromStorage();
+function initCartState(storageKey: string): CartState {
+  const restored = loadCartFromStorage(storageKey);
   return restored ?? createInitialCartState();
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, undefined, initCartState);
+function CartStateProvider({ children, storageKey }: { children: ReactNode; storageKey: string }) {
+  const [state, dispatch] = useReducer(cartReducer, storageKey, initCartState);
 
   useEffect(() => {
     if (state.items.length > 0) {
-      saveCartToStorage(state);
+      saveCartToStorage(state, storageKey);
     } else {
-      clearCartFromStorage();
+      clearCartFromStorage(storageKey);
     }
-  }, [state]);
+  }, [state, storageKey]);
 
   const addItem = useCallback((product: Product, quantity: number = 1) => {
     dispatch({ type: 'ADD_ITEM', product, quantity });
@@ -65,4 +67,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state.items, state.totalItems, state.totalPrice, state.discount, addItem, removeItem, updateQuantity, clearCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const auth = useContext(AuthContext);
+  const storageKey = getCartStorageKey(auth?.user?.uid);
+  return (
+    <CartStateProvider key={storageKey} storageKey={storageKey}>
+      {children}
+    </CartStateProvider>
+  );
 }

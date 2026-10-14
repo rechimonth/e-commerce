@@ -18,6 +18,16 @@ class FirebaseConfigurationError extends Error {
   }
 }
 
+class CheckoutRequestError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'CheckoutRequestError';
+  }
+}
+
 function normalizePrivateKey(value: string): string {
   let key = value.trim();
 
@@ -155,9 +165,11 @@ function jsonError(res: VercelResponse, status: number, error: string) {
 function validAddress(value: unknown): value is Record<string, string> {
   if (!value || typeof value !== 'object') return false;
   const address = value as Record<string, unknown>;
-  return ['street', 'city', 'state', 'zipCode', 'country'].every(
-    (key) => typeof address[key] === 'string' && address[key].trim().length > 0,
-  );
+  const allowedKeys = ['street', 'city', 'state', 'zipCode', 'country'];
+  return Object.keys(address).every((key) => allowedKeys.includes(key))
+    && allowedKeys.every((key) => typeof address[key] === 'string'
+      && address[key].trim().length > 0
+      && address[key].length <= 200);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -173,22 +185,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const decoded = await verifyFirebaseIdToken(token);
     const body = req.body as Record<string, unknown> | undefined;
     if (!body || !Array.isArray(body.items) || body.items.length === 0) return jsonError(res, 400, 'El carrito está vacío');
+    if (body.items.length > 100) return jsonError(res, 400, 'El pedido supera el máximo de productos permitido');
     if (!validAddress(body.shippingAddress) || !validAddress(body.billingAddress)) return jsonError(res, 400, 'La dirección de envío no es válida');
     if (typeof body.paymentMethod !== 'string' || !PAYMENT_METHODS.has(body.paymentMethod)) return jsonError(res, 400, 'Método de pago no válido');
-    if (body.notes !== undefined && typeof body.notes !== 'string') return jsonError(res, 400, 'Las notas no son válidas');
+    if (body.notes !== undefined && (typeof body.notes !== 'string' || body.notes.length > 1000)) return jsonError(res, 400, 'Las notas no son válidas');
+
+    const firestore = getFirestore(app);
+    let orderUserId = decoded.uid;
+    if (body.targetUserId !== undefined) {
+      if (typeof body.targetUserId !== 'string' || !body.targetUserId.trim() || body.targetUserId.length > 128) {
+        return jsonError(res, 400, 'El usuario destino no es válido');
+      }
+      if (body.targetUserId !== decoded.uid) {
+        const [callerProfile, targetProfile] = await Promise.all([
+          firestore.collection('users').doc(decoded.uid).get(),
+          firestore.collection('users').doc(body.targetUserId).get(),
+        ]);
+        if (!callerProfile.exists || callerProfile.data()?.role !== 'admin') {
+          return jsonError(res, 403, 'Solo un administrador puede crear una orden para otro usuario');
+        }
+        if (!targetProfile.exists || targetProfile.data()?.role !== 'customer') {
+          return jsonError(res, 404, 'No se encontró el cliente seleccionado');
+        }
+        orderUserId = body.targetUserId;
+      }
+    }
 
     const requestedItems = body.items as unknown[];
     const parsedItems = requestedItems.map((entry) => {
-      if (!entry || typeof entry !== 'object') throw new Error('ITEM_INVALID');
+      if (!entry || typeof entry !== 'object') throw new CheckoutRequestError(400, 'Un producto del carrito no es válido');
       const item = entry as Record<string, unknown>;
       if (
         typeof item.productId !== 'string' ||
         !item.productId.trim() ||
+        item.productId.length > 128 ||
         typeof item.quantity !== 'number' ||
-        !Number.isInteger(item.quantity) ||
-        item.quantity < 1
+        !Number.isSafeInteger(item.quantity) ||
+        item.quantity < 1 ||
+        item.quantity > 1000
       ) {
-        throw new Error('ITEM_INVALID');
+        throw new CheckoutRequestError(400, 'Un producto del carrito no es válido');
       }
       return { productId: item.productId, quantity: item.quantity };
     });
@@ -196,7 +232,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const uniqueIds = new Set(parsedItems.map((item) => item.productId));
     if (uniqueIds.size !== parsedItems.length) return jsonError(res, 400, 'Hay productos duplicados en el pedido');
 
-    const firestore = getFirestore(app);
     const orderRef = firestore.collection('orders').doc();
     const now = Date.now();
 
@@ -208,27 +243,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const orderItems: Array<Record<string, unknown>> = [];
 
       snapshots.forEach((snapshot, index) => {
-        if (!snapshot.exists) throw new Error('PRODUCT_NOT_FOUND');
+        if (!snapshot.exists) throw new CheckoutRequestError(404, 'Uno de los productos ya no está disponible');
         const data = snapshot.data() ?? {};
         const requested = parsedItems[index]!;
         const priceCents = data.priceCents ?? data.price_cents;
         const stock = data.stock;
         const name = data.name;
         const imageUrl = data.imageUrl ?? data.image_url ?? '';
-        if (typeof priceCents !== 'number' || !Number.isInteger(priceCents) || priceCents < 0) throw new Error('PRODUCT_INVALID');
-        if (typeof stock !== 'number' || !Number.isInteger(stock) || stock < requested.quantity) throw new Error(`STOCK:${String(name ?? requested.productId)}`);
+        if (data.isActive !== true) throw new CheckoutRequestError(409, 'Uno de los productos ya no está disponible');
+        if (typeof priceCents !== 'number' || !Number.isSafeInteger(priceCents) || priceCents < 0) throw new Error('PRODUCT_INVALID');
+        if (typeof stock !== 'number' || !Number.isSafeInteger(stock) || stock < requested.quantity) {
+          throw new CheckoutRequestError(409, `No hay stock suficiente para ${String(name ?? requested.productId)}`);
+        }
         if (typeof name !== 'string') throw new Error('PRODUCT_INVALID');
         const productCurrency = typeof data.currency === 'string' ? data.currency : 'USD';
-        if (index === 0) currency = productCurrency;
-        if (productCurrency !== currency) throw new Error('CURRENCY_MISMATCH');
-        subtotalCents += priceCents * requested.quantity;
+        if (index === 0) {
+          if (!['USD', 'MXN', 'EUR', 'GBP', 'CAD'].includes(productCurrency)) throw new Error('PRODUCT_INVALID');
+          currency = productCurrency;
+        }
+        if (productCurrency !== currency) throw new CheckoutRequestError(409, 'Los productos tienen monedas diferentes');
+        const lineTotalCents = priceCents * requested.quantity;
+        if (!Number.isSafeInteger(lineTotalCents) || !Number.isSafeInteger(subtotalCents + lineTotalCents)) {
+          throw new Error('PRODUCT_INVALID');
+        }
+        subtotalCents += lineTotalCents;
         orderItems.push({ productId: requested.productId, name, priceCents, quantity: requested.quantity, imageUrl: typeof imageUrl === 'string' ? imageUrl : '', orderId: orderRef.id });
         transaction.update(productRefs[index]!, { stock: stock - requested.quantity, updatedAt: FieldValue.serverTimestamp() });
       });
 
       transaction.set(orderRef, {
         id: orderRef.id,
-        userId: decoded.uid,
+        userId: orderUserId,
         items: orderItems,
         subtotalCents,
         taxCents: 0,
@@ -250,6 +295,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, orderId: orderRef.id });
   } catch (error) {
     if (error instanceof UnauthorizedCheckoutError) return jsonError(res, 401, error.message);
+    if (error instanceof CheckoutRequestError) return jsonError(res, error.status, error.message);
     if (error instanceof FirebaseConfigurationError) {
       console.error('Checkout Firebase configuration error:', error.message);
       return jsonError(res, 500, 'La configuración de Firebase del servidor está incompleta.');

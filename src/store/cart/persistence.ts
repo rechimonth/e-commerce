@@ -15,6 +15,10 @@ import { calculateTotal, calculateTotalItems, createInitialCartState } from '@/u
 export const CART_STORAGE_KEY = 'ecommerce-cart';
 export const CART_FORMAT_VERSION = 1;
 
+export function getCartStorageKey(userId?: string | null): string {
+  return userId ? `${CART_STORAGE_KEY}:${userId}` : CART_STORAGE_KEY;
+}
+
 interface SerializedMoney {
   amount: number;
   currency: string;
@@ -87,7 +91,7 @@ function isCartItem(obj: unknown): obj is CartItem {
   );
 }
 
-export function saveCartToStorage(state: CartState): void {
+export function saveCartToStorage(state: CartState, storageKey = CART_STORAGE_KEY): void {
   if (!isAvailable()) return;
 
   const serialized: SerializedCartState = {
@@ -102,23 +106,23 @@ export function saveCartToStorage(state: CartState): void {
   };
 
   try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(serialized));
+    localStorage.setItem(storageKey, JSON.stringify(serialized));
   } catch {
     // QuotaExceededError u otros errores de localStorage — silenciosos
   }
 }
 
-export function loadCartFromStorage(): CartState | null {
+export function loadCartFromStorage(storageKey = CART_STORAGE_KEY): CartState | null {
   if (!isAvailable()) return null;
 
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return null;
 
     const data = JSON.parse(raw) as unknown;
 
     if (typeof data !== 'object' || data === null) {
-      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
       return null;
     }
 
@@ -126,13 +130,13 @@ export function loadCartFromStorage(): CartState | null {
 
     if (obj.version !== CART_FORMAT_VERSION) {
       // Versión desconocida/futura: descartar para evitar datos inválidos
-      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
       return null;
     }
 
     const stateData = obj.state;
     if (typeof stateData !== 'object' || stateData === null) {
-      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
       return null;
     }
 
@@ -145,7 +149,7 @@ export function loadCartFromStorage(): CartState | null {
       !isMoney(s.totalPrice) ||
       typeof s.lastUpdated !== 'string'
     ) {
-      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
       return null;
     }
 
@@ -171,9 +175,9 @@ export function loadCartFromStorage(): CartState | null {
   }
 }
 
-export function clearCartFromStorage(): void {
+export function clearCartFromStorage(storageKey = CART_STORAGE_KEY): void {
   if (!isAvailable()) return;
-  localStorage.removeItem(CART_STORAGE_KEY);
+  localStorage.removeItem(storageKey);
 }
 
 export function createInitialCartStateSafe(): CartState {

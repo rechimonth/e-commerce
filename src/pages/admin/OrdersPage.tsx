@@ -252,7 +252,7 @@ export function AdminOrdersPage() {
     setUpdatingOrderId(orderId);
     try {
       if (!user) throw new Error('Usuario administrador no autenticado');
-      const updated = await ordersService.updateOrderStatus(orderId, newStatus, user.uid);
+      const updated = await ordersService.updateOrderStatus(orderId, newStatus);
       if (updated) {
         setOrders((prev) =>
           prev ? prev.map((o) => (o.id === orderId ? updated : o)) : prev,
@@ -298,7 +298,7 @@ export function AdminOrdersPage() {
     if (selectedOrderIds.size === 0 || !user) return;
     setIsBulkProcessing(true);
     try {
-      await Promise.all([...selectedOrderIds].map((id) => ordersService.updateOrderStatus(id, 'completed', user.uid)));
+      await Promise.all([...selectedOrderIds].map((id) => ordersService.updateOrderStatus(id, 'completed')));
       setSelectedOrderIds(new Set());
       void fetchOrders();
     } catch (e) {

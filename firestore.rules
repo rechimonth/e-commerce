@@ -10,49 +10,57 @@ service cloud.firestore {
     function isAdmin() { return getUserRole() == 'admin'; }
     function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
     function isOrderOwner() { return isSignedIn() && resource.data.userId == request.auth.uid; }
-    function pricesValid() {
-      return request.resource.data.subtotalCents is int && request.resource.data.subtotalCents >= 0
-        && request.resource.data.taxCents is int && request.resource.data.taxCents >= 0
-        && request.resource.data.shippingCents is int && request.resource.data.shippingCents >= 0
-        && request.resource.data.discountCents is int && request.resource.data.discountCents >= 0
-        && request.resource.data.totalCents is int && request.resource.data.totalCents >= 0;
+    function validProduct(data) {
+      return data.keys().hasOnly([
+          'id', 'name', 'nameLower', 'description', 'priceCents', 'currency', 'category', 'imageKey', 'imageUrl',
+          'images', 'stock', 'rating', 'reviewCount', 'isActive', 'createdAt', 'updatedAt', 'createdBy',
+        ])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 160
+        && data.description is string && data.description.size() <= 5000
+        && data.priceCents is int && data.priceCents >= 0 && data.priceCents <= 100000000
+        && data.currency in ['USD', 'MXN', 'EUR', 'GBP', 'CAD']
+        && data.category in ['action-figures', 'video-games', 'shoes']
+        && data.imageKey is string && data.imageKey.size() <= 2048
+        && data.imageUrl is string && data.imageUrl.size() <= 4096
+        && (!('nameLower' in data.keys()) || (data.nameLower is string && data.nameLower.size() <= 160))
+        && (!('images' in data.keys()) || (data.images is list && data.images.size() <= 10))
+        && data.stock is int && data.stock >= 0 && data.stock <= 1000000
+        && data.rating is number && data.rating >= 0 && data.rating <= 5
+        && data.reviewCount is int && data.reviewCount >= 0
+        && data.isActive is bool
+        && data.createdBy is string && data.createdBy.size() > 0
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
     }
-    function itemsValid() {
-      return request.resource.data.items is list
-        && request.resource.data.items.size() >= 1
-        && request.resource.data.items[0].productId is string
-        && request.resource.data.items[0].name is string
-        && request.resource.data.items[0].priceCents is int
-        && request.resource.data.items[0].priceCents >= 0
-        && request.resource.data.items[0].quantity is int
-        && request.resource.data.items[0].quantity >= 1
-        && request.resource.data.items[0].imageUrl is string
-        && request.resource.data.items[0].orderId is string;
+    function orderCoreUnchanged() {
+      return request.resource.data.id == resource.data.id
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.items == resource.data.items
+        && request.resource.data.subtotalCents == resource.data.subtotalCents
+        && request.resource.data.taxCents == resource.data.taxCents
+        && request.resource.data.shippingCents == resource.data.shippingCents
+        && request.resource.data.discountCents == resource.data.discountCents
+        && request.resource.data.totalCents == resource.data.totalCents
+        && request.resource.data.currency == resource.data.currency
+        && request.resource.data.shippingAddress == resource.data.shippingAddress
+        && request.resource.data.billingAddress == resource.data.billingAddress
+        && request.resource.data.paymentMethod == resource.data.paymentMethod
+        && request.resource.data.createdAt == resource.data.createdAt;
     }
-    function orderAllowedFields() {
-      return request.resource.data.keys().hasOnly([
-        'id', 'userId', 'items', 'subtotalCents', 'taxCents', 'shippingCents', 'discountCents', 'totalCents', 'currency',
-        'status', 'statusHistory', 'createdAt', 'updatedAt', 'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
-      ]);
+    function adminOrderUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'trackingNumber', 'carrier', 'estimatedDelivery', 'attachments', 'updatedAt',
+        ])
+        && orderCoreUnchanged()
+        && request.resource.data.updatedAt == request.time
+        && (!('trackingNumber' in request.resource.data.keys()) || request.resource.data.trackingNumber is string)
+        && (!('carrier' in request.resource.data.keys()) || request.resource.data.carrier is string)
+        && (!('estimatedDelivery' in request.resource.data.keys()) || request.resource.data.estimatedDelivery is int)
+        && (!('attachments' in request.resource.data.keys()) || (request.resource.data.attachments is list && request.resource.data.attachments.size() <= 50));
     }
-    function orderCustomerUpdatableFields() {
-      return request.resource.data.keys().hasOnly([
-        'id', 'userId', 'items', 'subtotalCents', 'taxCents', 'shippingCents', 'discountCents', 'totalCents', 'currency',
-        'status', 'statusHistory', 'createdAt', 'updatedAt', 'notes', 'shippingAddress', 'billingAddress', 'paymentMethod',
-      ])
-      && request.resource.data.userId == resource.data.userId
-      && request.resource.data.status == resource.data.status
-      && request.resource.data.items == resource.data.items
-      && request.resource.data.subtotalCents == resource.data.subtotalCents
-      && request.resource.data.taxCents == resource.data.taxCents
-      && request.resource.data.shippingCents == resource.data.shippingCents
-      && request.resource.data.discountCents == resource.data.discountCents
-      && request.resource.data.totalCents == resource.data.totalCents
-      && request.resource.data.currency == resource.data.currency
-      && request.resource.data.statusHistory == resource.data.statusHistory
-      && request.resource.data.shippingAddress == resource.data.shippingAddress
-      && request.resource.data.billingAddress == resource.data.billingAddress
-      && request.resource.data.createdAt == resource.data.createdAt;
+    function customerOrderUpdate() {
+      return isOrderOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes'])
+        && (!('notes' in request.resource.data.keys()) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 1000));
     }
     function userAllowedFields() {
       return request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'role', 'createdAt', 'lastLoginAt', 'preferences']);
@@ -64,25 +72,28 @@ service cloud.firestore {
       allow create: if isOwner(uid) && !exists(/databases/$(database)/documents/users/$(uid)) && userAllowedFields()
         && request.resource.data.uid == uid && request.resource.data.role == 'customer';
       allow update: if (isAdmin() && userAllowedFields() && request.resource.data.uid == uid && request.resource.data.createdAt == resource.data.createdAt)
-        || (isOwner(uid) && request.resource.data.keys().hasOnly(['email', 'displayName', 'photoURL', 'lastLoginAt', 'preferences'])
+        || (isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'displayName', 'photoURL', 'lastLoginAt', 'preferences'])
         && request.resource.data.uid == uid && request.resource.data.role == resource.data.role && request.resource.data.createdAt == resource.data.createdAt);
       allow delete: if false;
     }
 
     match /products/{productId} {
-      allow list, get: if true;
-      allow create, update, delete: if isAdmin();
+      allow list, get: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && validProduct(request.resource.data);
+      allow update: if isAdmin() && validProduct(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdBy == resource.data.createdBy
+        && (!('id' in resource.data.keys()) || request.resource.data.id == resource.data.id);
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
       allow get: if isAdmin() || isOrderOwner();
       allow list: if isAdmin() || isOrderOwner();
-      // Customer checkout is performed by /api/checkout using Firebase Admin.
-      // This prevents client-controlled prices and stock writes from reaching Firestore directly.
-      allow create: if isAdmin() && orderAllowedFields()
-        && request.resource.data.id == orderId
-        && request.resource.data.status == 'pending';
-      allow update: if (isAdmin() && orderAllowedFields()) || (isOrderOwner() && orderCustomerUpdatableFields());
+      // All order creation, including admin-created orders, goes through the
+      // server transaction that revalidates prices and adjusts stock.
+      allow create: if false;
+      allow update: if isAdmin() && adminOrderUpdate() || customerOrderUpdate();
       allow delete: if isAdmin();
     }
 

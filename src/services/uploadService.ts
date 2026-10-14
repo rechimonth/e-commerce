@@ -15,22 +15,24 @@ export interface UploadFileResult {
 export interface UploadFileParams {
   readonly file: File;
   readonly prefix?: string;
+  readonly orderId?: string;
 }
 
 export const uploadService = {
-  async uploadFile({ file, prefix = 'products' }: UploadFileParams): Promise<UploadFileResult> {
+  async uploadFile({ file, prefix = 'products', orderId }: UploadFileParams): Promise<UploadFileResult> {
     // Validaciones locales rápidas antes de tocar la red
     const maxSize = 5 * 1024 * 1024; // 5 MB
-    if (file.size > maxSize) {
+    if (file.size <= 0 || file.size > maxSize) {
       throw new Error(`File too large. Max size is ${maxSize / (1024 * 1024)} MB`);
     }
 
-    const allowedTypes = new Set([
+    const imageTypes = new Set([
       'image/jpeg',
       'image/png',
       'image/webp',
       'image/gif',
     ]);
+    const allowedTypes = prefix === 'orders' ? new Set([...imageTypes, 'application/pdf']) : imageTypes;
     if (!allowedTypes.has(file.type)) {
       throw new Error('Invalid file type. Allowed: jpeg, png, webp, gif');
     }
@@ -51,25 +53,32 @@ export const uploadService = {
         fileType: file.type,
         fileSize: file.size,
         prefix,
+        ...(orderId ? { orderId } : {}),
       }),
     });
 
-    const result = await response.json();
+    const result = (await response.json()) as {
+      success?: boolean;
+      error?: string;
+      data?: {
+        uploadUrl?: string;
+        fields?: Record<string, string>;
+        key?: string;
+        publicUrl?: string;
+      };
+    };
 
-    if (!response.ok || !result.success) {
+    if (!response.ok || !result.success || !result.data?.uploadUrl || !result.data.key) {
       throw new Error(result.error || 'Failed to get upload URL');
     }
 
-    const { uploadUrl, key, publicUrl } = result.data;
+    const { uploadUrl, fields = {}, key, publicUrl = '' } = result.data;
 
-    // Subir archivo directamente a S3
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': file.type,
-      },
-      body: file,
-    });
+    const formData = new FormData();
+    for (const [field, value] of Object.entries(fields)) formData.append(field, value);
+    formData.append('file', file);
+
+    const uploadResponse = await fetch(uploadUrl, { method: 'POST', body: formData });
 
     if (!uploadResponse.ok) {
       throw new Error('Failed to upload file to S3');

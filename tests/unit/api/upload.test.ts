@@ -6,13 +6,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-vi.mock('@aws-sdk/client-s3', () => {
-  const mockSend = vi.fn();
-  const MockS3Client = vi.fn(function MockS3Client() { return { send: mockSend }; });
-  return { S3Client: MockS3Client, PutObjectCommand: vi.fn() };
-});
+vi.mock('@aws-sdk/client-s3', () => ({ S3Client: vi.fn(function S3Client() { return {}; }) }));
 
-vi.mock('@aws-sdk/s3-request-presigner', () => ({ getSignedUrl: vi.fn() }));
+vi.mock('@aws-sdk/s3-presigned-post', () => ({
+  createPresignedPost: vi.fn().mockResolvedValue({
+    url: 'https://test-bucket.s3.us-east-1.amazonaws.com',
+    fields: { key: 'products/test-key.jpg', Policy: 'signed-policy' },
+  }),
+}));
 
 vi.mock('firebase-admin/app', () => ({
   getApps: vi.fn(() => [{ name: 'test-app' }]),
@@ -111,6 +112,13 @@ describe('POST /api/upload', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it('requires extension and content type to match', async () => {
+    const handler = (await import('../../../api/upload')).default;
+    const res = createResponse();
+    await handler(createRequest({ fileName: 'test.jpg', fileType: 'image/png', fileSize: 1024 }), res);
+    expect(res.statusCode).toBe(400);
+  });
+
   it('returns 400 when file is too large', async () => {
     const handler = (await import('../../../api/upload')).default;
     const res = createResponse();
@@ -127,17 +135,59 @@ describe('POST /api/upload', () => {
     expect(res.statusCode).toBe(500);
   });
 
-  it('returns 200 with presigned URL on success', async () => {
-    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
-    vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url' as unknown as never);
+  it('returns a presigned POST with an enforced size and content type policy', async () => {
+    const { createPresignedPost } = await import('@aws-sdk/s3-presigned-post');
     const handler = (await import('../../../api/upload')).default;
     const res = createResponse();
     await handler(createRequest({ fileName: 'photo.jpg', fileType: 'image/jpeg', fileSize: 1024 }), res);
     expect(res.statusCode).toBe(200);
-    const payload = res.jsonPayload as { success: boolean; data: { uploadUrl: string; key: string; publicUrl: string } };
+    const payload = res.jsonPayload as {
+      success: boolean;
+      data: { uploadUrl: string; fields: Record<string, string>; key: string; publicUrl: string };
+    };
     expect(payload.success).toBe(true);
-    expect(payload.data.uploadUrl).toBe('https://signed-url');
+    expect(payload.data.uploadUrl).toBe('https://test-bucket.s3.us-east-1.amazonaws.com');
     expect(payload.data.key).toMatch(/^products\/[0-9a-f-]+\.jpg$/);
+    expect(payload.data.fields.Policy).toBe('signed-policy');
     expect(payload.data.publicUrl).toContain('test-bucket');
+    expect(createPresignedPost).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        Conditions: [
+          ['content-length-range', 1, 5 * 1024 * 1024],
+          ['eq', '$Content-Type', 'image/jpeg'],
+        ],
+        Fields: { 'Content-Type': 'image/jpeg' },
+      }),
+    );
+  });
+
+  it('allows a PDF only for an order attachment', async () => {
+    const handler = (await import('../../../api/upload')).default;
+    const rejected = createResponse();
+    await handler(createRequest({ fileName: 'receipt.pdf', fileType: 'application/pdf', fileSize: 1024 }), rejected);
+    expect(rejected.statusCode).toBe(400);
+
+    const allowed = createResponse();
+    await handler(createRequest({
+      fileName: 'receipt.pdf',
+      fileType: 'application/pdf',
+      fileSize: 1024,
+      prefix: 'orders',
+      orderId: 'order-1',
+    }), allowed);
+    expect(allowed.statusCode).toBe(200);
+  });
+
+  it('rejects unknown upload prefixes', async () => {
+    const handler = (await import('../../../api/upload')).default;
+    const res = createResponse();
+    await handler(createRequest({
+      fileName: 'photo.jpg',
+      fileType: 'image/jpeg',
+      fileSize: 1024,
+      prefix: '../users',
+    }), res);
+    expect(res.statusCode).toBe(400);
   });
 });

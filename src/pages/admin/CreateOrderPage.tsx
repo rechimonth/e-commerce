@@ -179,7 +179,7 @@ export function AdminCreateOrderPage() {
         totalPrice: { amount: total, currency: 'USD' },
         lastUpdated: new Date(),
       };
-      const order = await checkoutService.processCheckout(checkoutData, cartState, user.uid);
+      const order = await checkoutService.processCheckout(checkoutData, cartState, user.uid, selectedCustomerId);
       if (!order) {
         setError('No pudimos crear la orden. Intenta nuevamente.');
         return;

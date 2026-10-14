@@ -5,13 +5,12 @@
  * Envoltura todas las llamadas en firebaseTryCatch para consistencia de errores.
  */
 import type { Order, OrderDTO, OrderStatus } from '@/types/order';
-import { canTransition } from '@/types/order';
 import { firebaseTryCatch } from '@/infrastructure/firebase/config';
 import { FirebaseInfraError } from '@/infrastructure/firebase/config';
+import { getCurrentUserIdToken } from '@/infrastructure/firebase/auth';
 import {
   getAllOrders as firestoreGetAllOrders,
   getUserOrders as firestoreGetUserOrders,
-  updateOrderStatus as firestoreUpdateOrderStatus,
   getOrder as firestoreGetOrder,
   createOrder as firestoreCreateOrder,
   updateOrderTracking as firestoreUpdateOrderTracking,
@@ -90,10 +89,28 @@ export const ordersService = {
       const dto = await firestoreGetOrder(orderId);
       if (!dto) throw new FirebaseInfraError('NOT_FOUND', 'Orden no encontrada');
       if (dto.userId !== userId) throw new FirebaseInfraError('FORBIDDEN', 'No tienes permiso para cancelar esta orden');
-      if (!canTransition(dto.status, 'cancelled')) {
+      if (dto.status !== 'pending') {
         throw new FirebaseInfraError('VALIDATION_ERROR', 'Esta orden no se puede cancelar en su estado actual');
       }
-      const updated = await firestoreUpdateOrderStatus(orderId, 'cancelled', userId);
+
+      const token = await getCurrentUserIdToken();
+      const response = await fetch('/api/cancel-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderId }),
+      });
+      const payload = (await response.json().catch(() => null)) as { success?: boolean; error?: string } | null;
+      if (!response.ok || !payload?.success) {
+        throw new FirebaseInfraError(
+          response.status === 403 ? 'FORBIDDEN' : response.status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR',
+          payload?.error ?? 'No se pudo cancelar la orden',
+        );
+      }
+
+      const updated = await firestoreGetOrder(orderId);
       if (!updated) throw new FirebaseInfraError('INTERNAL_ERROR', 'No se pudo cancelar la orden');
       return toOrder(updated);
     });
@@ -113,13 +130,25 @@ export const ordersService = {
     });
   },
 
-  async updateOrderStatus(
-    orderId: string,
-    status: OrderStatus,
-    adminUserId: string,
-  ): Promise<Order | null> {
+  async updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order | null> {
     return firebaseTryCatch(async () => {
-      const dto = await firestoreUpdateOrderStatus(orderId, status, adminUserId);
+      const token = await getCurrentUserIdToken();
+      const response = await fetch('/api/update-order-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderId, status }),
+      });
+      const payload = (await response.json().catch(() => null)) as { success?: boolean; error?: string } | null;
+      if (!response.ok || !payload?.success) {
+        throw new FirebaseInfraError(
+          response.status === 403 ? 'FORBIDDEN' : response.status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR',
+          payload?.error ?? 'No se pudo actualizar el estado de la orden',
+        );
+      }
+      const dto = await firestoreGetOrder(orderId);
       if (!dto) return null;
       return toOrder(dto);
     });

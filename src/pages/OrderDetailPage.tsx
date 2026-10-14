@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ordersService } from '@/services/ordersService';
+import { orderAttachmentService } from '@/services/orderAttachmentService';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
 import type { Order } from '@/types/order';
@@ -25,6 +26,24 @@ export function OrderDetailPage() {
   const [error, setError] = useState<ServiceError | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+
+  const handleOpenAttachment = async (orderId: string, key: string) => {
+    setAttachmentError(null);
+    const tab = window.open('about:blank', '_blank');
+    try {
+      const url = await orderAttachmentService.getDownloadUrl(orderId, key);
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = url;
+      } else {
+        window.location.assign(url);
+      }
+    } catch (e) {
+      tab?.close();
+      setAttachmentError(e instanceof Error ? e.message : 'No se pudo abrir el archivo');
+    }
+  };
 
   const handleCancel = async () => {
     if (!order || !user) return;
@@ -255,23 +274,23 @@ export function OrderDetailPage() {
               {order.attachments && order.attachments.length > 0 && (
                 <div className="rounded-lg border border-neutral-200 p-6">
                   <h2 className="mb-4 text-lg font-semibold text-neutral-900">Archivos adjuntos</h2>
+                  {attachmentError && <p role="alert" className="mb-3 text-sm text-error-700">{attachmentError}</p>}
                   <div className="space-y-2">
                     {order.attachments.map((att) => (
-                      <a
+                      <button
                         key={att.key}
-                        href={att.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-3 rounded-md border border-neutral-200 p-3 hover:bg-neutral-50"
+                        type="button"
+                        onClick={() => void handleOpenAttachment(order.id, att.key)}
+                        className="flex w-full items-center gap-3 rounded-md border border-neutral-200 p-3 text-left hover:bg-neutral-50"
                       >
-                        <img src={att.url} alt={att.name} className="h-10 w-10 rounded object-cover" />
+                        <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 bg-neutral-100 text-xs font-bold text-neutral-600">FILE</span>
                         <div>
                           <p className="text-sm font-medium text-neutral-900">{att.name}</p>
                           <p className="text-xs text-neutral-500">
                             {att.uploadedAt.toLocaleString('es-ES')}
                           </p>
                         </div>
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>

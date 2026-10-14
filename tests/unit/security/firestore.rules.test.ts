@@ -10,6 +10,7 @@
  * In CI, use:  npx firebase emulators:exec "npm run test:rules"
  */
 import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { serverTimestamp } from 'firebase/firestore';
 import type { RulesTestEnvironment, RulesTestContext } from '@firebase/rules-unit-testing';
 
 // Guard: only load the rules-testing SDK when explicitly requested.
@@ -38,7 +39,6 @@ MaybeDescribe('Firestore Security Rules', () => {
   // ─── Test data ──────────────────────────────────────────────────────────
 
   const validProduct = {
-    id: 'prod-1',
     name: 'Test Product',
     description: 'A test product',
     priceCents: 9999,
@@ -50,8 +50,8 @@ MaybeDescribe('Firestore Security Rules', () => {
     rating: 4.5,
     reviewCount: 100,
     isActive: true,
-    createdAt: { seconds: 1700000000, nanoseconds: 0 },
-    updatedAt: { seconds: 1700000000, nanoseconds: 0 },
+    createdAt: new Date(1700000000000),
+    updatedAt: new Date(1700000000000),
     createdBy: 'admin-uid',
   };
 
@@ -145,6 +145,7 @@ MaybeDescribe('Firestore Security Rules', () => {
       await adminDb.doc('users/customer-1').set(customer1Profile);
       await adminDb.doc('users/admin-1').set(adminProfile);
       await adminDb.doc('products/prod-1').set(validProduct);
+      await adminDb.doc('products/inactive-prod').set({ ...validProduct, isActive: false });
       await adminDb.doc('orders/order-1').set(validOrder('customer-1'));
       await adminDb.doc('orders/admin-order').set(validOrder('admin-1'));
     });
@@ -204,6 +205,28 @@ MaybeDescribe('Firestore Security Rules', () => {
       await assertSucceeds(db.doc('users/customer-1').update({ lastLoginAt: 1700000001000 }));
     });
 
+    it('customer can update allowed profile fields without replacing the full document', async () => {
+      const db = customer1Env().firestore();
+      await assertSucceeds(
+        db.doc('users/customer-1').update({
+          displayName: 'Updated Customer',
+          lastLoginAt: 1700000001000,
+          'preferences.notifications': false,
+        }),
+      );
+    });
+
+    it('customer can update allowed profile fields without replacing the full document', async () => {
+      const db = customer1Env().firestore();
+      await assertSucceeds(
+        db.doc('users/customer-1').update({
+          displayName: 'Updated Customer',
+          lastLoginAt: 1700000001000,
+          'preferences.notifications': false,
+        }),
+      );
+    });
+
     it('customer cannot delete own profile', async () => {
       const db = customer1Env().firestore();
       await assertFails(db.doc('users/customer-1').delete());
@@ -218,9 +241,19 @@ MaybeDescribe('Firestore Security Rules', () => {
       await assertSucceeds(db.doc('products/prod-1').get());
     });
 
-    it('unauthenticated user cannot read products', async () => {
+    it('unauthenticated user can read active products', async () => {
       const db = unauthEnv().firestore();
-      await assertFails(db.doc('products/prod-1').get());
+      await assertSucceeds(db.doc('products/prod-1').get());
+    });
+
+    it('unauthenticated user cannot read inactive products', async () => {
+      const db = unauthEnv().firestore();
+      await assertFails(db.doc('products/inactive-prod').get());
+    });
+
+    it('admin can read inactive products', async () => {
+      const db = adminEnv().firestore();
+      await assertSucceeds(db.doc('products/inactive-prod').get());
     });
 
     it('customer cannot create products', async () => {
@@ -230,7 +263,12 @@ MaybeDescribe('Firestore Security Rules', () => {
 
     it('admin can create products', async () => {
       const db = adminEnv().firestore();
-      await assertSucceeds(db.doc('products/prod-2').set({ ...validProduct, id: 'prod-2' }));
+      await assertSucceeds(db.doc('products/prod-2').set(validProduct));
+    });
+
+    it('admin cannot create products with negative prices or stock', async () => {
+      const db = adminEnv().firestore();
+      await assertFails(db.doc('products/invalid').set({ ...validProduct, priceCents: -1 }));
     });
 
     it('admin can update products', async () => {
@@ -252,14 +290,19 @@ MaybeDescribe('Firestore Security Rules', () => {
   // ─── Orders ───────────────────────────────────────────────────────────
 
   describe('orders/{orderId}', () => {
-    it('customer can create order for self', async () => {
+    it('customer cannot create orders directly in Firestore', async () => {
       const db = customer1Env().firestore();
-      await assertSucceeds(db.doc('orders/order-cust1').set(validOrder('customer-1')));
+      await assertFails(db.doc('orders/order-cust1').set(validOrder('customer-1')));
     });
 
     it('customer cannot create order for another user', async () => {
       const db = customer1Env().firestore();
       await assertFails(db.doc('orders/order-hack').set(validOrder('admin-1')));
+    });
+
+    it('admin cannot create orders directly in Firestore', async () => {
+      const db = adminEnv().firestore();
+      await assertFails(db.doc('orders/admin-direct-order').set(validOrder('admin-1')));
     });
 
     it('customer cannot set status=processing on creation', async () => {
@@ -314,14 +357,46 @@ MaybeDescribe('Firestore Security Rules', () => {
       await assertSucceeds(db.doc('orders/order-1').update({ notes: 'New note' }));
     });
 
-    it('admin can change order status', async () => {
-      const db = adminEnv().firestore();
-      await assertSucceeds(db.doc('orders/order-1').update({ status: 'processing' }));
+    it('customer cannot change payment method or the stored order id', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('orders/order-1').update({ paymentMethod: 'cash' }));
+      await assertFails(db.doc('orders/order-1').update({ id: 'other-order' }));
     });
 
-    it('admin can update order totals', async () => {
+    it('admin cannot change order status directly in Firestore', async () => {
       const db = adminEnv().firestore();
-      await assertSucceeds(db.doc('orders/order-1').update({ totalCents: 9999 }));
+      await assertFails(db.doc('orders/order-1').update({ status: 'processing' }));
+    });
+
+    it('admin cannot update order totals from the client', async () => {
+      const db = adminEnv().firestore();
+      await assertFails(db.doc('orders/order-1').update({ totalCents: 9999 }));
+    });
+
+    it('admin can update tracking fields and attachments', async () => {
+      const db = adminEnv().firestore();
+      await assertSucceeds(db.doc('orders/order-1').update({
+        trackingNumber: 'TRACK-1',
+        carrier: 'Carrier',
+        estimatedDelivery: 1700000000000,
+        attachments: [{ key: 'orders/file.jpg', url: 'https://example.com/file.jpg', name: 'file.jpg', uploadedAt: 1700000000000 }],
+        updatedAt: serverTimestamp(),
+      }));
+    });
+
+    it('admin cannot skip a valid order status transition', async () => {
+      const db = adminEnv().firestore();
+      const orderRef = db.doc('orders/order-1');
+      const snapshot = await orderRef.get();
+      const current = snapshot.data()!;
+      await assertFails(orderRef.update({
+        status: 'completed',
+        statusHistory: [
+          ...current.statusHistory,
+          { from: 'pending', to: 'completed', by: 'admin-1', timestamp: serverTimestamp() },
+        ],
+        updatedAt: serverTimestamp(),
+      }));
     });
   });
 

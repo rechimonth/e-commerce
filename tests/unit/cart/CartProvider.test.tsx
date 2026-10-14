@@ -6,6 +6,7 @@ import {
   saveCartToStorage,
   loadCartFromStorage,
   clearCartFromStorage,
+  getCartStorageKey,
 } from '@/store/cart/persistence';
 import type { Product } from '@/types/domain';
 import { money } from '@/types/pricing';
@@ -254,6 +255,31 @@ describe('CartProvider persistence', () => {
     expect(parsed.version).toBe(1);
     expect(parsed.state.items).toHaveLength(1);
     expect(parsed.state.items[0]?.productId).toBe('p1');
+  });
+
+  it('isolates persisted carts by authenticated user', () => {
+    const state = {
+      items: [{
+        productId: testProduct.id,
+        name: testProduct.name,
+        price: testProduct.price,
+        quantity: 1,
+        image: testProduct.image,
+        maxStock: testProduct.stock,
+      }],
+      discount: money(0),
+      totalItems: 1,
+      totalPrice: testProduct.price,
+      lastUpdated: new Date(),
+    };
+    const userAKey = getCartStorageKey('user-a');
+    const userBKey = getCartStorageKey('user-b');
+
+    saveCartToStorage(state, userAKey);
+
+    expect(loadCartFromStorage(userAKey)?.items).toHaveLength(1);
+    expect(loadCartFromStorage(userBKey)).toBeNull();
+    expect(getCartStorageKey(null)).toBe('ecommerce-cart');
   });
 
   it('restores cart from localStorage on init', () => {
