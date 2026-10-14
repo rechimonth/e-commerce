@@ -52,7 +52,7 @@ describe('cloud cart persistence', () => {
     const restored = await loadCartFromCloud('customer-1');
 
     expect(restored?.totalItems).toBe(3);
-    expect(restored?.totalPrice.amount).toBe(4497);
+    expect(restored?.totalPrice.amount).toBe(cartStateFixture.totalPrice.amount);
     expect(restored?.items).toHaveLength(2);
   });
 
