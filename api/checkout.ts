@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -11,13 +11,6 @@ class UnauthorizedCheckoutError extends Error {
   }
 }
 
-class FirebaseConfigurationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'FirebaseConfigurationError';
-  }
-}
-
 class CheckoutRequestError extends Error {
   constructor(
     readonly status: number,
@@ -26,90 +19,6 @@ class CheckoutRequestError extends Error {
     super(message);
     this.name = 'CheckoutRequestError';
   }
-}
-
-function normalizePrivateKey(value: string): string {
-  let key = value.trim();
-
-  // Vercel can receive the service-account key with literal \\n sequences,
-  // real line breaks, or an extra pair of wrapping quotes.
-  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
-    key = key.slice(1, -1).trim();
-  }
-
-  return key
-    .replace(/\\r?\\n/g, '\n')
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\r')
-    .trim();
-}
-
-function getFirebaseAdminApp() {
-  const apps = getApps();
-  if (apps.length > 0) return apps[0]!;
-
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
-
-  if (serviceAccountJson) {
-    try {
-      const credentials = JSON.parse(serviceAccountJson) as {
-        project_id?: unknown;
-        client_email?: unknown;
-        private_key?: unknown;
-      };
-
-      const projectId = typeof credentials.project_id === 'string' ? credentials.project_id : '';
-      const clientEmail = typeof credentials.client_email === 'string' ? credentials.client_email : '';
-      const privateKey = typeof credentials.private_key === 'string' ? normalizePrivateKey(credentials.private_key) : '';
-
-      if (!projectId || !clientEmail || !privateKey) {
-        throw new FirebaseConfigurationError('FIREBASE_SERVICE_ACCOUNT_JSON is missing required fields');
-      }
-
-      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
-        throw new FirebaseConfigurationError('FIREBASE_SERVICE_ACCOUNT_JSON contains an invalid private key');
-      }
-
-      return initializeApp({
-        credential: cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-      });
-    } catch (error) {
-      if (error instanceof FirebaseConfigurationError) throw error;
-      throw new FirebaseConfigurationError('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
-    }
-  }
-
-  const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.VITE_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKeyValue = process.env.FIREBASE_PRIVATE_KEY;
-
-  const missing = [
-    !projectId ? 'FIREBASE_PROJECT_ID (or VITE_FIREBASE_PROJECT_ID)' : null,
-    !clientEmail ? 'FIREBASE_CLIENT_EMAIL' : null,
-    !privateKeyValue ? 'FIREBASE_PRIVATE_KEY' : null,
-  ].filter((value): value is string => Boolean(value));
-
-  if (missing.length > 0) {
-    throw new FirebaseConfigurationError(`Missing Firebase Admin environment variables: ${missing.join(', ')}`);
-  }
-
-  const privateKey = normalizePrivateKey(privateKeyValue ?? '');
-
-  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
-    throw new FirebaseConfigurationError('FIREBASE_PRIVATE_KEY has an invalid format');
-  }
-
-  return initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
 }
 
 /**
