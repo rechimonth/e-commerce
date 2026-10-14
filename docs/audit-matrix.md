@@ -1,63 +1,57 @@
-# Auditoría final — Proyecto Integrador 5
+# Matriz de cumplimiento — E-Commerce
 
-Esta matriz refleja el estado del código entregado después de la reparación. No afirma que exista un deploy de producción hasta que se ejecute con credenciales y una URL reales.
+**Actualizado:** 14/10/2026. Esta matriz separa funcionalidad implementada, validación automática y comprobaciones que requieren acceso a servicios reales.
 
-| Requisito | Estado | Evidencia |
+| Requisito | Estado | Evidencia / límite |
 |---|---|---|
-| React 18 + TypeScript + Vite | PASS | package.json, src/ |
-| Arquitectura por capas | PASS | types, infrastructure, services, contexts, hooks, components, pages |
-| Auth email/password | PASS | Firebase Auth + LoginPage/RegisterPage |
-| Auth Google | PASS | signInWithGoogle + preservación de rol existente |
-| Logout/persistencia | PASS | Firebase Auth observer/persistence |
-| Roles customer/admin | PASS | perfil Firestore + AdminRoute + Firestore Rules |
-| Catálogo Firestore | PASS | productsService/firestore |
-| Filtro categoría | PASS | ProductFilters + Firestore query |
-| Búsqueda con debounce | PASS | useDebounce + catálogo |
-| Detalle producto | PASS | ProductDetailPage |
-| Carrito Context API | PASS | CartContext/CartProvider |
-| Carrito useReducer | PASS | cart utilities/reducer |
-| Persistencia carrito | PASS | store/cart/persistence |
-| Checkout simulado | PASS | checkoutService |
-| Crear orden en Firestore | PASS | checkoutService → createOrder |
-| No perder carrito ante error | PASS | CheckoutPage + useCheckout |
-| Estados de orden | PASS | OrderStatus + transitions |
-| Historial propio | PASS | getUserOrders + ordersService |
-| Detalle de orden | PASS | OrderDetailPage + ownership rules |
-| Admin CRUD productos | PASS | AdminProductFormPage/ProductsPage |
-| Upload S3 presigned | PASS | /api/upload + AWS SDK |
-| Auth server-side upload | PASS | firebase-admin verifyIdToken + role Firestore |
-| AWS secrets frontend | PASS | no VITE_AWS_*; server-only env |
-| Admin ve todas las órdenes | PASS | getAllOrders + rules |
-| Filtrar órdenes | PASS | AdminOrdersPage |
-| Cambiar estado | PASS | updateOrderStatus + admin UID |
-| UI loading/empty/error | PASS | componentes reutilizables |
-| Testing | PARTIAL — requiere ejecutar npm ci/npm test en un entorno con dependencias instaladas | tests/ |
-| Firestore rules | PASS — tests deben ejecutarse con Emulator | firestore.rules + tests/unit/security |
-| Firestore indexes | PASS | firestore.indexes.json |
-| Vercel deploy | NOT VERIFIED | requiere credenciales y URL de producción |
-| URL pública | NOT VERIFIED | debe agregarse después del deploy real |
-| README | PASS | README.md |
-| Bitácora AI | PASS | docs/ai-notes.md; revisar que las entradas sigan siendo evidencia real |
-| Extras | OMITIDOS | son opcionales según Proyecto 5 |
+| React 18 + TypeScript + Vite | PASS | `package.json`, `src/` |
+| Arquitectura por capas | PASS | `types`, `infrastructure`, `services`, `contexts`, `hooks`, `components`, `pages` |
+| Auth email/password y Google | IMPLEMENTADO | Firebase Auth; la configuración de proveedores debe verificarse en el proyecto Firebase real |
+| Logout y persistencia de sesión | IMPLEMENTADO | Firebase Auth observer/persistence |
+| Roles customer/admin | IMPLEMENTADO | Perfil Firestore, rutas protegidas, validación server-side y reglas |
+| Catálogo, categorías, búsqueda debounce y detalle | IMPLEMENTADO | Servicio de productos, filtros y páginas de catálogo |
+| Carrito Context API + useReducer | IMPLEMENTADO | `src/store/cart/CartProvider.tsx`, `src/utils/cart/cartUtils.ts` |
+| Persistencia de carrito por usuario | IMPLEMENTADO | Firestore `carts/{uid}` con reglas por propietario; localStorage es caché/offline |
+| Checkout simulado | IMPLEMENTADO | `src/services/checkoutService.ts`, `api/checkout.ts`; no cobra dinero real |
+| Revalidación de precio y stock | IMPLEMENTADO | Backend lee productos y crea orden/transacción |
+| Historial, detalle y cancelación de órdenes | IMPLEMENTADO | Servicios de órdenes y endpoints protegidos |
+| CRUD de productos admin | IMPLEMENTADO | Páginas y servicios administrativos |
+| Upload S3 presigned POST | IMPLEMENTADO EN CÓDIGO | `api/upload.ts` + `src/services/uploadService.ts`; no prueba por sí solo bucket/CORS reales |
+| Reglas Firestore de carrito y roles | CI PASS | `firestore.rules` + suite Firebase Emulator |
+| Flujos UI carrito → checkout | CI PASS | `tests/integration/cart-checkout-flow.test.tsx`; el límite remoto de checkout está mockeado |
+| Lint, pruebas, build y typecheck API | CI PASS | Run de GitHub Actions: [38656741694](https://github.com/rechimonth/e-commerce/actions/runs/38656741694) |
+| Vercel | PARCIAL | El check de integración despliega; falta una prueba autenticada completa contra el alias de producción |
+| Variables Vercel/Firebase/AWS | PENDIENTE DE VERIFICACIÓN EXTERNA | No se pueden inferir sus valores desde el repositorio |
+| S3 real: CORS, carga y lectura | PENDIENTE E2E | Requiere bucket y credenciales reales |
+| Presentación/defensa | PENDIENTE DEL EQUIPO | Preparar demostración de customer/admin, seguridad, carrito cloud y upload firmado |
 
-## Bloqueadores de código conocidos
+## Pruebas automáticas de CI
 
-No quedan bloqueadores funcionales identificados en la revisión estática.
-
-## Verificación pendiente fuera del código
+El workflow ejecuta, en orden:
 
 1. `npm ci`
 2. `npm run lint`
-3. `npm run build`
-4. `npm run typecheck:api`
-5. `npm run test`
-6. Firebase Emulator/security tests
-7. configuración real de Firebase Authentication
-8. configuración real de Firestore
-9. configuración real de S3/CORS
-10. variables server-only de Vercel
-11. deploy de Vercel
-12. prueba end-to-end en producción con customer y admin
+3. `npm test`
+4. Firebase Emulator y `npm run test:rules`
+5. `npm run build`
+6. `npm run typecheck:api`
 
-No inventar resultados de estas verificaciones.
+No declarar una prueba real de producción o una subida a S3 como exitosa basándose solo en mocks o en un check verde de Vercel.
 
+## Checklist de smoke test real antes de presentar
+
+- [ ] Iniciar sesión como customer y comprobar que no puede acceder a rutas/API admin.
+- [ ] Añadir dos productos, cambiar cantidades y verificar total.
+- [ ] Recargar y abrir la sesión en otro navegador/dispositivo: comprobar sincronización del carrito por UID.
+- [ ] Completar checkout simulado y confirmar que la orden aparece en historial; verificar que el carrito se limpia solo tras éxito.
+- [ ] Provocar un error de checkout y confirmar que el carrito se conserva.
+- [ ] Iniciar sesión como admin, crear/editar un producto y subir una imagen.
+- [ ] Verificar que el objeto S3 se puede leer desde la URL prevista y que un usuario no admin no puede pedir una firma.
+- [ ] Cambiar estado de una orden como admin y confirmar que el cliente ve el estado actualizado.
+- [ ] Verificar `/api/health` en el dominio real y revisar logs de Functions sin exponer secretos.
+
+## Configuración externa que no debe inventarse
+
+Verificar en Vercel/Firebase/AWS: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `FIREBASE_WEB_API_KEY`, `FIREBASE_SERVICE_ACCOUNT_JSON` (o formato dividido), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`, `AWS_REGION` y `ALLOWED_ORIGINS`.
+
+Las variables AWS y Firebase Admin deben ser server-only. No copiar credenciales al frontend ni a GitHub. Desplegar `firestore.rules` y los índices en el proyecto Firebase correcto antes de probar los flujos reales.

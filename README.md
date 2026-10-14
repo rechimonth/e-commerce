@@ -28,7 +28,7 @@ El checkout simula el pago; no procesa cargos reales con una pasarela.
 ## 🎯 Objetivo
 
 - Separar UI, lógica de negocio, servicios e infraestructura.
-- Usar Firebase Authentication para identidad y Firestore para perfiles, productos, órdenes y reseñas.
+- Usar Firebase Authentication para identidad y Firestore para perfiles, productos, carritos por usuario, órdenes y reseñas.
 - Subir imágenes a S3 con una política temporal firmada generada por una Vercel Function.
 - Proteger operaciones según rol tanto en rutas frontend como en el backend y las reglas de Firestore.
 - Validar cambios con ESLint, TypeScript, Vitest, React Testing Library y pruebas de reglas con Firebase Emulator.
@@ -78,7 +78,7 @@ El checkout simula el pago; no procesa cargos reales con una pasarela.
 
 - Registro, inicio/cierre de sesión y persistencia de sesión con Firebase Auth.
 - Catálogo Firestore con filtros, búsqueda con debounce, detalle y paginación.
-- Carrito global con Context API + useReducer.
+- Carrito global con Context API + useReducer, caché local y sincronización en Firestore por UID para usuarios autenticados.
 - Checkout simulado con validación del lado del servidor, revalidación de precios y actualización de stock.
 - Historial, detalle y cancelación permitida de órdenes.
 - Reseñas limitadas a clientes que hayan comprado el producto en una orden completada.
@@ -108,7 +108,7 @@ El checkout simula el pago; no procesa cargos reales con una pasarela.
 La solución se divide en tres capas principales:
 
 1. **Frontend:** React + TypeScript + Vite para páginas, rutas, componentes y estado global.
-2. **BaaS:** Firebase Authentication gestiona identidad y Firestore persiste perfiles, productos, órdenes y reseñas.
+2. **BaaS:** Firebase Authentication gestiona identidad y Firestore persiste perfiles, productos, carritos por UID, órdenes y reseñas.
 3. **Backend serverless:** Vercel Functions valida tokens/roles y realiza operaciones privilegiadas, incluida la firma de solicitudes S3.
 
 Flujo de compra:
@@ -172,7 +172,7 @@ src/
 ├── infrastructure/firebase/# Adaptadores Auth y Firestore
 ├── pages/                  # Páginas de cliente y admin
 ├── services/               # Servicios de dominio
-├── store/cart/             # Reducer y provider del carrito
+├── store/cart/             # Reducer, caché local y sincronización cloud del carrito
 ├── test/                   # Setup, fixtures, mocks y providers
 ├── types/                  # Tipos del dominio
 └── utils/                  # Funciones auxiliares
