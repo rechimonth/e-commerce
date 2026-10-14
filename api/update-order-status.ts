@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -17,28 +17,6 @@ class OrderStatusError extends Error {
   ) {
     super(message);
   }
-}
-
-function normalizePrivateKey(value: string): string {
-  let key = value.trim();
-  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
-    key = key.slice(1, -1).trim();
-  }
-  return key.replace(/\\r?\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\r').trim();
-}
-
-function getFirebaseAdminApp() {
-  const apps = getApps();
-  if (apps.length > 0) return apps[0]!;
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKeyValue = process.env.FIREBASE_PRIVATE_KEY;
-  if (!projectId || !clientEmail || !privateKeyValue) throw new Error('Firebase Admin is not configured');
-  const privateKey = normalizePrivateKey(privateKeyValue);
-  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
-    throw new Error('Firebase Admin private key is invalid');
-  }
-  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
 }
 
 function jsonError(res: VercelResponse, status: number, error: string) {
@@ -90,6 +68,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, orderId: body.orderId, status: body.status });
   } catch (error) {
     if (error instanceof OrderStatusError) return jsonError(res, error.status, error.message);
+    if (error instanceof FirebaseConfigurationError) {
+      console.error('Firebase Admin configuration error:', error.message);
+      return jsonError(res, 500, 'Firebase server configuration is incomplete');
+    }
     console.error('Admin order status update failed:', error instanceof Error ? error.message : 'unknown error');
     return jsonError(res, 401, 'Unable to update order status');
   }
