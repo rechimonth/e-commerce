@@ -228,6 +228,44 @@ function docToProduct(docSnap: QueryDocumentSnapshot<DocumentData>): ProductDTO 
 }
 
 /* ------------------------------------------------------------------ */
+/*                         PRODUCT REVIEWS                            */
+/* ------------------------------------------------------------------ */
+
+export interface ProductReviewDTO {
+  readonly id: string;
+  readonly productId: string;
+  readonly rating: number;
+  readonly comment: string;
+  readonly displayName: string;
+  readonly createdAt: number;
+}
+
+export async function getProductReviews(productId: string, maxResults = 20): Promise<ProductReviewDTO[]> {
+  return firebaseTryCatch(async () => {
+    const db = getFirebaseDb();
+    const safeLimit = Number.isSafeInteger(maxResults) ? Math.max(1, Math.min(maxResults, 50)) : 20;
+    const reviewQuery = query(
+      collection(db, 'productReviews'),
+      where('productId', '==', productId),
+      orderBy('createdAt', 'desc'),
+      firestoreLimit(safeLimit),
+    );
+    const snapshot = await getDocs(reviewQuery);
+    return snapshot.docs.map((reviewDoc) => {
+      const data = reviewDoc.data();
+      return {
+        id: reviewDoc.id,
+        productId: typeof data.productId === 'string' ? data.productId : productId,
+        rating: typeof data.rating === 'number' ? data.rating : 0,
+        comment: typeof data.comment === 'string' ? data.comment : '',
+        displayName: typeof data.displayName === 'string' ? data.displayName : 'Cliente',
+        createdAt: toMillis(data.createdAt),
+      };
+    });
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /*                          ORDER FUNCTIONS                           */
 /* ------------------------------------------------------------------ */
 
