@@ -180,6 +180,8 @@ describe('useProducts', () => {
         category: undefined,
         limit: 20,
         search: undefined,
+        cursor: null,
+        page: 1,
       });
     });
   });
