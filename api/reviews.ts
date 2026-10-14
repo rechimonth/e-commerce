@@ -125,6 +125,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('Firebase Admin configuration error:', error.message);
       return jsonError(res, 500, 'La configuración del servidor está incompleta');
     }
+    const errorCode = (error as { code?: unknown })?.code;
+    if (typeof errorCode === 'string' && errorCode.startsWith('auth/')) {
+      return jsonError(res, 401, 'La sesión no es válida o ha expirado');
+    }
     console.error('Review submission failed:', error instanceof Error ? error.message : 'unknown error');
     return jsonError(res, 500, 'No se pudo guardar la reseña');
   }
