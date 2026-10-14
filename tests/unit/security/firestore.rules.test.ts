@@ -400,6 +400,48 @@ MaybeDescribe('Firestore Security Rules', () => {
     });
   });
 
+  // ─── Product reviews ───────────────────────────────────────────────────
+
+  describe('productReviews/{reviewId}', () => {
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().doc('productReviews/review-1').set({
+          productId: 'prod-1',
+          rating: 5,
+          comment: 'Excelente producto, llegó perfecto.',
+          displayName: 'Cliente Uno',
+          createdAt: new Date(1700000000000),
+          updatedAt: new Date(1700000000000),
+        });
+        await context.firestore().doc('reviewOwners/private-map').set({ reviewId: 'review-1' });
+      });
+    });
+
+    it('allows public reading of valid product reviews', async () => {
+      const db = unauthEnv().firestore();
+      await assertSucceeds(db.collection('productReviews').where('productId', '==', 'prod-1').get());
+    });
+
+    it('does not allow customers to create or edit reviews directly', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('productReviews/forged-review').set({
+        productId: 'prod-1',
+        rating: 5,
+        comment: 'Compra no verificada pero quiero publicar.',
+        displayName: 'Cliente',
+        createdAt: new Date(1700000000000),
+        updatedAt: new Date(1700000000000),
+      }));
+      await assertFails(db.doc('productReviews/review-1').update({ rating: 1 }));
+    });
+
+    it('keeps the private reviewer mapping inaccessible to clients', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('reviewOwners/private-map').get());
+      await assertFails(db.collection('reviewOwners').get());
+    });
+  });
+
   // ─── Settings ─────────────────────────────────────────────────────────
 
   describe('settings/{settingId}', () => {
