@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Container } from '@/components/ui/Container';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
@@ -11,13 +11,58 @@ import { QuantitySelector } from '@/components/ui/QuantitySelector';
 import { useProduct } from '@/hooks/useProduct';
 import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 import { useCart } from '@/hooks/useCart';
+import { useAuth } from '@/hooks/useAuth';
+import { reviewsService, type ProductReview } from '@/services/reviewsService';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const safeId = id ?? '';
-  const { product, isLoading, error, status } = useProduct(safeId);
+  const { product, isLoading, error, status, refetch } = useProduct(safeId);
   const { addItem } = useCart();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSuccess, setReviewSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setReviewsLoading(true);
+    reviewsService.fetchProductReviews(safeId)
+      .then((result) => { if (active) setReviews(result); })
+      .catch(() => { if (active) setReviewError('No se pudieron cargar las reseñas.'); })
+      .finally(() => { if (active) setReviewsLoading(false); });
+    return () => { active = false; };
+  }, [safeId]);
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      setReviewError('Inicia sesión para publicar una reseña.');
+      return;
+    }
+    if (reviewComment.trim().length < 10 || reviewComment.trim().length > 1500) {
+      setReviewError('El comentario debe tener entre 10 y 1500 caracteres.');
+      return;
+    }
+    setReviewSubmitting(true);
+    setReviewError(null);
+    setReviewSuccess(null);
+    try {
+      await reviewsService.submitProductReview(safeId, reviewRating, reviewComment);
+      setReviewComment('');
+      setReviewSuccess('Reseña guardada. Solo se aceptan reseñas de compras completadas.');
+      setReviews(await reviewsService.fetchProductReviews(safeId));
+      refetch();
+    } catch (submitError) {
+      setReviewError(submitError instanceof Error ? submitError.message : 'No se pudo guardar la reseña.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
   const isError = status === 'error';
   const noId = !id;
 
@@ -43,6 +88,38 @@ export function ProductDetailPage() {
             <div className="mt-6 grid gap-3 border-t border-cyan-400/10 pt-5 text-xs text-slate-500 sm:grid-cols-3"><span>⚡ Envío rápido</span><span>↺ Cambios simples</span><span>🔒 Compra segura</span></div>
           </div>
         </div>}
+        {product && <section className="mt-10 space-y-6" aria-labelledby="product-reviews-heading">
+          <div className="cyber-panel rounded-2xl p-6 sm:p-8">
+            <p className="cyber-kicker">CUSTOMER FEEDBACK</p>
+            <h2 id="product-reviews-heading" className="mt-2 font-display text-xl font-bold uppercase text-white">Reseñas de clientes</h2>
+            <p className="mt-2 text-sm text-slate-400">Las reseñas solo se publican cuando el servidor confirma una compra completada.</p>
+            {user ? <div className="mt-5 space-y-4">
+              <div>
+                <p className="mb-2 text-sm font-semibold text-slate-200">Tu puntuación</p>
+                <div className="flex gap-2" role="group" aria-label="Puntuación de 1 a 5 estrellas">
+                  {[1, 2, 3, 4, 5].map((star) => <button key={star} type="button" aria-label={`${star} estrellas`} aria-pressed={reviewRating === star} onClick={() => setReviewRating(star)} className={`rounded-lg border px-3 py-2 text-lg transition ${star <= reviewRating ? 'border-amber-300/50 bg-amber-300/10 text-amber-300' : 'border-slate-700 text-slate-500'}`}>★</button>)}
+                </div>
+              </div>
+              <label className="block text-sm font-semibold text-slate-200" htmlFor="product-review-comment">Comentario</label>
+              <textarea id="product-review-comment" value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} rows={4} maxLength={1500} placeholder="¿Qué te pareció el producto? (mínimo 10 caracteres)" className="w-full rounded-xl border border-cyan-300/15 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/50" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-xs text-slate-500">{reviewComment.trim().length}/1500 caracteres</span>
+                <Button onClick={handleSubmitReview} disabled={reviewSubmitting || reviewComment.trim().length < 10 || reviewComment.trim().length > 1500}>{reviewSubmitting ? 'Publicando...' : 'Publicar reseña'}</Button>
+              </div>
+            </div> : <p className="mt-4 text-sm text-slate-400">Inicia sesión para dejar una reseña después de completar una compra.</p>}
+            {reviewError && <p role="alert" className="mt-4 rounded-lg border border-red-400/20 bg-red-500/5 px-3 py-2 text-sm text-red-300">{reviewError}</p>}
+            {reviewSuccess && <p role="status" className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-300">{reviewSuccess}</p>}
+          </div>
+          <div className="space-y-3">
+            {reviewsLoading ? <p className="py-6 text-center text-sm text-slate-500">Cargando reseñas...</p> : reviews.length === 0 ? <div className="cyber-panel rounded-xl p-6 text-sm text-slate-400">Todavía no hay reseñas para este producto.</div> : reviews.map((review) => <article key={review.id} className="cyber-panel rounded-xl p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div><h3 className="font-semibold text-white">{review.displayName}</h3><p className="text-sm tracking-widest text-amber-300" aria-label={`${review.rating} de 5 estrellas`}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</p></div>
+                <time className="text-xs text-slate-500" dateTime={review.createdAt.toISOString()}>{review.createdAt.toLocaleDateString('es-AR')}</time>
+              </div>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-300">{review.comment}</p>
+            </article>)}
+          </div>
+        </section>}
       </Container>
     </>
   );
