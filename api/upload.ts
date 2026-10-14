@@ -1,6 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -15,32 +15,6 @@ const CONTENT_TYPES_BY_EXTENSION: Readonly<Record<string, string>> = {
   pdf: 'application/pdf',
 };
 const PRESIGNED_URL_EXPIRY_SECONDS = 300;
-
-function normalizePrivateKey(value: string): string {
-  let key = value.trim();
-  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
-    key = key.slice(1, -1).trim();
-  }
-  return key.replace(/\\r?\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\r').trim();
-}
-
-function getFirebaseAdminApp() {
-  const apps = getApps();
-  if (apps.length > 0) return apps[0]!;
-
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKeyValue = process.env.FIREBASE_PRIVATE_KEY;
-  const privateKey = privateKeyValue ? normalizePrivateKey(privateKeyValue) : '';
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error('Firebase Admin environment is not configured');
-  }
-  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
-    throw new Error('Firebase Admin private key has an invalid format');
-  }
-
-  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
-}
 
 async function verifyAdmin(idToken: string): Promise<{ uid: string }> {
   const app = getFirebaseAdminApp();
@@ -87,6 +61,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await verifyAdmin(token);
   } catch (error) {
     if (error instanceof Error && error.message === 'FORBIDDEN') return jsonError(res, 403, 'Admin role required');
+    if (error instanceof FirebaseConfigurationError) {
+      console.error('Firebase Admin configuration error:', error.message);
+      return jsonError(res, 500, 'Firebase server configuration is incomplete');
+    }
     console.error('Firebase token verification failed:', error instanceof Error ? error.message : 'unknown error');
     return jsonError(res, 401, 'Invalid Firebase ID token');
   }
