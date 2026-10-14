@@ -58,7 +58,7 @@ El checkout simula el pago; no procesa cargos reales con una pasarela.
 5. Consultar y filtrar órdenes.
 6. Actualizar estados y datos de seguimiento.
 7. Crear órdenes para un cliente desde el flujo administrativo.
-8. Gestionar usuarios/categorías y consultar las páginas de analytics, auditoría y configuración disponibles.
+8. Gestionar usuarios/categorías y consultar las páginas de analytics y configuración disponibles.
 
 ---
 
@@ -361,21 +361,31 @@ npm run dev
 
 Abre la URL que indique Vite, normalmente http://localhost:5173. Este comando sirve el frontend; para probar las rutas /api/* también debes iniciar Vercel localmente.
 
-### 5. Ejecutar frontend + funciones serverless
+### 5. Ejecutar frontend + funciones serverless de Vercel (recomendado)
 
-Instala la CLI si no la tienes:
+Esta aplicación contiene archivos `api/*.ts`; para probar checkout, usuarios y uploads localmente, utiliza `vercel dev`, no solo `npm run dev`.
 
-~~~
-npm install --global vercel
-~~~
+**Primera configuración en este equipo (una sola vez):**
 
-Vincula el proyecto cuando la CLI lo solicite (elige el proyecto existente e-commerce, no crees otro) y ejecuta:
+```bash
+npx vercel@latest login
+npx vercel@latest link
+```
 
-~~~
-vercel dev
-~~~
+Cuando `vercel link` pregunte, selecciona el equipo/proyecto de Vercel existente **`rechimonths-projects / e-commerce`**. No crees otro proyecto ni elijas otro proyecto con nombre parecido. La carpeta `.vercel/` identifica el vínculo local y está excluida por Git.
 
-Vercel local sirve la SPA y las funciones de api/. Asegúrate de que las variables server-only estén disponibles en el entorno local. No uses credenciales compartidas en chats o logs; genera credenciales nuevas si corresponde.
+**Cada vez que quieras iniciar la aplicación local:**
+
+```bash
+npx vercel@latest pull --yes --environment=development
+npx vercel@latest dev --listen 3000
+```
+
+Abre http://localhost:3000. El comando `vercel dev` sirve la SPA y las funciones de `api/`. El `pull` descarga la configuración y variables del entorno **Development** del proyecto vinculado. Configura las variables de Development en Vercel; no pegues credenciales de producción en el código ni en el README.
+
+Si solo necesitas el frontend y no vas a probar funciones serverless, puedes ejecutar `npm run dev` y abrir la URL que imprima Vite (normalmente http://localhost:5173). En ese modo las llamadas a `/api/*` no se ejecutan como funciones locales de Vercel.
+
+Si el puerto 3000 ya está ocupado, detén la otra instancia con `Ctrl+C` antes de volver a iniciar `vercel dev`.
 
 ### 6. Configurar Firebase
 
@@ -460,7 +470,7 @@ npx firebase-tools emulators:exec --only firestore "npm run test:rules"
 
 Los tests de seguridad cubren accesos de usuarios autenticados/no autenticados, separación de roles, datos de productos y órdenes. El CI también ejecuta el emulador, el build y el typecheck de API.
 
-**Estado verificado del CI:** la ejecución [38576685895](https://github.com/rechimonth/e-commerce/actions/runs/38576685895) finalizó en verde para el commit 477d0f3e: lint, tests, reglas de Firestore, build y typecheck de API. Esto no sustituye una prueba end-to-end autenticada contra Firebase y AWS reales.
+**Estado verificado del CI:** consulta [la pestaña Actions](https://github.com/rechimonth/e-commerce/actions) para ver el resultado del último commit. El commit funcional `c9dcbec` fue validado con lint, 434 tests unitarios/de integración, 48 pruebas de reglas Firestore, build de producción y typecheck de API. Esto no sustituye una prueba end-to-end autenticada contra Firebase y AWS reales.
 
 El script npm run test:coverage existe, pero antes de usarlo verifica que el proveedor de cobertura de Vitest esté instalado y fijado en el lockfile. No se presenta una cifra de cobertura sin un informe generado.
 
@@ -480,7 +490,26 @@ URL de producción:
 
 https://e-commerce-mauve-one-98.vercel.app/
 
-Último despliegue de producción verificado durante esta revisión: estado READY, commit 477d0f3e1b50d80b11940431233f926cf1f00c43. [Ver deployment en Vercel](https://vercel.com/rechimonths-projects/e-commerce/FGbRQYQdfcjB36jV9E4vQ3h29CX5).
+**Abrir y comprobar el deploy desde Git Bash:**
+
+```bash
+# La aplicación pública debe responder por HTTPS.
+curl -I https://e-commerce-mauve-one-98.vercel.app/
+
+# Health check público del backend serverless; debe devolver status=ok.
+curl -fsS https://e-commerce-mauve-one-98.vercel.app/api/health
+```
+
+**Publicación normal de cambios:** Vercel está conectado a GitHub; después de editar y probar en la rama `main`, crea un commit descriptivo y envíalo. La integración de Vercel iniciará el despliegue automáticamente.
+
+```bash
+git status --short
+git add <archivos-modificados>
+git commit -m "fix: describe el cambio"
+git push origin main
+```
+
+No hace falta ejecutar `vercel deploy --prod` para el flujo habitual conectado a GitHub. Después del push, revisa [GitHub Actions](https://github.com/rechimonth/e-commerce/actions) y el último deployment en Vercel. Abrir la URL y obtener `status: ok` valida el acceso básico, pero no reemplaza la prueba autenticada de checkout y subida real a S3.
 
 ---
 
