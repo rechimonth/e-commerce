@@ -98,7 +98,10 @@ service cloud.firestore {
     }
 
     match /productReviews/{reviewId} {
-      allow get, list: if resource.data.keys().hasOnly([
+      allow get, list: if resource.data.keys().hasAll([
+          'productId', 'rating', 'comment', 'displayName', 'createdAt',
+        ])
+        && resource.data.keys().hasOnly([
           'productId', 'rating', 'comment', 'displayName', 'createdAt', 'updatedAt',
         ])
         && resource.data.productId is string
