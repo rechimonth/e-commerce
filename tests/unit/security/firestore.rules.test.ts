@@ -148,6 +148,12 @@ MaybeDescribe('Firestore Security Rules', () => {
       await adminDb.doc('products/inactive-prod').set({ ...validProduct, isActive: false });
       await adminDb.doc('orders/order-1').set(validOrder('customer-1'));
       await adminDb.doc('orders/admin-order').set(validOrder('admin-1'));
+      await adminDb.doc('auditLogs/log-1').set({
+        action: 'product.updated',
+        user: 'admin-1',
+        timestamp: new Date(1700000000000),
+        details: 'Updated test product',
+      });
     });
   });
 
@@ -230,6 +236,27 @@ MaybeDescribe('Firestore Security Rules', () => {
     it('customer cannot delete own profile', async () => {
       const db = customer1Env().firestore();
       await assertFails(db.doc('users/customer-1').delete());
+    });
+  });
+
+  // ─── Audit logs ────────────────────────────────────────────────────────
+
+  describe('auditLogs/{logId}', () => {
+    it('admin can list audit logs', async () => {
+      await assertSucceeds(adminEnv().firestore().collection('auditLogs').orderBy('timestamp', 'desc').get());
+    });
+
+    it('customer cannot list audit logs', async () => {
+      await assertFails(customer1Env().firestore().collection('auditLogs').get());
+    });
+
+    it('admin cannot create audit logs from the browser client', async () => {
+      await assertFails(adminEnv().firestore().collection('auditLogs').doc('forged').set({
+        action: 'forged',
+        user: 'admin-1',
+        timestamp: new Date(1700000000000),
+        details: 'Client-forged audit entry',
+      }));
     });
   });
 
