@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ROUTES } from '@/constants/routes';
-import type { UserProfile } from '@/types/auth';
+import { usersService } from '@/services/usersService';
+import type { AdminUserSummary } from '@/services/usersService';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
 
 export function UsersPage() {
-  const [users, setUsers] = useState<UserProfile[] | null>(null);
+  const [users, setUsers] = useState<AdminUserSummary[] | null>(null);
   const [status, setStatus] = useState<AsyncStatus>('loading');
   const [error, setError] = useState<ServiceError | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,24 +21,7 @@ export function UsersPage() {
     setStatus('loading');
     setError(null);
     try {
-      const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
-      const { getFirebaseDb } = await import('@/infrastructure/firebase/config');
-      const db = getFirebaseDb();
-      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(50));
-      const snapshot = await getDocs(q);
-      const usersList = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          uid: doc.id,
-          email: data.email ?? null,
-          displayName: data.displayName ?? null,
-          photoURL: data.photoURL ?? null,
-          role: data.role ?? 'customer',
-          createdAt: new Date(data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now()),
-          lastLoginAt: new Date(data.lastLoginAt?.seconds ? data.lastLoginAt.seconds * 1000 : Date.now()),
-          preferences: data.preferences ?? { currency: 'USD', locale: 'es', notifications: true },
-        } as UserProfile;
-      });
+      const usersList = await usersService.fetchUsers();
       setUsers(usersList);
       setStatus('success');
     } catch (e) {
@@ -55,9 +39,11 @@ export function UsersPage() {
     void fetchUsers();
   }, [fetchUsers]);
 
-  const filteredUsers = users?.filter((u) =>
-    (u.displayName ?? u.email ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.uid.toLowerCase().includes(searchTerm.toLowerCase())
+  const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
+  const filteredUsers = users?.filter((user) =>
+    (user.displayName ?? '').toLocaleLowerCase().includes(normalizedSearch) ||
+    (user.email ?? '').toLocaleLowerCase().includes(normalizedSearch) ||
+    user.uid.toLocaleLowerCase().includes(normalizedSearch),
   ) ?? [];
 
   if (status === 'loading') {
@@ -73,7 +59,7 @@ export function UsersPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-error-600">{error.message}</p>
-        <button onClick={fetchUsers} className="mt-2 text-sm text-primary-600 hover:underline">
+        <button onClick={() => void fetchUsers()} className="mt-2 text-sm text-primary-600 hover:underline">
           Reintentar
         </button>
       </Card>
@@ -85,9 +71,7 @@ export function UsersPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900">Usuarios</h1>
         <Link to={ROUTES.ADMIN_USER_NEW}>
-          <Button variant="solid" size="md">
-            Nuevo usuario
-          </Button>
+          <Button variant="solid" size="md">Nuevo usuario</Button>
         </Link>
       </div>
 
