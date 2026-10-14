@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Price } from '@/components/ui/Price';
-import { productsService } from '@/services/productsService';
+import { productsService, type ProductsResult } from '@/services/productsService';
 import { exportToCsv } from '@/utils/export';
 import { ROUTES } from '@/constants/routes';
 import { PRODUCT_CATEGORIES } from '@/types/domain';
@@ -51,7 +51,7 @@ export function AdminProductsPage() {
   const fetchProducts = useCallback(async () => {
     setState((prev) => ({ ...prev, status: 'loading', error: null }));
     try {
-      const result: PaginatedResult<Product> = await productsService.fetchProductsAdmin({
+      const result: ProductsResult = await productsService.fetchProductsAdmin({
         search: searchTerm || undefined,
         category: categoryFilter || undefined,
         limit: 20,
@@ -266,9 +266,9 @@ export function AdminProductsPage() {
 
       {state.status === 'success' && (state.pagination?.hasPrev || state.pagination?.hasNext) && (
         <nav className="flex items-center justify-center gap-4" aria-label="Paginación de productos">
-          <Button variant="outline" size="sm" disabled={!state.pagination?.hasPrev || state.status === 'loading'} onClick={() => setPageCursors((previous) => previous.length > 1 ? previous.slice(0, -1) : previous)}>Anterior</Button>
+          <Button variant="outline" size="sm" disabled={!state.pagination?.hasPrev} onClick={() => setPageCursors((previous) => previous.length > 1 ? previous.slice(0, -1) : previous)}>Anterior</Button>
           <span className="text-sm text-slate-400">Página {pageIndex + 1}</span>
-          <Button variant="outline" size="sm" disabled={!state.nextCursor || state.status === 'loading'} onClick={() => { if (state.nextCursor) setPageCursors((previous) => [...previous, state.nextCursor]); }}>Siguiente</Button>
+          <Button variant="outline" size="sm" disabled={!state.nextCursor} onClick={() => { if (state.nextCursor) setPageCursors((previous) => [...previous, state.nextCursor]); }}>Siguiente</Button>
         </nav>
       )}
 
