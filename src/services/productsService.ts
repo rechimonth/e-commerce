@@ -3,7 +3,6 @@
  * Orquesta Firestore y convierte DTOs a entidades de dominio.
  */
 import {
-  getProducts,
   getProductsPage,
   getProduct,
   createProduct as firestoreCreateProduct,
