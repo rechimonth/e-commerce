@@ -49,6 +49,35 @@ function toMillis(ts: unknown): number {
   return typeof ts === 'number' ? ts : Date.now();
 }
 
+export interface CustomerProfileDTO {
+  readonly uid: string;
+  readonly displayName: string;
+  readonly email: string;
+}
+
+export async function getCustomerProfiles(maxResults = 100): Promise<CustomerProfileDTO[]> {
+  return firebaseTryCatch(async () => {
+    const db = getFirebaseDb();
+    const safeLimit = Number.isSafeInteger(maxResults) ? Math.max(1, Math.min(maxResults, 200)) : 100;
+    const q = query(
+      collection(db, 'users'),
+      where('role', '==', 'customer'),
+      firestoreLimit(safeLimit),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((userDoc) => {
+      const data = userDoc.data();
+      return {
+        uid: userDoc.id,
+        displayName: typeof data.displayName === 'string' && data.displayName.trim()
+          ? data.displayName.trim()
+          : 'Cliente sin nombre',
+        email: typeof data.email === 'string' ? data.email : '',
+      };
+    });
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*                          PRODUCT FUNCTIONS                          */
 /* ------------------------------------------------------------------ */
