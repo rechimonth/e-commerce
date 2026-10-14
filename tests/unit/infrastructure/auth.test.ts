@@ -129,10 +129,51 @@ describe('Firebase auth', () => {
     expect(result.uid).toBe('test-uid');
   });
 
+  it('signInWithEmail creates a customer profile when the Firestore document is missing', async () => {
+    const { signInWithEmail } = await setupAuth();
+    mocks.authStubs.signInWithEmailAndPassword.mockResolvedValue(mocks.mockUserCredential);
+    mocks.firestoreStubs.getDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => null,
+    });
+    mocks.firestoreStubs.setDoc.mockResolvedValue(undefined);
+
+    await signInWithEmail('test@test.com', 'password123');
+
+    expect(mocks.firestoreStubs.setDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ uid: 'test-uid', role: 'customer' }),
+      { merge: true },
+    );
+  });
+
+  it('signInWithEmail preserves the role of an existing admin profile', async () => {
+    const { signInWithEmail } = await setupAuth();
+    mocks.authStubs.signInWithEmailAndPassword.mockResolvedValue(mocks.mockUserCredential);
+    mocks.firestoreStubs.getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        uid: 'test-uid',
+        email: 'test@test.com',
+        role: 'admin',
+        preferences: {},
+      }),
+      id: 'test-uid',
+    });
+
+    await signInWithEmail('test@test.com', 'password123');
+
+    expect(mocks.firestoreStubs.setDoc).not.toHaveBeenCalled();
+  });
+
   it('signUpWithEmail creates auth user, updates profile, and creates Firestore profile', async () => {
     const { signUpWithEmail } = await setupAuth();
     mocks.authStubs.createUserWithEmailAndPassword.mockResolvedValue(mocks.mockUserCredential);
     mocks.authStubs.updateProfile.mockResolvedValue(undefined);
+    mocks.firestoreStubs.getDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => null,
+    });
     mocks.firestoreStubs.setDoc.mockResolvedValue(undefined);
 
     const result = await signUpWithEmail('test@test.com', 'password123', 'Test User');
@@ -188,6 +229,27 @@ describe('Firebase auth', () => {
     expect(mocks.authStubs.onAuthStateChanged).toHaveBeenCalled();
     expect(typeof unsub).toBe('function');
     expect(mocks.unsubscribe).toBe(unsub);
+  });
+
+  it('observeAuthState creates a missing profile before returning the authenticated user', async () => {
+    const { observeAuthState } = await setupAuth();
+    mocks.authStubs.onAuthStateChanged.mockImplementation((_auth, callback) => {
+      void callback(mocks.mockUser);
+      return mocks.unsubscribe;
+    });
+    mocks.firestoreStubs.getDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => null,
+    });
+    mocks.firestoreStubs.setDoc.mockResolvedValue(undefined);
+    const callback = vi.fn();
+
+    observeAuthState(callback);
+
+    await vi.waitFor(() => expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({ uid: 'test-uid', role: 'customer' }),
+    ));
+    expect(mocks.firestoreStubs.setDoc).toHaveBeenCalled();
   });
 
   it('getUserProfile returns UserProfileDTO from Firestore', async () => {

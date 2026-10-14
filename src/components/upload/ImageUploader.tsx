@@ -29,7 +29,7 @@ export function ImageUploader({
         if (!result) break;
         const image = { url: result.publicUrl, key: result.key, alt: file.name };
         uploadedImages.push(image);
-        onImagesUploaded(uploadedImages);
+        onImagesUploaded([...uploadedImages]);
       }
     } catch {
       // El hook ya captura el error

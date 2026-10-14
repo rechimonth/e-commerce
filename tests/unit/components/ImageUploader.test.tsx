@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageUploader } from '@/components/upload/ImageUploader';
+import type { ProductImage } from '@/types/domain';
 
 const { mockUploadFile } = vi.hoisted(() => ({ mockUploadFile: vi.fn() }));
 
@@ -14,6 +16,20 @@ vi.mock('@/hooks/useUpload', () => ({
   }),
 }));
 
+function StatefulImageUploader({
+  onImagesUploaded,
+}: {
+  onImagesUploaded: (images: readonly ProductImage[]) => void;
+}) {
+  const [images, setImages] = useState<readonly ProductImage[]>([]);
+  const handleImagesUploaded = (uploadedImages: readonly ProductImage[]) => {
+    setImages(uploadedImages);
+    onImagesUploaded(uploadedImages);
+  };
+
+  return <ImageUploader images={images} onImagesUploaded={handleImagesUploaded} />;
+}
+
 describe('ImageUploader', () => {
   beforeEach(() => {
     mockUploadFile.mockReset();
@@ -25,9 +41,7 @@ describe('ImageUploader', () => {
       publicUrl: `https://images.example/${file.name}`,
     }));
     const onImagesUploaded = vi.fn();
-    const { container } = render(
-      <ImageUploader images={[]} onImagesUploaded={onImagesUploaded} />,
-    );
+    const { container } = render(<StatefulImageUploader onImagesUploaded={onImagesUploaded} />);
     const input = container.querySelector('input[type="file"]');
     const files = [
       new File(['one'], 'one.png', { type: 'image/png' }),

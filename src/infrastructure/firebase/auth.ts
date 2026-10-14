@@ -28,6 +28,37 @@ import { getFirebaseAuth, getFirebaseDb, firebaseTryCatch } from './config';
 
 const provider = new GoogleAuthProvider();
 
+async function ensureUserProfile(user: FirebaseUser): Promise<UserProfileDTO> {
+  const db = getFirebaseDb();
+  const existingProfile = await getUserProfileFromDb(user.uid, db);
+  if (existingProfile) return existingProfile;
+
+  const timestamp = Date.now();
+  const profile: UserProfileDTO = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName ?? null,
+    photoURL: user.photoURL ?? null,
+    role: 'customer',
+    createdAt: timestamp,
+    lastLoginAt: timestamp,
+    preferences: {
+      currency: 'USD',
+      locale: 'es-MX',
+      notifications: true,
+    },
+  };
+
+  try {
+    await createUserProfile(profile);
+    return profile;
+  } catch (error) {
+    const profileAfterCreate = await getUserProfileFromDb(user.uid, db);
+    if (profileAfterCreate) return profileAfterCreate;
+    throw error;
+  }
+}
+
 /**
  * Inicia sesión con email/password.
  * @throws FirebaseInfraError si las credenciales son inválidas.
@@ -36,6 +67,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return firebaseTryCatch(async () => {
     const auth = getFirebaseAuth();
     const result = await signInWithEmailAndPassword(auth, email, password);
+    await ensureUserProfile(result.user);
     return result.user;
   });
 }
@@ -57,21 +89,7 @@ export async function signUpWithEmail(
       await updateProfile(result.user, { displayName });
     }
 
-    const profile: UserProfileDTO = {
-      uid: result.user.uid,
-      email: result.user.email,
-      displayName: result.user.displayName ?? displayName ?? null,
-      photoURL: result.user.photoURL ?? null,
-      role: 'customer' as UserRole,
-      createdAt: Date.now(),
-      lastLoginAt: Date.now(),
-      preferences: {
-        currency: 'USD',
-        locale: 'es-MX',
-        notifications: true,
-      },
-    };
-    await createUserProfile(profile);
+    await ensureUserProfile(result.user);
 
     return result.user;
   });
@@ -86,27 +104,7 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
     const auth = getFirebaseAuth();
     const result = await signInWithPopup(auth, provider);
 
-    const existingProfile = await getUserProfileFromDb(result.user.uid, getFirebaseDb());
-    if (existingProfile) {
-      // El perfil existente es la fuente de verdad del rol. No se reescribe
-      // desde el cliente durante un login para evitar degradar admin → customer.
-    } else {
-      const profile: UserProfileDTO = {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName ?? null,
-        photoURL: result.user.photoURL ?? null,
-        role: 'customer',
-        createdAt: Date.now(),
-        lastLoginAt: Date.now(),
-        preferences: {
-          currency: 'USD',
-          locale: 'es-MX',
-          notifications: true,
-        },
-      };
-      await createUserProfile(profile);
-    }
+    await ensureUserProfile(result.user);
 
     return result.user;
   });
@@ -134,7 +132,6 @@ export async function signOutUser(): Promise<void> {
  */
 export function observeAuthState(callback: (user: UserProfileDTO | null) => void): () => void {
   const auth = getFirebaseAuth();
-  const db = getFirebaseDb();
 
   return onAuthStateChanged(auth, async (firebaseUser) => {
     if (!firebaseUser) {
@@ -143,7 +140,7 @@ export function observeAuthState(callback: (user: UserProfileDTO | null) => void
     }
 
     try {
-      const profile = await getUserProfileFromDb(firebaseUser.uid, db);
+      const profile = await ensureUserProfile(firebaseUser);
       callback(profile);
     } catch {
       callback(null);

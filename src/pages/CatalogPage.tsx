@@ -31,6 +31,8 @@ export function CatalogPage() {
     setSearchParams(newParams);
   };
   useEffect(() => {
+    if ((searchParams.get('search') ?? '') === localSearch) return;
+
     const newParams = new URLSearchParams(searchParams);
     if (localSearch) newParams.set('search', localSearch); else newParams.delete('search');
     setSearchParams(newParams, { replace: true });
