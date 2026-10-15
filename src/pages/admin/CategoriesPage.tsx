@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { ROUTES } from '@/constants/routes';
 import { PRODUCT_CATEGORIES } from '@/types/domain';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
@@ -63,9 +60,7 @@ export function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900">Categorías</h1>
-        <Link to={ROUTES.ADMIN_CATEGORY_NEW}>
-          <Button variant="solid" size="md">Nueva categoría</Button>
-        </Link>
+        <p className="text-sm text-neutral-600">Taxonomía fija validada por las reglas de Firestore</p>
       </div>
 
       <Card>
@@ -75,7 +70,6 @@ export function CategoriesPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Nombre</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Productos</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
@@ -83,11 +77,6 @@ export function CategoriesPage() {
                 <tr key={cat.name}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{cat.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{cat.count}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <Link to={ROUTES.ADMIN_CATEGORY_EDIT(cat.name)}>
-                      <Button variant="outline" size="sm">Editar</Button>
-                    </Link>
-                  </td>
                 </tr>
               ))}
             </tbody>
