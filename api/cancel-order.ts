@@ -1,6 +1,6 @@
 import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../server/firebaseToken.js';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 class CancellationError extends Error {
@@ -76,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         status: 'cancelled',
         statusHistory: [
           ...history,
-          { from: 'pending', to: 'cancelled', by: decoded.uid, timestamp: FieldValue.serverTimestamp() },
+          { from: 'pending', to: 'cancelled', by: decoded.uid, timestamp: Timestamp.now() },
         ],
         updatedAt: FieldValue.serverTimestamp(),
       });

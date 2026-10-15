@@ -21,7 +21,7 @@ import {
   type QueryConstraint,
   limit as firestoreLimit,
   serverTimestamp,
-  type Timestamp,
+  Timestamp,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
@@ -353,7 +353,7 @@ export async function updateOrderStatus(id: string, status: OrderStatus, adminUs
         from: currentStatus,
         to: status,
         by: adminUserId,
-        timestamp: serverTimestamp(),
+        timestamp: Timestamp.now(),
       },
     ];
 

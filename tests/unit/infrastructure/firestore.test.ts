@@ -93,6 +93,7 @@ const mocks = vi.hoisted(() => {
     Timestamp: {
       fromMillis: vi.fn((ms: number) => ({ _type: 'Timestamp', _ms: ms })),
       fromDate: vi.fn((d: Date) => ({ _type: 'Timestamp', _date: d })),
+      now: vi.fn(() => ({ _type: 'TimestampNow' })),
       prototype: { toMillis: vi.fn() },
     },
     getFirestore: vi.fn(() => mockDb),
@@ -370,7 +371,22 @@ describe('Firebase firestore', () => {
 
     const result = await updateOrderStatus('order-1', 'processing', 'admin-user');
 
-    expect(mocks.firestoreStubs.updateDoc).toHaveBeenCalled();
+    expect(mocks.firestoreStubs.updateDoc).toHaveBeenCalledWith(
+      { _ref: 'orders/order-1', id: 'order-1' },
+      expect.objectContaining({
+        status: 'processing',
+        statusHistory: [
+          ...withHistoryData.statusHistory,
+          expect.objectContaining({
+            from: 'pending',
+            to: 'processing',
+            by: 'admin-user',
+            timestamp: { _type: 'TimestampNow' },
+          }),
+        ],
+        updatedAt: { _serverTimestamp: true },
+      }),
+    );
     expect(result?.status).toBe('processing');
   });
 });

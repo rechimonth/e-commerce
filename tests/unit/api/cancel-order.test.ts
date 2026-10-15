@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   order: { userId: 'customer-1', status: 'pending', statusHistory: [] as unknown[], items: [] as Array<{ productId: string; quantity: number }> },
   products: new Map<string, { stock: number }>(),
   update: vi.fn(),
+  timestamp: vi.fn(() => ({ type: 'timestamp' })),
 }));
 
 vi.mock('firebase-admin/app', () => ({
@@ -18,6 +19,7 @@ vi.mock('../../../server/firebaseToken.js', () => ({
 }));
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: { serverTimestamp: vi.fn(() => ({ type: 'serverTimestamp' })) },
+  Timestamp: { now: mocks.timestamp },
   getFirestore: vi.fn(() => ({
     collection: vi.fn((collectionName: string) => ({
       doc: vi.fn((id: string) => ({ id, collectionName })),
@@ -81,7 +83,7 @@ describe('POST /api/cancel-order', () => {
       expect.objectContaining({ id: 'order-1' }),
       expect.objectContaining({
         status: 'cancelled',
-        statusHistory: [expect.objectContaining({ from: 'pending', to: 'cancelled', by: 'customer-1' })],
+        statusHistory: [expect.objectContaining({ from: 'pending', to: 'cancelled', by: 'customer-1', timestamp: { type: 'timestamp' } })],
       }),
     );
   });
