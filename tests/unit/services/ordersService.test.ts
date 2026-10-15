@@ -56,13 +56,13 @@ describe('ordersService.updateOrderStatus', () => {
     vi.unstubAllGlobals();
   });
 
-  it('uses PATCH and waits for API confirmation before refreshing the order', async () => {
+  it('uses POST and waits for API confirmation before refreshing the order', async () => {
     await ordersService.updateOrderStatus('order-123', 'processing');
 
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/update-order-status',
       expect.objectContaining({
-        method: 'PATCH',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Bearer firebase-id-token',
@@ -72,4 +72,27 @@ describe('ordersService.updateOrderStatus', () => {
     );
     expect(mocks.getOrder).toHaveBeenCalledWith('order-123');
   });
+  
+  it('deletes orders through the persistent admin POST endpoint', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, deletedOrderIds: ['order-123'] }),
+    });
+
+    await expect(ordersService.deleteOrders(['order-123'])).resolves.toEqual(['order-123']);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/delete-orders',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer firebase-id-token',
+        },
+        body: JSON.stringify({ orderIds: ['order-123'] }),
+      }),
+    );
+  });
+
 });
