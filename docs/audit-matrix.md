@@ -19,7 +19,7 @@
 | Upload S3 presigned POST | IMPLEMENTADO EN CÓDIGO | `api/upload.ts` + `src/services/uploadService.ts`; no prueba por sí solo bucket/CORS reales |
 | Reglas Firestore de carrito y roles | CI PASS | `firestore.rules` + suite Firebase Emulator |
 | Flujos UI carrito → checkout | CI PASS | `tests/integration/cart-checkout-flow.test.tsx`; el límite remoto de checkout está mockeado |
-| Lint, pruebas, build y typecheck API | CI PASS | Run de GitHub Actions: [38656741694](https://github.com/rechimonth/e-commerce/actions/runs/38656741694) |
+| Lint, pruebas, build y typecheck API | CI PASS | Run de GitHub Actions: [38657289399](https://github.com/rechimonth/e-commerce/actions/runs/38656741694) |
 | Vercel | PARCIAL | El check de integración despliega; falta una prueba autenticada completa contra el alias de producción |
 | Variables Vercel/Firebase/AWS | PENDIENTE DE VERIFICACIÓN EXTERNA | No se pueden inferir sus valores desde el repositorio |
 | S3 real: CORS, carga y lectura | PENDIENTE E2E | Requiere bucket y credenciales reales |

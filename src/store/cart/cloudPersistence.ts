@@ -90,6 +90,10 @@ export async function loadCartFromCloud(userId: string): Promise<CartState | nul
 export function saveCartToCloud(userId: string, state: CartState): Promise<void> {
   if (!userId) return Promise.reject(new Error('A user ID is required to sync the cart'));
 
+  if (state.items.length > MAX_CART_ITEMS) {
+    return Promise.reject(new Error('Cloud cart sync supports at most 100 distinct products; the local cart is preserved'));
+  }
+
   const previous = pendingWrites.get(userId) ?? Promise.resolve();
   const next = previous.catch(() => undefined).then(async () => {
     const reference = doc(getFirebaseDb(), 'carts', userId);
@@ -100,7 +104,7 @@ export function saveCartToCloud(userId: string, state: CartState): Promise<void>
 
     await setDoc(reference, {
       version: CART_DOCUMENT_VERSION,
-      items: state.items.slice(0, MAX_CART_ITEMS),
+      items: state.items,
       discount: state.discount,
       lastUpdated: state.lastUpdated.toISOString(),
     });

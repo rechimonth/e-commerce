@@ -8,7 +8,7 @@
 
 ## Evidencia actual
 
-La ejecución de CI para el commit `4d5333f9194b4485f3158753c858b45c4fd98410` terminó correctamente:
+La ejecución de CI para el commit `1aebf941b4b5e37508523a560eb11d86fe0e30a8` terminó correctamente:
 
 - `npm ci`
 - `npm run lint`
@@ -17,7 +17,7 @@ La ejecución de CI para el commit `4d5333f9194b4485f3158753c858b45c4fd98410` te
 - `npm run build`
 - `npm run typecheck:api`
 
-[Ver ejecución completa en GitHub Actions](https://github.com/rechimonth/e-commerce/actions/runs/38656741694).
+[Ver ejecución completa en GitHub Actions](https://github.com/rechimonth/e-commerce/actions/runs/38657289399).
 
 La suite incluye un flujo de integración de carrito → checkout → confirmación y una prueba de fallo que comprueba que el carrito se conserva. El servicio remoto de checkout está mockeado en esas pruebas; no son un checkout E2E contra Firebase de producción.
 

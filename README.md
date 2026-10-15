@@ -43,7 +43,7 @@ El checkout simula el pago; no procesa cargos reales con una pasarela.
 1. Registrarse o iniciar sesión con email/contraseña; el inicio con Google está integrado.
 2. Explorar, buscar y filtrar productos por categoría.
 3. Ver detalles y reseñas de productos.
-4. Agregar productos al carrito, modificar cantidades y eliminarlos.
+4. Agregar productos al carrito, modificar cantidades y eliminarlos; al iniciar sesión, el carrito se sincroniza por UID en Firestore y mantiene una caché local para uso offline.
 5. Confirmar un checkout con datos de envío y método de pago simulado.
 6. Consultar el historial y detalle de sus órdenes.
 7. Cancelar una orden que todavía esté en estado pending, cuando se cumplan las validaciones del servidor.

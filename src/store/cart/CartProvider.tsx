@@ -1,13 +1,13 @@
 /**
  * CartProvider — provee el estado del carrito a la app.
  *
- * Usa useReducer con inicialización lazy (restaura desde localStorage).
- * Persiste cambios al localStorage vía useEffect.
+ * Usa useReducer con inicialización lazy desde la caché local.
+ * Sincroniza carritos autenticados con Firestore y mantiene localStorage como fallback.
  * Los callbacks están memoizados para mantener referencias estables.
  *
  * NO usa React Context directamente en consumidores — ellos usan useCart().
  */
-import { useReducer, useEffect, useMemo, useCallback, useContext, useState } from 'react';
+import { useReducer, useEffect, useMemo, useCallback, useContext, useState, useRef } from 'react';
 import { cartReducer, createInitialCartState } from '@/utils/cart/cartUtils';
 import {
   loadCartFromStorage,
@@ -29,6 +29,9 @@ function initCartState(storageKey: string): CartState {
 
 function CartStateProvider({ children, storageKey, userId }: { children: ReactNode; storageKey: string; userId?: string }) {
   const [state, dispatch] = useReducer(cartReducer, storageKey, initCartState);
+  const initialStateRef = useRef(state);
+  const currentStateRef = useRef(state);
+  currentStateRef.current = state;
   const [cloudReady, setCloudReady] = useState(!userId);
 
   useEffect(() => {
@@ -41,7 +44,10 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
     setCloudReady(false);
     void loadCartFromCloud(userId)
       .then((cloudState) => {
-        if (active && cloudState) dispatch({ type: 'HYDRATE', state: cloudState });
+        const changedDuringHydration = currentStateRef.current !== initialStateRef.current;
+        if (active && cloudState && !changedDuringHydration) {
+          dispatch({ type: 'HYDRATE', state: cloudState });
+        }
       })
       .catch(() => {
         // Keep the per-user local cache available if Firestore is temporarily unreachable.
