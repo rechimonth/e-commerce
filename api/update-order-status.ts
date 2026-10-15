@@ -1,6 +1,6 @@
 import { FirebaseConfigurationError, getFirebaseAdminApp } from '../server/firebaseAdmin.js';
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../server/firebaseToken.js';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const VALID_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         status: body.status,
         statusHistory: [
           ...history,
-          { from: currentStatus, to: body.status, by: decoded.uid, timestamp: FieldValue.serverTimestamp() },
+          { from: currentStatus, to: body.status, by: decoded.uid, timestamp: Timestamp.now() },
         ],
         updatedAt: FieldValue.serverTimestamp(),
       });
