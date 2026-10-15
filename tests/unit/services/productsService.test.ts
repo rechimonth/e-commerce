@@ -91,23 +91,40 @@ describe('productsService', () => {
     });
   });
 
-  it('fetchProducts filters by search term (client-side)', async () => {
-    const { getProductsPage } = await import('@/infrastructure/firebase/firestore');
-    (getProductsPage as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockProducts, nextCursor: null, hasNext: false });
+  it('fetchProducts searches the full active catalogue, not only one page', async () => {
+    const { getProducts } = await import('@/infrastructure/firebase/firestore');
+    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
 
     const result = await productsService.fetchProducts({ search: 'iPhone' });
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]!.name).toBe('iPhone 15 Pro');
+    expect(getProducts).toHaveBeenCalledWith({ category: undefined, isActive: true });
   });
 
   it('fetchProducts returns empty for non-matching search', async () => {
-    const { getProductsPage } = await import('@/infrastructure/firebase/firestore');
-    (getProductsPage as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockProducts, nextCursor: null, hasNext: false });
+    const { getProducts } = await import('@/infrastructure/firebase/firestore');
+    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
 
     const result = await productsService.fetchProducts({ search: 'xyz' });
 
+    expect(getProducts).toHaveBeenCalledWith({ category: undefined, isActive: true });
     expect(result.items).toHaveLength(0);
+  });
+
+  it('finds a matching product beyond the first 20 catalogue entries', async () => {
+    const { getProducts } = await import('@/infrastructure/firebase/firestore');
+    const fullCatalogue = Array.from({ length: 25 }, (_, index) => ({
+      ...mockProducts[0]!,
+      id: `product-${index}`,
+      name: index === 24 ? 'Elden Ring' : `Unrelated Product ${index}`,
+    }));
+    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(fullCatalogue);
+
+    const result = await productsService.fetchProducts({ search: 'elden ring', limit: 20 });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.name).toBe('Elden Ring');
   });
 
   it('fetchProduct returns a single product', async () => {

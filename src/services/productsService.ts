@@ -3,6 +3,7 @@
  * Orquesta Firestore y convierte DTOs a entidades de dominio.
  */
 import {
+  getProducts,
   getProductsPage,
   getProduct,
   createProduct as firestoreCreateProduct,
@@ -77,12 +78,31 @@ export const productsService = {
   async fetchProducts(params: FetchProductsParams = {}): Promise<ProductsResult> {
     return firebaseTryCatch(async () => {
       const { search, category, limit = DEFAULT_LIMIT, cursor, page = cursor ? 2 : 1 } = params;
-      const result = await getProductsPage({ category, isActive: true, limit, cursor });
       const normalizedSearch = search?.trim().toLocaleLowerCase();
-      const items = result.items
-        .map(toProduct)
-        .filter((product) => !normalizedSearch || product.name.toLocaleLowerCase().includes(normalizedSearch));
-      return normalizePage(items, limit, page, result.nextCursor);
+
+      // Firestore has no case-insensitive substring query. Search the complete
+      // active/category-scoped set before paginating, so matches beyond page one
+      // remain discoverable.
+      if (normalizedSearch) {
+        const allProducts = await getProducts({ category, isActive: true });
+        const matches = allProducts
+          .map(toProduct)
+          .filter((product) => product.name.toLocaleLowerCase().includes(normalizedSearch))
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        let startIndex = 0;
+        if (cursor) {
+          const cursorIndex = matches.findIndex((product) => product.id === cursor);
+          startIndex = cursorIndex >= 0 ? cursorIndex + 1 : 0;
+        } else if (page > 1) {
+          startIndex = (page - 1) * limit;
+        }
+        const items = matches.slice(startIndex, startIndex + limit);
+        const hasNext = startIndex + limit < matches.length;
+        return normalizePage(items, limit, page, hasNext ? items[items.length - 1]?.id ?? null : null);
+      }
+
+      const result = await getProductsPage({ category, isActive: true, limit, cursor });
+      return normalizePage(result.items.map(toProduct), limit, page, result.nextCursor);
     });
   },
 

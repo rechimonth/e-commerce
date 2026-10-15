@@ -4,7 +4,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const mocks = vi.hoisted(() => ({
   uid: 'admin-1',
   role: 'admin',
-  order: { status: 'pending', statusHistory: [] as unknown[] },
+  order: { status: 'pending', statusHistory: [] as unknown[], items: [] as Array<{ productId: string; quantity: number }> },
+  products: new Map<string, { stock: number }>(),
   update: vi.fn(),
   delete: vi.fn(),
   timestamp: vi.fn(() => ({ type: 'timestamp' })),
@@ -31,7 +32,13 @@ vi.mock('firebase-admin/firestore', () => ({
       })),
     })),
     runTransaction: vi.fn(async (callback: (transaction: unknown) => Promise<void>) => callback({
-      get: async () => ({ exists: true, data: () => mocks.order }),
+      get: async (ref: { collectionName?: string; id?: string }) => {
+        if (ref.collectionName === 'products') {
+          const product = mocks.products.get(ref.id ?? '');
+          return { exists: Boolean(product), data: () => product };
+        }
+        return { exists: true, data: () => mocks.order };
+      },
       update: mocks.update,
       delete: mocks.delete,
     })),
@@ -80,7 +87,8 @@ describe('/api/update-order-status', () => {
     vi.clearAllMocks();
     mocks.uid = 'admin-1';
     mocks.role = 'admin';
-    mocks.order = { status: 'pending', statusHistory: [] };
+    mocks.order = { status: 'pending', statusHistory: [], items: [] };
+    mocks.products.clear();
     mocks.headers = {};
   });
 
@@ -110,6 +118,29 @@ describe('/api/update-order-status', () => {
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'order-1' }),
       expect.objectContaining({ status: 'processing' }),
+    );
+  });
+
+  it('restores reserved stock when an admin cancels a pending order', async () => {
+    mocks.order = {
+      status: 'pending',
+      statusHistory: [],
+      items: [{ productId: 'product-1', quantity: 2 }],
+    };
+    mocks.products.set('product-1', { stock: 3 });
+    const handler = (await import('../../../api/update-order-status')).default;
+    const response = createResponse();
+
+    await handler(createRequest({ orderId: 'order-1', status: 'cancelled' }), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionName: 'products', id: 'product-1' }),
+      expect.objectContaining({ stock: 5 }),
+    );
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionName: 'orders', id: 'order-1' }),
+      expect.objectContaining({ status: 'cancelled' }),
     );
   });
 

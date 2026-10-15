@@ -104,6 +104,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new OrderStatusError(409, 'Invalid order status transition');
       }
 
+      if (nextStatus === 'cancelled') {
+        const items = Array.isArray(order.items) ? order.items as Array<Record<string, unknown>> : [];
+        const restockItems = items.map((item) => {
+          if (
+            typeof item.productId !== 'string' ||
+            !item.productId ||
+            item.productId.length > 128 ||
+            item.productId.includes('/') ||
+            typeof item.quantity !== 'number' ||
+            !Number.isSafeInteger(item.quantity) ||
+            item.quantity < 1
+          ) {
+            throw new OrderStatusError(409, 'Order contains invalid restock data');
+          }
+          return { ref: firestore.collection('products').doc(item.productId), quantity: item.quantity };
+        });
+        // Firestore requires all transaction reads to finish before writes.
+        const productSnapshots = await Promise.all(restockItems.map(({ ref }) => transaction.get(ref)));
+        productSnapshots.forEach((productSnapshot, index) => {
+          if (!productSnapshot.exists) return;
+          const currentStock = productSnapshot.data()?.stock;
+          const quantity = restockItems[index]!.quantity;
+          if (typeof currentStock !== 'number' || !Number.isSafeInteger(currentStock) ||
+              currentStock < 0 || !Number.isSafeInteger(currentStock + quantity)) {
+            throw new OrderStatusError(409, 'Product contains invalid stock data');
+          }
+        });
+        productSnapshots.forEach((productSnapshot, index) => {
+          if (!productSnapshot.exists) return;
+          const currentStock = productSnapshot.data()?.stock as number;
+          transaction.update(restockItems[index]!.ref, {
+            stock: currentStock + restockItems[index]!.quantity,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        });
+      }
+
       const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
       transaction.update(orderRef, {
         status: nextStatus,

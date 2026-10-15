@@ -202,14 +202,15 @@ export function AdminOrdersPage() {
   const [statusSelectValues, setStatusSelectValues] = useState<Record<string, string>>({});
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ORDERS_PER_PAGE = 20;
 
   const fetchOrders = useCallback(async () => {
     setStatus('loading');
     setError(null);
     try {
-      const filters: { status?: OrderStatus; limit?: number } = {};
+      const filters: { status?: OrderStatus } = {};
       if (statusFilter !== 'all') filters.status = statusFilter;
-      filters.limit = 50;
       const result = await ordersService.fetchAllOrders(filters);
       setOrders(result);
       setStatus('success');
@@ -295,22 +296,44 @@ export function AdminOrdersPage() {
   };
 
   const handleBulkComplete = async () => {
-    if (selectedOrderIds.size === 0 || !user) return;
+    if (selectedOrderIds.size === 0 || !user || !orders) return;
     setIsBulkProcessing(true);
-    try {
-      await Promise.all([...selectedOrderIds].map((id) => ordersService.updateOrderStatus(id, 'completed')));
-      setSelectedOrderIds(new Set());
-      void fetchOrders();
-    } catch (e) {
-      const err: ServiceError = {
-        code: 'INTERNAL_ERROR',
-        message: e instanceof Error ? e.message : 'Error al actualizar órdenes',
-        details: { error: e instanceof Error ? e.message : String(e) },
-      };
-      setError(err);
-    } finally {
-      setIsBulkProcessing(false);
+    setError(null);
+    const selected = orders.filter((order) => selectedOrderIds.has(order.id));
+    const completedIds = new Set<string>();
+    const failedIds: string[] = [];
+
+    // Respect pending -> processing -> completed; continue after individual failures.
+    for (const order of selected) {
+      try {
+        let currentStatus = order.status;
+        if (currentStatus === 'pending') {
+          const processing = await ordersService.updateOrderStatus(order.id, 'processing');
+          if (!processing) throw new Error('No se pudo pasar la orden a procesamiento');
+          currentStatus = processing.status;
+        }
+        if (currentStatus !== 'processing') {
+          failedIds.push(order.id);
+          continue;
+        }
+        const completed = await ordersService.updateOrderStatus(order.id, 'completed');
+        if (!completed) throw new Error('No se pudo completar la orden');
+        completedIds.add(order.id);
+      } catch {
+        failedIds.push(order.id);
+      }
     }
+
+    setSelectedOrderIds(new Set(failedIds));
+    await fetchOrders();
+    if (failedIds.length > 0) {
+      setError({
+        code: 'VALIDATION_ERROR',
+        message: `${completedIds.size} orden(es) completada(s). ${failedIds.length} no se pudieron completar por su estado actual o por un error de persistencia.`,
+        details: { failedOrderIds: failedIds },
+      });
+    }
+    setIsBulkProcessing(false);
   };
 
   const handleDeleteOrders = async (orderIds: string[]) => {
@@ -360,6 +383,10 @@ export function AdminOrdersPage() {
     setDateRangeFilter('all');
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, paymentFilter, dateRangeFilter]);
+
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     return orders.filter((order) => {
@@ -372,6 +399,12 @@ export function AdminOrdersPage() {
       return matchesSearch && matchesStatus && matchesPayment && matchesDate;
     });
   }, [orders, searchTerm, statusFilter, paymentFilter, dateRangeFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
+  const visibleOrders = filteredOrders.slice(
+    (currentPage - 1) * ORDERS_PER_PAGE,
+    currentPage * ORDERS_PER_PAGE,
+  );
 
   const getAvailableStatusTransitions = (current: OrderStatus): OrderStatus[] => {
     return (['pending', 'processing', 'completed', 'cancelled'] as const)
@@ -584,7 +617,7 @@ export function AdminOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200">
-                {filteredOrders.map((order) => (
+                {visibleOrders.map((order) => (
                   <tr key={order.id} className={selectedOrderIds.has(order.id) ? 'bg-primary-50/50' : ''}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -639,6 +672,16 @@ export function AdminOrdersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-neutral-600" aria-live="polite">
+              Mostrando {filteredOrders.length === 0 ? 0 : (currentPage - 1) * ORDERS_PER_PAGE + 1}–{Math.min(currentPage * ORDERS_PER_PAGE, filteredOrders.length)} de {filteredOrders.length} órdenes filtradas ({orders?.length ?? 0} cargadas)
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>Anterior</Button>
+              <span className="text-sm text-neutral-600">Página {Math.min(currentPage, totalPages)} de {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>Siguiente</Button>
+            </div>
           </div>
         </Card>
       )}
