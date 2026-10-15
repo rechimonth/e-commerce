@@ -257,11 +257,6 @@ export function AdminOrdersPage() {
         setOrders((prev) =>
           prev ? prev.map((o) => (o.id === orderId ? updated : o)) : prev,
         );
-        setStatusSelectValues((prev) => {
-          const next = { ...prev };
-          delete next[orderId];
-          return next;
-        });
       } else {
         void fetchOrders();
       }
@@ -273,6 +268,11 @@ export function AdminOrdersPage() {
       };
       setError(err);
     } finally {
+      setStatusSelectValues((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
       setUpdatingOrderId(null);
     }
   };

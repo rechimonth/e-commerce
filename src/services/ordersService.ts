@@ -127,7 +127,7 @@ export const ordersService = {
     return firebaseTryCatch(async () => {
       const token = await getCurrentUserIdToken();
       const response = await fetch('/api/update-order-status', {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,

@@ -24,16 +24,49 @@ function jsonError(res: VercelResponse, status: number, error: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST' && req.method !== 'PATCH') {
-    res.setHeader('Allow', 'POST, PATCH');
-    return jsonError(res, 405, 'Method not allowed. Use POST or PATCH');
+  // POST/PATCH are the supported contract. PUT and DELETE remain accepted for
+  // compatibility with clients deployed before the current service contract.
+  const allowedMethods = 'POST, PATCH, PUT, DELETE, OPTIONS';
+  res.setHeader('Allow', allowedMethods);
+
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    return res.status(204).end();
   }
+  if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method ?? '')) {
+    return jsonError(res, 405, 'Method not allowed. Use POST, PATCH, PUT, or DELETE');
+  }
+
   const authorization = req.headers.authorization ?? '';
   if (!authorization.startsWith('Bearer ')) return jsonError(res, 401, 'Authentication required');
-  const body = req.body as { orderId?: unknown; status?: unknown } | undefined;
-  if (
-    !body || typeof body.orderId !== 'string' || !body.orderId.trim() || body.orderId.length > 128
-    || typeof body.status !== 'string' || !Object.hasOwn(VALID_TRANSITIONS, body.status)
+
+  const body = req.body as { orderId?: unknown; orderIds?: unknown; status?: unknown } | undefined;
+  const isDelete = req.method === 'DELETE';
+  let orderIds: string[] = [];
+
+  if (isDelete) {
+    const rawIds = Array.isArray(body?.orderIds)
+      ? body.orderIds
+      : typeof body?.orderId === 'string'
+        ? [body.orderId]
+        : [];
+    orderIds = rawIds.map((value) => typeof value === 'string' ? value.trim() : '');
+    if (
+      orderIds.length < 1 ||
+      orderIds.length > 100 ||
+      orderIds.some((id) => !id || id.length > 128 || id.includes('/')) ||
+      new Set(orderIds).size !== orderIds.length
+    ) {
+      return jsonError(res, 400, 'DELETE requires orderId or 1–100 unique orderIds');
+    }
+  } else if (
+    !body ||
+    typeof body.orderId !== 'string' ||
+    !body.orderId.trim() ||
+    body.orderId.length > 128 ||
+    typeof body.status !== 'string' ||
+    !Object.hasOwn(VALID_TRANSITIONS, body.status)
   ) {
     return jsonError(res, 400, 'Invalid order status request');
   }
@@ -42,33 +75,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
     const app = getFirebaseAdminApp();
     const firestore = getFirestore(app);
-    const [profile] = await Promise.all([
-      firestore.collection('users').doc(decoded.uid).get(),
-    ]);
+    const profile = await firestore.collection('users').doc(decoded.uid).get();
     if (!profile.exists || profile.data()?.role !== 'admin') return jsonError(res, 403, 'Admin role required');
 
-    const orderRef = firestore.collection('orders').doc(body.orderId);
+    // Legacy DELETE compatibility. The current frontend should use
+    // POST /api/admin/delete-orders for deletions.
+    if (isDelete) {
+      const orderRefs = orderIds.map((id) => firestore.collection('orders').doc(id));
+      await firestore.runTransaction(async (transaction) => {
+        const snapshots = await Promise.all(orderRefs.map((ref) => transaction.get(ref)));
+        if (snapshots.some((snapshot) => !snapshot.exists)) {
+          throw new OrderStatusError(404, 'One or more orders were not found');
+        }
+        orderRefs.forEach((ref) => transaction.delete(ref));
+      });
+      return res.status(200).json({ success: true, deletedOrderIds: orderIds });
+    }
+
+    const orderId = (body!.orderId as string).trim();
+    const nextStatus = body!.status as string;
+    const orderRef = firestore.collection('orders').doc(orderId);
     await firestore.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(orderRef);
       if (!snapshot.exists) throw new OrderStatusError(404, 'Order not found');
       const order = snapshot.data() ?? {};
       const currentStatus = typeof order.status === 'string' ? order.status : '';
-      if (!VALID_TRANSITIONS[currentStatus]?.includes(body.status as string)) {
+      if (!VALID_TRANSITIONS[currentStatus]?.includes(nextStatus)) {
         throw new OrderStatusError(409, 'Invalid order status transition');
       }
 
       const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
       transaction.update(orderRef, {
-        status: body.status,
+        status: nextStatus,
         statusHistory: [
           ...history,
-          { from: currentStatus, to: body.status, by: decoded.uid, timestamp: Timestamp.now() },
+          { from: currentStatus, to: nextStatus, by: decoded.uid, timestamp: Timestamp.now() },
         ],
         updatedAt: FieldValue.serverTimestamp(),
       });
     });
 
-    return res.status(200).json({ success: true, orderId: body.orderId, status: body.status });
+    return res.status(200).json({ success: true, orderId, status: nextStatus });
   } catch (error) {
     if (error instanceof OrderStatusError) return jsonError(res, error.status, error.message);
     if (error instanceof FirebaseTokenError) return jsonError(res, error.status, error.message);
@@ -76,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('Firebase Admin configuration error:', error.message);
       return jsonError(res, 500, 'Firebase server configuration is incomplete');
     }
-    console.error('Admin order status update failed:', error instanceof Error ? error.message : 'unknown error');
-    return jsonError(res, 500, 'Unable to update order status');
+    console.error('Admin order operation failed:', error instanceof Error ? error.message : 'unknown error');
+    return jsonError(res, 500, isDelete ? 'Unable to delete orders' : 'Unable to update order status');
   }
 }

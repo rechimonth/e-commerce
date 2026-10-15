@@ -56,13 +56,13 @@ describe('ordersService.updateOrderStatus', () => {
     vi.unstubAllGlobals();
   });
 
-  it('uses POST and waits for API confirmation before refreshing the order', async () => {
+  it('uses PATCH and waits for API confirmation before refreshing the order', async () => {
     await ordersService.updateOrderStatus('order-123', 'processing');
 
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/update-order-status',
       expect.objectContaining({
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Bearer firebase-id-token',

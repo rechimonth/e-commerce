@@ -6,7 +6,9 @@ const mocks = vi.hoisted(() => ({
   role: 'admin',
   order: { status: 'pending', statusHistory: [] as unknown[] },
   update: vi.fn(),
+  delete: vi.fn(),
   timestamp: vi.fn(() => ({ type: 'timestamp' })),
+  headers: {} as Record<string, string>,
 }));
 
 vi.mock('firebase-admin/app', () => ({
@@ -22,8 +24,8 @@ vi.mock('firebase-admin/firestore', () => ({
   Timestamp: { now: mocks.timestamp },
   getFirestore: vi.fn(() => ({
     collection: vi.fn((collectionName: string) => ({
-      doc: vi.fn(() => ({
-        id: 'order-1',
+      doc: vi.fn((id?: string) => ({
+        id: id ?? 'order-1',
         collectionName,
         get: async () => ({ exists: true, data: () => ({ role: mocks.role }) }),
       })),
@@ -31,11 +33,14 @@ vi.mock('firebase-admin/firestore', () => ({
     runTransaction: vi.fn(async (callback: (transaction: unknown) => Promise<void>) => callback({
       get: async () => ({ exists: true, data: () => mocks.order }),
       update: mocks.update,
+      delete: mocks.delete,
     })),
   })),
 }));
 
-function createRequest(body: Record<string, unknown>, method: 'POST' | 'PATCH' = 'POST'): VercelRequest {
+type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' | 'OPTIONS';
+
+function createRequest(body: Record<string, unknown> = {}, method: HttpMethod = 'POST'): VercelRequest {
   return {
     method,
     headers: { authorization: 'Bearer test-token' },
@@ -46,12 +51,20 @@ function createRequest(body: Record<string, unknown>, method: 'POST' | 'PATCH' =
 function createResponse() {
   let statusCode = 200;
   let jsonPayload: Record<string, unknown> = {};
+  mocks.headers = {};
   const response = {
+    setHeader(name: string, value: string) {
+      mocks.headers[name] = value;
+      return response;
+    },
     status(code: number) {
       statusCode = code;
       return {
         json(payload: Record<string, unknown>) {
           jsonPayload = payload;
+          return response;
+        },
+        end() {
           return response;
         },
       };
@@ -62,19 +75,20 @@ function createResponse() {
   return response as unknown as VercelResponse & typeof response;
 }
 
-describe('POST /api/update-order-status', () => {
+describe('/api/update-order-status', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.uid = 'admin-1';
     mocks.role = 'admin';
     mocks.order = { status: 'pending', statusHistory: [] };
+    mocks.headers = {};
   });
 
-  it('appends an authenticated admin transition transactionally', async () => {
+  it('persists a valid admin transition transactionally with POST', async () => {
     const handler = (await import('../../../api/update-order-status')).default;
     const response = createResponse();
 
-    await handler(createRequest({ orderId: 'order-1', status: 'processing' }), response);
+    await handler(createRequest({ orderId: 'order-1', status: 'processing' }, 'POST'), response);
 
     expect(response.statusCode).toBe(200);
     expect(mocks.update).toHaveBeenCalledWith(
@@ -86,11 +100,11 @@ describe('POST /api/update-order-status', () => {
     );
   });
 
-  it('accepts PATCH requests for order state transitions', async () => {
+  it.each(['PATCH', 'PUT'] as const)('accepts %s for a status transition', async (method) => {
     const handler = (await import('../../../api/update-order-status')).default;
     const response = createResponse();
 
-    await handler(createRequest({ orderId: 'order-1', status: 'processing' }, 'PATCH'), response);
+    await handler(createRequest({ orderId: 'order-1', status: 'processing' }, method), response);
 
     expect(response.statusCode).toBe(200);
     expect(mocks.update).toHaveBeenCalledWith(
@@ -99,7 +113,40 @@ describe('POST /api/update-order-status', () => {
     );
   });
 
-  it('rejects non-admin callers', async () => {
+  it('supports legacy DELETE clients and removes documents transactionally', async () => {
+    const handler = (await import('../../../api/update-order-status')).default;
+    const response = createResponse();
+
+    await handler(createRequest({ orderId: 'order-1' }, 'DELETE'), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.jsonPayload).toEqual({ success: true, deletedOrderIds: ['order-1'] });
+    expect(mocks.delete).toHaveBeenCalledWith(expect.objectContaining({ id: 'order-1' }));
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('handles OPTIONS without reporting an unsupported method', async () => {
+    const handler = (await import('../../../api/update-order-status')).default;
+    const response = createResponse();
+
+    await handler(createRequest({}, 'OPTIONS'), response);
+
+    expect(response.statusCode).toBe(204);
+    expect(mocks.headers.Allow).toContain('OPTIONS');
+  });
+
+  it('returns 405 and Allow for genuinely unsupported methods', async () => {
+    const handler = (await import('../../../api/update-order-status')).default;
+    const response = createResponse();
+
+    await handler(createRequest({}, 'GET'), response);
+
+    expect(response.statusCode).toBe(405);
+    expect(response.jsonPayload.error).toContain('Method not allowed');
+    expect(mocks.headers.Allow).toContain('PATCH');
+  });
+
+  it('rejects non-admin callers without updating an order', async () => {
     mocks.role = 'customer';
     const handler = (await import('../../../api/update-order-status')).default;
     const response = createResponse();
@@ -110,14 +157,14 @@ describe('POST /api/update-order-status', () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid state transitions', async () => {
-    mocks.order = { status: 'pending', statusHistory: [] };
+  it('rejects invalid state transitions without writing to Firestore', async () => {
     const handler = (await import('../../../api/update-order-status')).default;
     const response = createResponse();
 
     await handler(createRequest({ orderId: 'order-1', status: 'completed' }), response);
 
     expect(response.statusCode).toBe(409);
+    expect(response.jsonPayload.error).toBe('Invalid order status transition');
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });
