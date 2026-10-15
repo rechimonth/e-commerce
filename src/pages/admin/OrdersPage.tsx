@@ -102,7 +102,7 @@ function BulkActionBar({ selectedCount, onClear, onBulkComplete, onBulkDelete, i
   );
 }
 
-function OrderActionsDropdown({ order, onViewDetail }: { order: Order; onViewDetail: () => void }) {
+function OrderActionsDropdown({ order, onViewDetail, onDeleteOrder }: { order: Order; onViewDetail: () => void; onDeleteOrder: (orderId: string) => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -154,7 +154,7 @@ function OrderActionsDropdown({ order, onViewDetail }: { order: Order; onViewDet
             <div className="my-1 h-px bg-neutral-100" />
             <button
               className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); onDeleteOrder(order.id); }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 6h18" />
@@ -313,12 +313,30 @@ export function AdminOrdersPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedOrderIds.size === 0) return;
+  const handleDeleteOrders = async (orderIds: string[]) => {
+    const uniqueOrderIds = [...new Set(orderIds)];
+    if (uniqueOrderIds.length === 0) return;
+    if (!user) {
+      setError({
+        code: 'UNAUTHORIZED',
+        message: 'Necesitas una sesión de administrador para eliminar órdenes.',
+        details: {},
+      });
+      return;
+    }
+
+    const confirmation = uniqueOrderIds.length === 1
+      ? '¿Eliminar permanentemente esta orden? Esta acción no se puede deshacer.'
+      : `¿Eliminar permanentemente estas ${uniqueOrderIds.length} órdenes? Esta acción no se puede deshacer.`;
+    if (!window.confirm(confirmation)) return;
+
     setIsBulkProcessing(true);
+    setError(null);
     try {
-      setOrders((prev) => prev ? prev.filter((o) => !selectedOrderIds.has(o.id)) : prev);
-      setSelectedOrderIds(new Set());
+      const deletedOrderIds = await ordersService.deleteOrders(uniqueOrderIds);
+      const deletedIds = new Set(deletedOrderIds);
+      setOrders((prev) => prev ? prev.filter((order) => !deletedIds.has(order.id)) : prev);
+      setSelectedOrderIds((prev) => new Set([...prev].filter((id) => !deletedIds.has(id))));
     } catch (e) {
       const err: ServiceError = {
         code: 'INTERNAL_ERROR',
@@ -329,6 +347,10 @@ export function AdminOrdersPage() {
     } finally {
       setIsBulkProcessing(false);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    await handleDeleteOrders([...selectedOrderIds]);
   };
 
   const handleClearFilters = () => {
@@ -408,6 +430,12 @@ export function AdminOrdersPage() {
           </Button>
         </div>
       </div>
+
+      {error && status !== 'error' && (
+        <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error.message}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
@@ -604,7 +632,7 @@ export function AdminOrdersPage() {
                             </option>
                           ))}
                         </select>
-                        <OrderActionsDropdown order={order} onViewDetail={() => {}} />
+                        <OrderActionsDropdown order={order} onViewDetail={() => {}} onDeleteOrder={(orderId) => { void handleDeleteOrders([orderId]); }} />
                       </div>
                     </td>
                   </tr>

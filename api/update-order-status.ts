@@ -24,7 +24,10 @@ function jsonError(res: VercelResponse, status: number, error: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return jsonError(res, 405, 'Method not allowed');
+  if (req.method !== 'POST' && req.method !== 'PATCH') {
+    res.setHeader('Allow', 'POST, PATCH');
+    return jsonError(res, 405, 'Method not allowed. Use POST or PATCH');
+  }
   const authorization = req.headers.authorization ?? '';
   if (!authorization.startsWith('Bearer ')) return jsonError(res, 401, 'Authentication required');
   const body = req.body as { orderId?: unknown; status?: unknown } | undefined;
@@ -74,6 +77,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return jsonError(res, 500, 'Firebase server configuration is incomplete');
     }
     console.error('Admin order status update failed:', error instanceof Error ? error.message : 'unknown error');
-    return jsonError(res, 401, 'Unable to update order status');
+    return jsonError(res, 500, 'Unable to update order status');
   }
 }

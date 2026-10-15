@@ -33,9 +33,9 @@ vi.mock('firebase-admin/firestore', () => ({
   })),
 }));
 
-function createRequest(body: Record<string, unknown>): VercelRequest {
+function createRequest(body: Record<string, unknown>, method: 'POST' | 'PATCH' = 'POST'): VercelRequest {
   return {
-    method: 'POST',
+    method,
     headers: { authorization: 'Bearer test-token' },
     body,
   } as unknown as VercelRequest;
@@ -81,6 +81,19 @@ describe('POST /api/update-order-status', () => {
         status: 'processing',
         statusHistory: [expect.objectContaining({ from: 'pending', to: 'processing', by: 'admin-1' })],
       }),
+    );
+  });
+
+  it('accepts PATCH requests for order state transitions', async () => {
+    const handler = (await import('../../../api/update-order-status')).default;
+    const response = createResponse();
+
+    await handler(createRequest({ orderId: 'order-1', status: 'processing' }, 'PATCH'), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'order-1' }),
+      expect.objectContaining({ status: 'processing' }),
     );
   });
 

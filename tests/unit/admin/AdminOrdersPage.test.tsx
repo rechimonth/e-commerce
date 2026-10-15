@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'admin-1', email: 'admin@test.com', displayName: 'Admin', photoURL: null, role: 'admin', createdAt: new Date(), lastLoginAt: new Date(), preferences: { currency: 'USD', locale: 'es-MX', notifications: true } }, roleState: 'admin', session: { uid: 'admin-1', role: 'admin', isAuthenticated: true }, isLoading: false, error: null, signIn: vi.fn(), signUp: vi.fn(), signInWithGoogle: vi.fn(), signOut: vi.fn(), refreshUserProfile: vi.fn(), clearError: vi.fn() }) }));
-vi.mock('@/services/ordersService', () => ({ ordersService: { fetchAllOrders: vi.fn(), updateOrderStatus: vi.fn() } }));
+vi.mock('@/services/ordersService', () => ({ ordersService: { fetchAllOrders: vi.fn(), updateOrderStatus: vi.fn(), deleteOrders: vi.fn() } }));
 vi.mock('@/infrastructure/firebase/config', () => ({ getFirebaseDb: vi.fn(() => ({ _type: 'Firestore' })), firebaseTryCatch: async (fn: () => Promise<unknown>) => fn(), _resetFirebaseForTesting: vi.fn(), initializeFirebase: vi.fn() }));
 vi.mock('@/infrastructure/firebase/auth', () => ({ observeAuthState: vi.fn(() => vi.fn()), signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signInWithGoogle: vi.fn(), signOutUser: vi.fn(), getUserProfile: vi.fn() }));
 
@@ -36,6 +36,53 @@ describe('AdminOrdersPage', () => {
     await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'processing');
     expect(ordersService.fetchAllOrders).toHaveBeenCalledWith({ status: 'processing', limit: 50 });
   });
+  it('deletes selected orders only after the API confirms success', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    vi.mocked(ordersService.deleteOrders).mockResolvedValue(['order-1']);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText(/order-1/i)).toBeInTheDocument());
+
+    await userEvent.click(screen.getAllByRole('checkbox')[0]!);
+    await userEvent.click(screen.getByRole('button', { name: /Eliminar seleccionadas/i }));
+
+    expect(ordersService.deleteOrders).toHaveBeenCalledWith(['order-1']);
+    await waitFor(() => expect(screen.getByText(/No hay órdenes registradas/i)).toBeInTheDocument());
+    confirmSpy.mockRestore();
+  });
+
+  it('keeps the order visible when the server rejects deletion', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    vi.mocked(ordersService.deleteOrders).mockRejectedValue(new Error('No se pudo eliminar'));
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText(/order-1/i)).toBeInTheDocument());
+
+    await userEvent.click(screen.getAllByRole('checkbox')[0]!);
+    await userEvent.click(screen.getByRole('button', { name: /Eliminar seleccionadas/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo eliminar');
+    expect(screen.getByText(/order-1/i)).toBeInTheDocument();
+    confirmSpy.mockRestore();
+  });
+
+  it('deletes an individual order from the row actions menu', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    vi.mocked(ordersService.deleteOrders).mockResolvedValue(['order-1']);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText(/order-1/i)).toBeInTheDocument());
+
+    const row = screen.getByText(/order-1/i).closest('tr');
+    if (!row) throw new Error('Row not found');
+    await userEvent.click(within(row).getAllByRole('button')[0]!);
+    await userEvent.click(screen.getByRole('button', { name: /Eliminar orden/i }));
+
+    expect(ordersService.deleteOrders).toHaveBeenCalledWith(['order-1']);
+    await waitFor(() => expect(screen.getByText(/No hay órdenes registradas/i)).toBeInTheDocument());
+    confirmSpy.mockRestore();
+  });
+
   it('changes order status', async () => {
     vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
     vi.mocked(ordersService.updateOrderStatus).mockResolvedValue({ ...mockOrder, status: 'processing' });

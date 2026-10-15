@@ -127,7 +127,7 @@ export const ordersService = {
     return firebaseTryCatch(async () => {
       const token = await getCurrentUserIdToken();
       const response = await fetch('/api/update-order-status', {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -144,6 +144,46 @@ export const ordersService = {
       const dto = await firestoreGetOrder(orderId);
       if (!dto) return null;
       return toOrder(dto);
+    });
+  },
+
+
+  async deleteOrders(orderIds: readonly string[]): Promise<string[]> {
+    return firebaseTryCatch(async () => {
+      const uniqueOrderIds = [...new Set(orderIds)];
+      if (uniqueOrderIds.length === 0) return [];
+      const token = await getCurrentUserIdToken();
+      const response = await fetch('/api/admin/delete-orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderIds: uniqueOrderIds }),
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        deletedOrderIds?: unknown;
+        error?: string;
+      } | null;
+      if (
+        !response.ok ||
+        !payload?.success ||
+        !Array.isArray(payload.deletedOrderIds) ||
+        !payload.deletedOrderIds.every((id): id is string => typeof id === 'string')
+      ) {
+        const code = response.status === 401
+          ? 'UNAUTHORIZED'
+          : response.status === 403
+            ? 'FORBIDDEN'
+            : response.status === 404
+              ? 'NOT_FOUND'
+              : response.status >= 500
+                ? 'INTERNAL_ERROR'
+                : 'VALIDATION_ERROR';
+        throw new FirebaseInfraError(code, payload?.error ?? 'No se pudieron eliminar las órdenes');
+      }
+      return payload.deletedOrderIds;
     });
   },
 
