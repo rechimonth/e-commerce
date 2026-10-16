@@ -51,6 +51,21 @@ describe('AdminLayout', () => {
     expect(screen.getByTestId('nav-link-configuración')).toHaveTextContent('Configuración');
   });
 
+  it('renders accessible top navigation links for the store', () => {
+    render(
+      <AuthContext.Provider value={createAuthValue()}>
+        <MemoryRouter initialEntries={['/admin/orders']}>
+          <AdminLayout />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    const nav = screen.getByRole('navigation', { name: 'Navegación de la tienda' });
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/');
+    expect(within(nav).getByRole('link', { name: 'Catálogo' })).toHaveAttribute('href', '/catalog');
+    expect(within(nav).getByRole('link', { name: 'Favoritos' })).toHaveAttribute('href', '/favorites');
+  });
+
   it('renders user display name in sidebar', () => {
     render(
       <AuthContext.Provider value={createAuthValue()}>

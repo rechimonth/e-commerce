@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
@@ -102,71 +103,126 @@ function BulkActionBar({ selectedCount, onClear, onBulkComplete, onBulkDelete, i
   );
 }
 
-function OrderActionsDropdown({ order, onViewDetail, onDeleteOrder }: { order: Order; onViewDetail: () => void; onDeleteOrder: (orderId: string) => void }) {
+function OrderActionsDropdown({ order, onDeleteOrder }: { order: Order; onDeleteOrder: (orderId: string) => void }) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const menuWidth = 192;
+      const estimatedMenuHeight = 152;
+      const padding = 8;
+      const spaceBelow = window.innerHeight - rect.bottom - padding;
+      const spaceAbove = rect.top - padding;
+      const openAbove = spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
+      const top = openAbove
+        ? Math.max(padding, rect.top - Math.min(estimatedMenuHeight, spaceAbove) - 4)
+        : Math.max(
+            padding,
+            Math.min(rect.bottom + 4, window.innerHeight - Math.min(estimatedMenuHeight, window.innerHeight - 16) - padding),
+          );
+      const left = Math.max(padding, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - padding));
+      setPosition({ top, left });
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  const menu = open && position ? createPortal(
+    <>
+      <button
+        type="button"
+        aria-label="Cerrar menú de acciones"
+        className="fixed inset-0 z-[90] cursor-default"
+        onClick={() => setOpen(false)}
+      />
+      <div
+        role="menu"
+        data-testid="order-actions-menu"
+        style={{ top: position.top, left: position.left }}
+        className="fixed z-[100] max-h-[calc(100vh-1rem)] w-48 overflow-y-auto rounded-md bg-white py-1 shadow-xl ring-1 ring-black/10"
+      >
+        <Link
+          to={`/admin/orders/${order.id}`}
+          onClick={() => setOpen(false)}
+          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Ver detalle
+        </Link>
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none"
+          onClick={() => setOpen(false)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          Editar orden
+        </button>
+        <div className="my-1 h-px bg-neutral-100" />
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 focus:outline-none"
+          onClick={() => { setOpen(false); onDeleteOrder(order.id); }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          </svg>
+          Eliminar orden
+        </button>
+      </div>
+    </>,
+    document.body,
+  ) : null;
 
   return (
-    <div className="relative">
-      <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={`Acciones de la orden ${order.id.slice(-8)}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        data-testid="order-actions-trigger"
+        onClick={() => setOpen((value) => !value)}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-cyan-400/25 bg-transparent text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="1" />
           <circle cx="19" cy="12" r="1" />
           <circle cx="5" cy="12" r="1" />
         </svg>
-      </Button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
-            <Link to={`/admin/orders/${order.id}`}>
-              <button
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-                onClick={() => setOpen(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                Ver detalle
-              </button>
-            </Link>
-            <button
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-              onClick={() => { setOpen(false); onViewDetail(); }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 9V2h12v7" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v8H6z" />
-              </svg>
-              Imprimir etiqueta
-            </button>
-            <button
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-              onClick={() => setOpen(false)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-              Editar orden
-            </button>
-            <div className="my-1 h-px bg-neutral-100" />
-            <button
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-              onClick={() => { setOpen(false); onDeleteOrder(order.id); }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-              </svg>
-              Eliminar orden
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+      </button>
+      {menu}
+    </>
   );
 }
 
@@ -194,7 +250,11 @@ export function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [status, setStatus] = useState<AsyncStatus>('idle');
   const [error, setError] = useState<ServiceError | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [idFilter, setIdFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
+  const [exactDateFilter, setExactDateFilter] = useState('');
+  const [minimumTotalFilter, setMinimumTotalFilter] = useState('');
+  const [maximumTotalFilter, setMaximumTotalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('all');
@@ -377,7 +437,11 @@ export function AdminOrdersPage() {
   };
 
   const handleClearFilters = () => {
-    setSearchTerm('');
+    setIdFilter('');
+    setUserFilter('');
+    setExactDateFilter('');
+    setMinimumTotalFilter('');
+    setMaximumTotalFilter('');
     setStatusFilter('all');
     setPaymentFilter('all');
     setDateRangeFilter('all');
@@ -385,20 +449,40 @@ export function AdminOrdersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, paymentFilter, dateRangeFilter]);
+  }, [idFilter, userFilter, exactDateFilter, minimumTotalFilter, maximumTotalFilter, statusFilter, paymentFilter, dateRangeFilter]);
 
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
+
+    const normalizedId = idFilter.trim().toLowerCase();
+    const normalizedUser = userFilter.trim().toLowerCase();
+    const minimumTotal = minimumTotalFilter.trim() === '' ? null : Number(minimumTotalFilter);
+    const maximumTotal = maximumTotalFilter.trim() === '' ? null : Number(maximumTotalFilter);
+
     return orders.filter((order) => {
-      const matchesSearch =
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.userId.toLowerCase().includes(searchTerm.toLowerCase());
+      const shortId = order.id.slice(-8).toLowerCase();
+      const normalizedOrderId = order.id.toLowerCase();
+      const matchesId = !normalizedId || normalizedOrderId.includes(normalizedId) || shortId.includes(normalizedId);
+      const matchesUser = !normalizedUser || order.userId.toLowerCase().includes(normalizedUser);
+      const orderDate = `${order.createdAt.getFullYear()}-${String(order.createdAt.getMonth() + 1).padStart(2, '0')}-${String(order.createdAt.getDate()).padStart(2, '0')}`;
+      const matchesExactDate = !exactDateFilter || orderDate === exactDateFilter;
+      const total = order.pricing.total.amount / 100;
+      const matchesMinimumTotal = minimumTotal === null || total >= minimumTotal;
+      const matchesMaximumTotal = maximumTotal === null || total <= maximumTotal;
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
       const matchesPayment = paymentFilter === 'all' || order.paymentMethod === paymentFilter;
-      const matchesDate = isInDateRange(order.createdAt, dateRangeFilter);
-      return matchesSearch && matchesStatus && matchesPayment && matchesDate;
+      const matchesDateRange = isInDateRange(order.createdAt, dateRangeFilter);
+
+      return matchesId
+        && matchesUser
+        && matchesExactDate
+        && matchesMinimumTotal
+        && matchesMaximumTotal
+        && matchesStatus
+        && matchesPayment
+        && matchesDateRange;
     });
-  }, [orders, searchTerm, statusFilter, paymentFilter, dateRangeFilter]);
+  }, [orders, idFilter, userFilter, exactDateFilter, minimumTotalFilter, maximumTotalFilter, statusFilter, paymentFilter, dateRangeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
   const visibleOrders = filteredOrders.slice(
@@ -520,34 +604,79 @@ export function AdminOrdersPage() {
       </div>
 
       <Card className="p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-wrap items-end gap-3">
-            <Select
-              label="Estado"
-              options={STATUS_FILTERS}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            />
-            <Select
-              label="Pago"
-              options={PAYMENT_METHODS}
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-            />
-            <Select
-              label="Fecha"
-              options={DATE_RANGE_FILTERS}
-              value={dateRangeFilter}
-              onChange={(e) => setDateRangeFilter(e.target.value as DateRangeFilter)}
-            />
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-800">Filtros por columna</h2>
+            <p className="mt-1 text-xs text-neutral-500">Combina varios criterios para acotar los resultados.</p>
           </div>
-          <div className="w-full lg:w-80">
-            <Input
-              placeholder="Buscar por ID o usuario..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <Button variant="outline" size="sm" onClick={handleClearFilters}>
+            Limpiar filtros
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+          <Input
+            label="ID"
+            placeholder="ID completo o últimos 8"
+            value={idFilter}
+            onChange={(event) => setIdFilter(event.target.value)}
+            aria-label="Filtrar por ID"
+          />
+          <Input
+            label="Usuario"
+            placeholder="UID del usuario"
+            value={userFilter}
+            onChange={(event) => setUserFilter(event.target.value)}
+            aria-label="Filtrar por usuario"
+          />
+          <Input
+            label="Fecha"
+            type="date"
+            value={exactDateFilter}
+            onChange={(event) => setExactDateFilter(event.target.value)}
+            aria-label="Filtrar por fecha"
+          />
+          <div className="w-full">
+            <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Total</label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Mínimo"
+                value={minimumTotalFilter}
+                onChange={(event) => setMinimumTotalFilter(event.target.value)}
+                aria-label="Total mínimo"
+              />
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Máximo"
+                value={maximumTotalFilter}
+                onChange={(event) => setMaximumTotalFilter(event.target.value)}
+                aria-label="Total máximo"
+              />
+            </div>
+            <p className="mt-1 text-xs text-neutral-500">Importe en unidades de moneda.</p>
           </div>
+          <Select
+            label="Estado"
+            options={STATUS_FILTERS}
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+          />
+          <Select
+            label="Pago"
+            options={PAYMENT_METHODS}
+            value={paymentFilter}
+            onChange={(event) => setPaymentFilter(event.target.value)}
+          />
+          <Select
+            label="Rango de fechas"
+            options={DATE_RANGE_FILTERS}
+            value={dateRangeFilter}
+            onChange={(event) => setDateRangeFilter(event.target.value as DateRangeFilter)}
+          />
         </div>
       </Card>
 
@@ -665,7 +794,7 @@ export function AdminOrdersPage() {
                             </option>
                           ))}
                         </select>
-                        <OrderActionsDropdown order={order} onViewDetail={() => {}} onDeleteOrder={(orderId) => { void handleDeleteOrders([orderId]); }} />
+                        <OrderActionsDropdown order={order} onDeleteOrder={(orderId) => { void handleDeleteOrders([orderId]); }} />
                       </div>
                     </td>
                   </tr>

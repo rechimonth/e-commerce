@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider } from '@/contexts/AuthProvider';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
@@ -24,6 +24,40 @@ describe('AdminOrdersPage', () => {
     await userEvent.click(within(row).getAllByRole('button')[0]!);
     expect(screen.getByRole('link', { name: /ver detalle/i })).toBeInTheDocument();
   });
+  it('removes print label while preserving all remaining row actions', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
+    const row = await screen.findByText(/order-1/i).then((element) => element.closest('tr'));
+    if (!row) throw new Error('Row not found');
+
+    await userEvent.click(within(row).getByTestId('order-actions-trigger'));
+
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ver detalle/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar orden/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /eliminar orden/i })).toBeInTheDocument();
+    expect(screen.queryByText(/imprimir etiqueta/i)).not.toBeInTheDocument();
+  });
+
+  it('filters orders by ID, user, exact date, and total range', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
+    await screen.findByText(/order-1/i);
+
+    fireEvent.change(screen.getByLabelText('Filtrar por ID'), { target: { value: 'order-1' } });
+    fireEvent.change(screen.getByLabelText('Filtrar por usuario'), { target: { value: 'user-1' } });
+    fireEvent.change(screen.getByLabelText('Filtrar por fecha'), { target: { value: '2025-01-15' } });
+    fireEvent.change(screen.getByLabelText('Total mínimo'), { target: { value: '1.00' } });
+    fireEvent.change(screen.getByLabelText('Total máximo'), { target: { value: '2.00' } });
+    expect(screen.getByText(/order-1/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Total mínimo'), { target: { value: '2.00' } });
+    expect(screen.getByText('Sin resultados')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /limpiar filtros/i }));
+    expect(screen.getByText(/order-1/i)).toBeInTheDocument();
+  });
+
   it('shows empty state when no orders', async () => {
     vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([]);
     render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);

@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
@@ -141,12 +141,29 @@ function AdminSidebar({ navItems, isActivePath, onLogout, user, onClose, collaps
 }
 
 function AdminHeader() {
+  const navLinks = [
+    { label: 'Inicio', href: ROUTES.HOME },
+    { label: 'Catálogo', href: ROUTES.CATALOG },
+    { label: 'Favoritos', href: ROUTES.FAVORITES },
+  ];
+
   return (
-    <header className="sticky top-0 z-20 hidden items-center border-b border-cyan-300/10 bg-slate-950/75 px-6 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl md:flex">
+    <header className="sticky top-0 z-40 flex flex-col gap-3 border-b border-cyan-300/10 bg-slate-950/90 px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <p className="cyber-kicker">CONTROL SURFACE</p>
         <h2 className="font-display text-sm font-bold tracking-wide text-slate-100">ADMIN OPERATIONS</h2>
       </div>
+      <nav aria-label="Navegación de la tienda" className="flex flex-wrap items-center gap-2">
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            to={link.href}
+            className="rounded-md border border-cyan-300/20 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-300 transition hover:border-cyan-300/50 hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 sm:text-sm"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }
