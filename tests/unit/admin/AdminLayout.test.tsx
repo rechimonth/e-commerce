@@ -75,7 +75,7 @@ describe('AdminLayout', () => {
     expect(screen.getByTestId('logout-button')).toHaveTextContent('Cerrar sesión');
   });
 
-  it('calls signOut when logout button clicked', async () => {
+  it('asks for confirmation before signing out and keeps the session when No is selected', () => {
     const signOut = vi.fn().mockResolvedValue(undefined);
     render(
       <AuthContext.Provider value={createAuthValue({ signOut })}>
@@ -85,8 +85,30 @@ describe('AdminLayout', () => {
       </AuthContext.Provider>,
     );
 
-    const logoutBtn = screen.getByTestId('logout-button');
-    fireEvent.click(logoutBtn);
+    fireEvent.click(screen.getByTestId('logout-button'));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('¿Desea cerrar sesión?')).toBeInTheDocument();
+    expect(signOut).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('signs out only after confirming with Sí', () => {
+    const signOut = vi.fn().mockResolvedValue(undefined);
+    render(
+      <AuthContext.Provider value={createAuthValue({ signOut })}>
+        <MemoryRouter initialEntries={['/admin']}>
+          <AdminLayout />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    fireEvent.click(screen.getByTestId('logout-button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí' }));
 
     expect(signOut).toHaveBeenCalledTimes(1);
   });

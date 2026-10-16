@@ -5,6 +5,7 @@ import { ROUTES } from '@/constants/routes';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui';
+import { Modal } from '@/components/ui/Modal';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import type { NavbarLink } from '@/components/ui/Navbar';
 
@@ -14,6 +15,7 @@ export function Header() {
   const { user, session, roleState, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const navLinks: NavbarLink[] = [{ label: 'Inicio', href: ROUTES.HOME }, { label: 'Catálogo', href: ROUTES.CATALOG }];
   const isAuthenticated = session !== null && roleState !== 'unauthenticated';
 
@@ -23,6 +25,11 @@ export function Header() {
   const handleLogout = async () => {
     await signOut();
     navigate(ROUTES.HOME, { replace: true });
+  };
+
+  const confirmLogout = async () => {
+    setLogoutConfirmationOpen(false);
+    await handleLogout();
   };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -49,12 +56,43 @@ export function Header() {
         {totalItems > 0 && <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full border border-[#05060d] bg-fuchsia-500 px-1 text-xs font-bold text-white shadow-[0_0_12px_rgba(244,114,182,0.6)]">{totalItems}</span>}
       </Link>
       {isLoading && roleState === 'loading' ? <Spinner size="sm" /> : isAuthenticated && user ? (
-        <><span className="hidden text-sm font-semibold text-cyan-100 sm:inline-block">Hola, {user.displayName ?? user.email ?? 'Usuario'}</span><button onClick={handleLogout} className="hidden h-11 px-2 text-sm font-semibold uppercase tracking-wider text-slate-400 transition hover:text-fuchsia-300 sm:inline-block">Salir</button></>
+        <><span className="hidden text-sm font-semibold text-cyan-100 sm:inline-block">Hola, {user.displayName ?? user.email ?? 'Usuario'}</span><button onClick={() => setLogoutConfirmationOpen(true)} className="hidden h-11 px-2 text-sm font-semibold uppercase tracking-wider text-slate-400 transition hover:text-fuchsia-300 sm:inline-block">Salir</button></>
       ) : <Link to={ROUTES.LOGIN} className="flex h-11 items-center px-2 text-sm font-semibold uppercase tracking-wider text-slate-300 transition hover:text-cyan-300">Entrar</Link>}
     </div>
   );
 
-  return <Navbar brand={<>ECOMMERCE <span className="text-fuchsia-400">AI</span></>} links={navLinks} rightContent={rightContent} />;
+  return (
+    <>
+      <Navbar brand={<>ECOMMERCE <span className="text-fuchsia-400">AI</span></>} links={navLinks} rightContent={rightContent} />
+      <Modal
+        isOpen={logoutConfirmationOpen}
+        onClose={() => setLogoutConfirmationOpen(false)}
+        title="¿Desea cerrar sesión?"
+        description="Se cerrará la sesión de tu cuenta."
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setLogoutConfirmationOpen(false)}
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+            >
+              No
+            </button>
+            <button
+              type="button"
+              onClick={() => void confirmLogout()}
+              className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2"
+            >
+              Sí
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-neutral-600">¿Deseas salir de tu cuenta ahora?</p>
+      </Modal>
+    </>
+  );
 }
 
 export default Header;

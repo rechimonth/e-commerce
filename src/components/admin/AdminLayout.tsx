@@ -27,10 +27,16 @@ export function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     navigate(ROUTES.LOGIN);
+  };
+
+  const confirmLogout = async () => {
+    setLogoutConfirmationOpen(false);
+    await handleLogout();
   };
 
   const isActivePath = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
@@ -40,14 +46,14 @@ export function AdminLayout() {
     <div className="admin-theme cyber-app-shell min-h-screen bg-[#05060d] text-slate-100" data-testid="admin-shell">
       <div className="cyber-grid" aria-hidden="true" />
       <aside className={`fixed inset-y-0 left-0 z-30 hidden border-r border-cyan-300/15 bg-slate-950/90 shadow-[12px_0_60px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-all md:flex md:flex-col ${collapsed ? 'w-20' : 'w-64'}`} data-testid="admin-sidebar">
-        <AdminSidebar navItems={adminNavItems} isActivePath={isActivePath} onLogout={handleLogout} user={user} collapsed={collapsed} onToggleCollapse={() => setCollapsed((c) => !c)} />
+        <AdminSidebar navItems={adminNavItems} isActivePath={isActivePath} onLogout={() => setLogoutConfirmationOpen(true)} user={user} collapsed={collapsed} onToggleCollapse={() => setCollapsed((c) => !c)} />
       </aside>
 
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 flex md:hidden">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={closeSidebar} />
           <aside className="w-64 overflow-y-auto border-r border-cyan-300/15 bg-slate-950/95 shadow-2xl">
-            <AdminSidebar navItems={adminNavItems} isActivePath={isActivePath} onLogout={handleLogout} user={user} onClose={closeSidebar} />
+            <AdminSidebar navItems={adminNavItems} isActivePath={isActivePath} onLogout={() => setLogoutConfirmationOpen(true)} user={user} onClose={closeSidebar} />
           </aside>
         </div>
       )}
@@ -56,6 +62,34 @@ export function AdminLayout() {
         <AdminHeader />
         <main className="p-4 sm:p-6 lg:p-7"><Outlet /></main>
       </div>
+      <Modal
+        isOpen={logoutConfirmationOpen}
+        onClose={() => setLogoutConfirmationOpen(false)}
+        title="¿Desea cerrar sesión?"
+        description="Se cerrará la sesión de tu cuenta de administrador."
+        size="sm"
+        variant="admin"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setLogoutConfirmationOpen(false)}
+              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
+            >
+              No
+            </button>
+            <button
+              type="button"
+              onClick={() => void confirmLogout()}
+              className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950"
+            >
+              Sí
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-slate-300">¿Deseas salir de tu cuenta ahora?</p>
+      </Modal>
     </div>
   );
 }
