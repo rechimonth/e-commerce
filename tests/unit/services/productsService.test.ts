@@ -127,7 +127,7 @@ describe('productsService', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]!.name).toBe('iPhone 15 Pro');
-    expect(getProducts).toHaveBeenCalledWith({ category: undefined, isActive: true });
+    expect(getProducts).toHaveBeenCalledWith({ category: undefined, isActive: true, sortBy: 'none' });
   });
 
   it('fetchProducts returns empty for non-matching search', async () => {
@@ -136,7 +136,7 @@ describe('productsService', () => {
 
     const result = await productsService.fetchProducts({ search: 'xyz' });
 
-    expect(getProducts).toHaveBeenCalledWith({ category: undefined, isActive: true });
+    expect(getProducts).toHaveBeenCalledWith({ category: undefined, isActive: true, sortBy: 'none' });
     expect(result.items).toHaveLength(0);
   });
 
