@@ -146,7 +146,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       firestore.collection('orders')
         .where('userId', '==', decoded.uid)
         .where('status', '==', 'completed')
-        .limit(200)
         .get(),
     ]);
 
