@@ -15,6 +15,7 @@ export interface UseProductsParams {
   readonly cursor?: string | null;
   readonly page?: number;
   readonly sortBy?: 'price-asc' | 'price-desc';
+}
 
 export interface UseProductsResult {
   readonly products: readonly Product[];
