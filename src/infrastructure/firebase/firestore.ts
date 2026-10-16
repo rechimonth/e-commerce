@@ -115,6 +115,7 @@ export async function getProducts(filters?: ProductFilters): Promise<ProductDTO[
 
 export interface ProductPageFilters extends ProductFilters {
   readonly cursor?: string | null;
+  readonly sortBy?: 'price-asc' | 'price-desc';
 }
 
 export interface ProductPageDTO {
@@ -132,7 +133,11 @@ export async function getProductsPage(filters: ProductPageFilters = {}): Promise
     const constraints: QueryConstraint[] = [];
     if (filters.category) constraints.push(where('category', '==', filters.category));
     if (filters.isActive !== undefined) constraints.push(where('isActive', '==', filters.isActive));
-    constraints.push(orderBy('createdAt', 'desc'));
+    if (filters.sortBy) {
+      constraints.push(orderBy('priceCents', filters.sortBy === 'price-asc' ? 'asc' : 'desc'));
+    } else {
+      constraints.push(orderBy('createdAt', 'desc'));
+    }
 
     let q = query(collection(db, 'products'), ...constraints);
     if (filters.cursor) {
