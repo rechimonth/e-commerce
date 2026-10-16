@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { Footer } from './Footer';
+import { BackButton } from '@/components/navigation/BackButton';
 import type { ReactNode } from 'react';
 
 interface SiteChromeProps {
@@ -14,6 +15,7 @@ export function SiteChrome({ children }: SiteChromeProps) {
     <div className="cyber-app-shell">
       <div className="cyber-grid" aria-hidden="true" />
       <div className="relative z-10 flex min-h-screen flex-col">
+        <BackButton />
         <div className="flex-1">{children}</div>
         {!isAdmin && <Footer />}
       </div>
