@@ -11,6 +11,12 @@ interface FavoritesContextValue {
 }
 const FavoritesContext = createContext<FavoritesContextValue | undefined>(undefined);
 const EMPTY_FAVORITES: string[] = [];
+const FAVORITES_CONTEXT_UNAVAILABLE: FavoritesContextValue = {
+  favoriteIds: EMPTY_FAVORITES,
+  favoriteCount: 0,
+  isFavorite: () => false,
+  toggleFavorite: async () => { throw new Error('FavoritesProvider is not mounted.'); },
+};
 
 export function FavoritesProvider({ children }: { readonly children: ReactNode }) {
   const { user, roleState } = useAuth();
@@ -78,6 +84,7 @@ export function FavoritesProvider({ children }: { readonly children: ReactNode }
 
 export function useFavorites() {
   const value = useContext(FavoritesContext);
-  if (!value) throw new Error('useFavorites debe utilizarse dentro de FavoritesProvider');
-  return value;
+  // Standalone component tests and isolated previews can render without the app provider.
+  // The real application mounts FavoritesProvider around every route.
+  return value ?? FAVORITES_CONTEXT_UNAVAILABLE;
 }
