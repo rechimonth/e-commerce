@@ -46,9 +46,69 @@ async function moderateReviewComment(comment: string): Promise<void> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return jsonError(res, 405, 'Método no permitido');
   const authorization = req.headers.authorization ?? '';
   if (!authorization.startsWith('Bearer ')) return jsonError(res, 401, 'Debes iniciar sesión');
+
+  if (req.method === 'GET') {
+    const productId = typeof req.query.productId === 'string' ? req.query.productId.trim() : '';
+    if (!productId || productId.length > 128 || productId.includes('/')) return jsonError(res, 400, 'Producto no válido');
+    try {
+      const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
+      const firestore = getFirestore(getFirebaseAdminApp());
+      const owner = await firestore.collection('reviewOwners').doc(`${productId}_${decoded.uid}`).get();
+      const reviewId = owner.exists && typeof owner.data()?.reviewId === 'string' ? owner.data()!.reviewId as string : null;
+      return res.status(200).json({ success: true, reviewId });
+    } catch (error) {
+      if (error instanceof FirebaseTokenError) return jsonError(res, error.status, error.message);
+      if (error instanceof FirebaseConfigurationError) return jsonError(res, 500, 'La configuración del servidor está incompleta');
+      return jsonError(res, 500, 'No se pudo consultar tu reseña');
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    const body = req.body as { productId?: unknown } | undefined;
+    if (!body || typeof body.productId !== 'string' || !body.productId.trim() || body.productId.length > 128 || body.productId.includes('/')) {
+      return jsonError(res, 400, 'Producto no válido');
+    }
+    try {
+      const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
+      const firestore = getFirestore(getFirebaseAdminApp());
+      const productId = body.productId.trim();
+      const ownerRef = firestore.collection('reviewOwners').doc(`${productId}_${decoded.uid}`);
+      const productRef = firestore.collection('products').doc(productId);
+      await firestore.runTransaction(async (transaction) => {
+        const [ownerSnapshot, productSnapshot] = await Promise.all([
+          transaction.get(ownerRef),
+          transaction.get(productRef),
+        ]);
+        if (!ownerSnapshot.exists) throw new ReviewRequestError(404, 'No tienes una reseña para eliminar');
+        const reviewId = ownerSnapshot.data()?.reviewId;
+        if (typeof reviewId !== 'string' || !reviewId) throw new Error('Invalid review owner mapping');
+        const reviewRef = firestore.collection('productReviews').doc(reviewId);
+        const reviewSnapshot = await transaction.get(reviewRef);
+        const previousRating = reviewSnapshot.data()?.rating;
+        if (productSnapshot.exists && typeof previousRating === 'number') {
+          const product = productSnapshot.data() ?? {};
+          const oldCount = typeof product.reviewCount === 'number' && Number.isSafeInteger(product.reviewCount) ? Math.max(0, product.reviewCount) : 0;
+          const oldRating = typeof product.rating === 'number' ? product.rating : 0;
+          const nextCount = Math.max(0, oldCount - 1);
+          const nextRating = nextCount > 0 ? Math.round(((oldRating * oldCount - previousRating) / nextCount) * 100) / 100 : 0;
+          transaction.update(productRef, { rating: Math.max(0, Math.min(5, nextRating)), reviewCount: nextCount, updatedAt: FieldValue.serverTimestamp() });
+        }
+        if (reviewSnapshot.exists) transaction.delete(reviewRef);
+        transaction.delete(ownerRef);
+      });
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      if (error instanceof ReviewRequestError) return jsonError(res, error.status, error.message);
+      if (error instanceof FirebaseTokenError) return jsonError(res, error.status, error.message);
+      if (error instanceof FirebaseConfigurationError) return jsonError(res, 500, 'La configuración del servidor está incompleta');
+      console.error('Review deletion failed:', error instanceof Error ? error.message : 'unknown error');
+      return jsonError(res, 500, 'No se pudo eliminar la reseña');
+    }
+  }
+
+  if (req.method !== 'POST') return jsonError(res, 405, 'Método no permitido');
 
   const body = req.body as { productId?: unknown; rating?: unknown; comment?: unknown } | undefined;
   if (
