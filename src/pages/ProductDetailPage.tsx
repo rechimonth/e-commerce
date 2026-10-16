@@ -27,6 +27,8 @@ export function ProductDetailPage() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewDeleting, setReviewDeleting] = useState(false);
+  const [myReviewId, setMyReviewId] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewSuccess, setReviewSuccess] = useState<string | null>(null);
 
@@ -47,6 +49,36 @@ export function ProductDetailPage() {
     });
   }, [user?.uid, product?.id, product?.isActive]);
 
+  useEffect(() => {
+    let active = true;
+    if (!user?.uid) {
+      setMyReviewId(null);
+      return () => { active = false; };
+    }
+    reviewsService.fetchMyReviewId(safeId)
+      .then((reviewId) => { if (active) setMyReviewId(reviewId); })
+      .catch(() => { if (active) setMyReviewId(null); });
+    return () => { active = false; };
+  }, [safeId, user?.uid]);
+
+  const handleDeleteReview = async () => {
+    if (!user || !myReviewId) return;
+    setReviewDeleting(true);
+    setReviewError(null);
+    setReviewSuccess(null);
+    try {
+      await reviewsService.deleteProductReview(safeId);
+      setMyReviewId(null);
+      setReviewSuccess('Tu reseña se eliminó correctamente.');
+      setReviews(await reviewsService.fetchProductReviews(safeId));
+      refetch();
+    } catch (deleteError) {
+      setReviewError(deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la reseña.');
+    } finally {
+      setReviewDeleting(false);
+    }
+  };
+
   const handleSubmitReview = async () => {
     if (!user) {
       setReviewError('Inicia sesión para publicar una reseña.');
@@ -63,6 +95,7 @@ export function ProductDetailPage() {
       await reviewsService.submitProductReview(safeId, reviewRating, reviewComment);
       setReviewComment('');
       setReviewSuccess('Reseña guardada. Solo se aceptan reseñas de compras completadas.');
+      setMyReviewId(await reviewsService.fetchMyReviewId(safeId));
       setReviews(await reviewsService.fetchProductReviews(safeId));
       refetch();
     } catch (submitError) {
@@ -89,7 +122,7 @@ export function ProductDetailPage() {
             <p className="cyber-kicker">PRODUCT // DETAIL</p>
             <h1 className="mt-3 font-display text-2xl font-black uppercase leading-tight text-white sm:text-4xl">{product.name}</h1>
             <Badge variant="success" className="mt-4 w-fit">{product.category}</Badge>
-            <div className="mt-6 flex items-end gap-3"><Price amount={product.price.amount} currency={product.price.currency} locale="en-US" className="font-display text-3xl font-bold text-cyan-300" /><span className="pb-1 text-sm text-slate-500">({product.reviewCount} reseñas)</span></div>
+            <div className="mt-6 flex flex-wrap items-end gap-3"><Price amount={product.price.amount} currency={product.price.currency} locale="en-US" className="font-display text-3xl font-bold text-cyan-300" /><span className="pb-1 text-amber-300" aria-label={`Promedio ${product.rating.toFixed(1)} de 5 estrellas`}>★ {product.rating.toFixed(1)}/5</span><span className="pb-1 text-sm text-slate-500">({product.reviewCount} reseñas)</span></div>
             <p className="mt-5 leading-7 text-slate-300">{product.description}</p>
             <div className="mt-5 flex items-center gap-2 text-sm">{product.stock > 0 ? <span className="text-cyan-300">● {product.stock} unidades disponibles</span> : <span className="text-red-300">● Sin stock</span>}</div>
             <div className="mt-auto flex flex-col gap-4 pt-8 sm:flex-row sm:items-center"><QuantitySelector quantity={quantity} min={1} max={product.stock} onChange={setQuantity} buttonSize="md" /><Button variant="solid" size="lg" className="flex-1 bg-cyan-400 font-display uppercase text-slate-950 hover:bg-cyan-300" onClick={() => addItem(product, quantity)} disabled={product.stock === 0}>{product.stock === 0 ? 'Sin stock' : 'Agregar al carrito'}</Button></div>
@@ -112,7 +145,7 @@ export function ProductDetailPage() {
               <textarea id="product-review-comment" value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} rows={4} maxLength={1500} placeholder="¿Qué te pareció el producto? (mínimo 10 caracteres)" className="w-full rounded-xl border border-cyan-300/15 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/50" />
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-xs text-slate-500">{reviewComment.trim().length}/1500 caracteres</span>
-                <Button onClick={handleSubmitReview} disabled={reviewSubmitting || reviewComment.trim().length < 10 || reviewComment.trim().length > 1500}>{reviewSubmitting ? 'Publicando...' : 'Publicar reseña'}</Button>
+                <div className="flex flex-wrap gap-2"><Button onClick={handleSubmitReview} disabled={reviewSubmitting || reviewDeleting || reviewComment.trim().length < 10 || reviewComment.trim().length > 1500}>{reviewSubmitting ? 'Publicando...' : myReviewId ? 'Actualizar mi reseña' : 'Publicar reseña'}</Button>{myReviewId && <Button variant="danger" onClick={handleDeleteReview} disabled={reviewDeleting || reviewSubmitting}>{reviewDeleting ? 'Eliminando...' : 'Eliminar mi reseña'}</Button>}</div>
               </div>
             </div> : <p className="mt-4 text-sm text-slate-400">Inicia sesión para dejar una reseña después de completar una compra.</p>}
             {reviewError && <p role="alert" className="mt-4 rounded-lg border border-red-400/20 bg-red-500/5 px-3 py-2 text-sm text-red-300">{reviewError}</p>}
