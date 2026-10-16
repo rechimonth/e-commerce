@@ -148,6 +148,31 @@ export const ordersService = {
   },
 
 
+  async completeOrderPayment(orderId: string): Promise<Order> {
+    return firebaseTryCatch(async () => {
+      if (!orderId || !orderId.trim()) {
+        throw new FirebaseInfraError('VALIDATION_ERROR', 'Identificador de orden inválido');
+      }
+
+      const currentOrder = await ordersService.fetchOrder(orderId);
+      if (!currentOrder) throw new FirebaseInfraError('NOT_FOUND', 'Orden no encontrada');
+      if (currentOrder.status !== 'pending' && currentOrder.status !== 'processing') {
+        throw new FirebaseInfraError('VALIDATION_ERROR', 'Solo se puede confirmar el pago de órdenes pendientes o en proceso');
+      }
+
+      // The API enforces admin permissions and validates each transition in Firestore.
+      // If the second transition fails, the order remains processing and can be retried.
+      if (currentOrder.status === 'pending') {
+        const processingOrder = await ordersService.updateOrderStatus(orderId, 'processing');
+        if (!processingOrder) throw new FirebaseInfraError('INTERNAL_ERROR', 'No se pudo preparar la orden para completar el pago');
+      }
+
+      const completedOrder = await ordersService.updateOrderStatus(orderId, 'completed');
+      if (!completedOrder) throw new FirebaseInfraError('INTERNAL_ERROR', 'No se pudo completar la orden');
+      return completedOrder;
+    });
+  },
+
   async deleteOrders(orderIds: readonly string[]): Promise<string[]> {
     return firebaseTryCatch(async () => {
       const uniqueOrderIds = [...new Set(orderIds)];

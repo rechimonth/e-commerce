@@ -32,6 +32,11 @@ describe('CartPage', () => {
     expect(screen.getByText(/Ver productos/i)).toBeInTheDocument();
   });
 
+  it('routes the unauthenticated empty-cart action to the product catalog', () => {
+    renderCartPage(createMockCart([]));
+    expect(screen.getByRole('link', { name: 'Ver productos' })).toHaveAttribute('href', '/catalog');
+  });
+
   it('renders cart items when cart has products', () => {
     renderCartPage(createMockCart([mockCartItem]));
     expect(screen.getByText('Test Product')).toBeInTheDocument();

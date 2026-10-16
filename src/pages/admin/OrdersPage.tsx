@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -13,6 +13,7 @@ import { Price } from '@/components/ui/Price';
 import { ordersService } from '@/services/ordersService';
 import { exportToCsv } from '@/utils/export';
 import { canTransition } from '@/types/order';
+import { ROUTES } from '@/constants/routes';
 import type { Order, OrderStatus } from '@/types/order';
 import type { ServiceError } from '@/types/api';
 import type { AsyncStatus } from '@/types/ui';
@@ -247,6 +248,7 @@ function isInDateRange(date: Date, range: DateRangeFilter): boolean {
 
 export function AdminOrdersPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [status, setStatus] = useState<AsyncStatus>('idle');
   const [error, setError] = useState<ServiceError | null>(null);
@@ -336,6 +338,11 @@ export function AdminOrdersPage() {
       });
       setUpdatingOrderId(null);
     }
+  };
+
+  const handleStartPayment = (order: Order) => {
+    if (order.status !== 'pending' && order.status !== 'processing') return;
+    navigate(`${ROUTES.CHECKOUT}?orderId=${encodeURIComponent(order.id)}&returnTo=admin`);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -795,6 +802,16 @@ export function AdminOrdersPage() {
                           ))}
                         </select>
                         <OrderActionsDropdown order={order} onDeleteOrder={(orderId) => { void handleDeleteOrders([orderId]); }} />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="order-payment-button"
+                          aria-label={`Registrar pago de la orden ${order.id.slice(-8)}`}
+                          disabled={(order.status !== 'pending' && order.status !== 'processing') || updatingOrderId === order.id}
+                          onClick={() => handleStartPayment(order)}
+                        >
+                          Registrar pago
+                        </Button>
                       </div>
                     </td>
                   </tr>

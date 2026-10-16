@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
 import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'admin-1', email: 'admin@test.com', displayName: 'Admin', photoURL: null, role: 'admin', createdAt: new Date(), lastLoginAt: new Date(), preferences: { currency: 'USD', locale: 'es-MX', notifications: true } }, roleState: 'admin', session: { uid: 'admin-1', role: 'admin', isAuthenticated: true }, isLoading: false, error: null, signIn: vi.fn(), signUp: vi.fn(), signInWithGoogle: vi.fn(), signOut: vi.fn(), refreshUserProfile: vi.fn(), clearError: vi.fn() }) }));
@@ -37,6 +37,40 @@ describe('AdminOrdersPage', () => {
     expect(screen.getByRole('button', { name: /editar orden/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /eliminar orden/i })).toBeInTheDocument();
     expect(screen.queryByText(/imprimir etiqueta/i)).not.toBeInTheDocument();
+  });
+
+  it('enables the per-order payment action only for pending and processing orders and opens its checkout', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
+    const router = createMemoryRouter([
+      { path: '/admin/orders', element: <AuthProvider><AdminOrdersPage /></AuthProvider> },
+      { path: '/checkout', element: <div data-testid="order-checkout-route">Checkout de orden</div> },
+    ], { initialEntries: ['/admin/orders'] });
+    render(<RouterProvider router={router} />);
+
+    const row = await screen.findByText(/order-1/i).then((element) => element.closest('tr'));
+    if (!row) throw new Error('Row not found');
+    const paymentButton = within(row).getByRole('button', { name: /registrar pago/i });
+    expect(paymentButton).toBeEnabled();
+
+    await userEvent.click(paymentButton);
+    expect(await screen.findByTestId('order-checkout-route')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/checkout');
+    expect(router.state.location.search).toContain('orderId=order-1');
+    expect(router.state.location.search).toContain('returnTo=admin');
+  });
+
+  it('disables the payment action for completed and cancelled orders', async () => {
+    vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([
+      { ...mockOrder, id: 'order-12345678', status: 'completed' },
+      { ...mockOrder, id: 'order-ABCDEFGH', status: 'cancelled' },
+    ]);
+    render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
+
+    const completedRow = await screen.findByText(/12345678/i).then((element) => element.closest('tr'));
+    const cancelledRow = screen.getByText(/ABCDEFGH/i).closest('tr');
+    if (!completedRow || !cancelledRow) throw new Error('Rows not found');
+    expect(within(completedRow).getByRole('button', { name: /registrar pago/i })).toBeDisabled();
+    expect(within(cancelledRow).getByRole('button', { name: /registrar pago/i })).toBeDisabled();
   });
 
   it('filters orders by ID, user, exact date, and total range', async () => {

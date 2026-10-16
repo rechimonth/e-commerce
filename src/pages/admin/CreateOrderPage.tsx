@@ -65,6 +65,7 @@ export function AdminCreateOrderPage() {
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('');
   const [error, setError] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -207,17 +208,15 @@ export function AdminCreateOrderPage() {
         setError('No pudimos crear la orden. Intenta nuevamente.');
         return;
       }
-      alert('Orden creada exitosamente: ' + order.id);
+      setCreatedOrderId(order.id);
       setCart([]);
       setSelectedRecipientId('');
       setPaymentMethod('card');
       setSelectedCategory('');
       setIsCatalogOpen(false);
-      navigate(ROUTES.ADMIN_ORDERS);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Error al crear la orden';
       setError(message);
-      alert(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -302,6 +301,32 @@ export function AdminCreateOrderPage() {
           <Card className="cyber-card p-6"><p className="cyber-kicker">TOTAL</p><h2 className="mt-1 mb-4 text-lg font-bold text-white">Resumen</h2><div className="space-y-3"><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Subtotal</span><span className="font-semibold text-slate-200"><Price amount={subtotal} currency="USD" /></span></div><div className="flex items-center justify-between text-sm"><span className="text-slate-400">Impuestos (21%)</span><span className="font-semibold text-slate-200"><Price amount={tax} currency="USD" /></span></div><div className="border-t border-cyan-300/15 pt-3"><div className="flex items-center justify-between"><span className="text-base font-bold text-slate-100">Total</span><span className="text-xl font-black text-cyan-300"><Price amount={total} currency="USD" /></span></div></div></div><div className="mt-6"><Button variant="solid" size="lg" className="w-full" disabled={cart.length === 0 || !selectedRecipientId || isSubmitting} onClick={handleCreateOrder}>{isSubmitting ? 'Creando...' : 'Crear Orden'}</Button></div></Card>
         </div>
       </div>
+
+      <Modal
+        isOpen={Boolean(createdOrderId)}
+        onClose={() => setCreatedOrderId(null)}
+        title="¡Orden creada correctamente!"
+        description="La orden quedó registrada y ya está disponible en el panel de administración."
+        size="sm"
+        variant="admin"
+        footer={
+          <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
+            <Button variant="outline" onClick={() => setCreatedOrderId(null)}>Seguir creando</Button>
+            <Button variant="solid" onClick={() => { setCreatedOrderId(null); navigate(ROUTES.ADMIN_ORDERS); }}>Ver órdenes</Button>
+          </div>
+        }
+      >
+        <div className="rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-300/10 text-xl font-bold text-emerald-200" aria-hidden="true">✓</span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-100">La creación se completó sin errores.</p>
+              <p className="mt-1 text-xs text-slate-400">Identificador de la orden</p>
+              <p className="mt-1 break-all font-mono text-sm text-emerald-200">{createdOrderId}</p>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <Modal isOpen={isCatalogOpen} onClose={() => setIsCatalogOpen(false)} title="Explorar Catálogo" size="lg" variant="admin">
         <div className="space-y-4">
