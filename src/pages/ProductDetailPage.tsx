@@ -13,6 +13,7 @@ import { resolveProductImage, handleProductImageError } from '@/utils/productIma
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { reviewsService, type ProductReview } from '@/services/reviewsService';
+import { recentlyViewedService } from '@/services/recentlyViewedService';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +39,13 @@ export function ProductDetailPage() {
       .finally(() => { if (active) setReviewsLoading(false); });
     return () => { active = false; };
   }, [safeId]);
+
+  useEffect(() => {
+    if (!user?.uid || !product?.id || !product.isActive) return;
+    void recentlyViewedService.record(user.uid, product.id).catch(() => {
+      // Browsing history is non-critical; a transient Firestore failure must not block the product page.
+    });
+  }, [user?.uid, product?.id, product?.isActive]);
 
   const handleSubmitReview = async () => {
     if (!user) {
