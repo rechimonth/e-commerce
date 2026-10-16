@@ -133,7 +133,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
-    await moderateReviewComment(comment);
     const app = getFirebaseAdminApp();
     const firestore = getFirestore(app);
     const productRef = firestore.collection('products').doc(productId);
@@ -157,6 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return Array.isArray(items) && items.some((item: { productId?: unknown }) => item?.productId === productId);
     });
     if (!hasPurchased) return jsonError(res, 403, 'Solo puedes reseñar productos de órdenes completadas');
+    await moderateReviewComment(comment);
 
     const displayName = typeof profileSnapshot.data()?.displayName === 'string'
       ? profileSnapshot.data()!.displayName.trim().slice(0, 80)
