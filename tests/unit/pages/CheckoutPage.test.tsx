@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { CheckoutPage } from '@/pages/CheckoutPage';
 
 vi.mock('@/hooks/useCart', () => ({ useCart: vi.fn() }));
@@ -27,6 +27,11 @@ const mockAuth = {
   roleState: 'customer' as const, session: { uid: 'user-1', role: 'customer', isAuthenticated: true }, isLoading: false, error: null,
   signIn: async () => {}, signUp: async () => {}, signInWithGoogle: async () => {}, signOut: async () => {}, refreshUserProfile: async () => {}, clearError: () => {},
 };
+
+function RouterLocation() {
+  const location = useLocation();
+  return <output data-testid="router-location">{location.pathname}{location.search}</output>;
+}
 
 describe('CheckoutPage', () => {
   beforeEach(() => {
@@ -113,11 +118,14 @@ describe('CheckoutPage', () => {
     vi.mocked(ordersService.fetchOrder).mockResolvedValue(paymentOrder);
     vi.mocked(ordersService.completeOrderPayment).mockResolvedValue({ ...paymentOrder, status: 'completed' });
 
-    const router = createMemoryRouter([
-      { path: '/checkout', element: <CheckoutPage /> },
-      { path: '/admin/orders', element: <div data-testid="admin-orders-return">Órdenes actualizadas</div> },
-    ], { initialEntries: ['/checkout?orderId=order-pay-1&returnTo=admin'] });
-    render(<RouterProvider router={router} />);
+    render(
+      <MemoryRouter initialEntries={['/checkout?orderId=order-pay-1&returnTo=admin']}>
+        <Routes>
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/admin/orders" element={<><div data-testid="admin-orders-return">Órdenes actualizadas</div><RouterLocation /></>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
     await screen.findByRole('button', { name: /confirmar pago recibido/i });
     expect(screen.getByText(/no tiene una pasarela de pagos conectada/i)).toBeInTheDocument();
@@ -125,7 +133,7 @@ describe('CheckoutPage', () => {
 
     expect(ordersService.completeOrderPayment).toHaveBeenCalledWith('order-pay-1');
     expect(await screen.findByTestId('admin-orders-return')).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/admin/orders');
+    expect(screen.getByTestId('router-location')).toHaveTextContent('/admin/orders');
   });
 
   it('muestra error cuando checkout falla', () => {

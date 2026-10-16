@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import Button from './Button';
 import type { EmptyStateConfig } from '@/types/ui';
 
@@ -25,7 +24,7 @@ export function EmptyState({ config, icon, onAction }: EmptyStateProps) {
       {config.description && <p className="text-sm text-neutral-600">{config.description}</p>}
       {config.actionLabel && config.actionHref && (
         <Button asChild variant="solid">
-          <Link to={config.actionHref}>{config.actionLabel}</Link>
+          <a href={config.actionHref}>{config.actionLabel}</a>
         </Button>
       )}
       {config.actionLabel && onAction && (

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'admin-1', email: 'admin@test.com', displayName: 'Admin', photoURL: null, role: 'admin', createdAt: new Date(), lastLoginAt: new Date(), preferences: { currency: 'USD', locale: 'es-MX', notifications: true } }, roleState: 'admin', session: { uid: 'admin-1', role: 'admin', isAuthenticated: true }, isLoading: false, error: null, signIn: vi.fn(), signUp: vi.fn(), signInWithGoogle: vi.fn(), signOut: vi.fn(), refreshUserProfile: vi.fn(), clearError: vi.fn() }) }));
@@ -13,6 +13,11 @@ vi.mock('@/infrastructure/firebase/auth', () => ({ observeAuthState: vi.fn(() =>
 import { ordersService } from '@/services/ordersService';
 
 const mockOrder = { id: 'order-1', userId: 'user-1', items: [{ productId: 'p1', name: 'Test', price: { amount: 100, currency: 'USD' as const }, quantity: 1, image: { url: '', alt: 'Test', key: '' }, orderId: 'order-1' }], pricing: { subtotal: { amount: 100, currency: 'USD' as const }, tax: { amount: 10, currency: 'USD' as const }, shipping: { amount: 5, currency: 'USD' as const }, discount: { amount: 0, currency: 'USD' as const }, total: { amount: 115, currency: 'USD' as const } }, status: 'pending' as const, statusHistory: [{ from: 'pending' as const, to: 'pending' as const, by: 'system', timestamp: new Date() }], shippingAddress: { street: '123 St', city: 'City', state: 'ST', zipCode: '12345', country: 'US' }, billingAddress: { street: '123 St', city: 'City', state: 'ST', zipCode: '12345', country: 'US' }, paymentMethod: 'card' as const, createdAt: new Date('2025-01-15'), updatedAt: new Date('2025-01-15') };
+
+function RouterLocation() {
+  const location = useLocation();
+  return <output data-testid="router-location">{location.pathname}{location.search}</output>;
+}
 
 describe('AdminOrdersPage', () => {
   beforeEach(() => { vi.clearAllMocks(); });
@@ -41,11 +46,14 @@ describe('AdminOrdersPage', () => {
 
   it('enables the per-order payment action only for pending and processing orders and opens its checkout', async () => {
     vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
-    const router = createMemoryRouter([
-      { path: '/admin/orders', element: <AuthProvider><AdminOrdersPage /></AuthProvider> },
-      { path: '/checkout', element: <div data-testid="order-checkout-route">Checkout de orden</div> },
-    ], { initialEntries: ['/admin/orders'] });
-    render(<RouterProvider router={router} />);
+    render(
+      <MemoryRouter initialEntries={['/admin/orders']}>
+        <Routes>
+          <Route path="/admin/orders" element={<AuthProvider><AdminOrdersPage /></AuthProvider>} />
+          <Route path="/checkout" element={<><div data-testid="order-checkout-route">Checkout de orden</div><RouterLocation /></>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
     const row = await screen.findByText(/order-1/i).then((element) => element.closest('tr'));
     if (!row) throw new Error('Row not found');
@@ -54,9 +62,7 @@ describe('AdminOrdersPage', () => {
 
     await userEvent.click(paymentButton);
     expect(await screen.findByTestId('order-checkout-route')).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/checkout');
-    expect(router.state.location.search).toContain('orderId=order-1');
-    expect(router.state.location.search).toContain('returnTo=admin');
+    expect(screen.getByTestId('router-location')).toHaveTextContent('/checkout?orderId=order-1&returnTo=admin');
   });
 
   it('disables the payment action for completed and cancelled orders', async () => {
