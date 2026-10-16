@@ -10,11 +10,14 @@ interface FavoritesContextValue {
   readonly toggleFavorite: (productId: string) => Promise<void>;
 }
 const FavoritesContext = createContext<FavoritesContextValue | undefined>(undefined);
+const EMPTY_FAVORITES: string[] = [];
 
 export function FavoritesProvider({ children }: { readonly children: ReactNode }) {
   const { user, roleState } = useAuth();
   const uid = roleState === 'admin' || roleState === 'customer' ? user?.uid ?? null : null;
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteState, setFavoriteState] = useState<{ uid: string | null; ids: string[] }>({ uid: null, ids: [] });
+  // Never expose the previous account's favorites during an auth/session transition.
+  const favoriteIds = favoriteState.uid === uid ? favoriteState.ids : EMPTY_FAVORITES;
   const [notice, setNotice] = useState<string | null>(null);
   const activeUid = useRef<string | null>(null);
   const pending = useRef(new Set<string>());
@@ -23,12 +26,12 @@ export function FavoritesProvider({ children }: { readonly children: ReactNode }
     activeUid.current = uid;
     pending.current.clear();
     if (!uid) {
-      setFavoriteIds([]);
+      setFavoriteState({ uid: null, ids: [] });
       setNotice(null);
       return;
     }
     let active = true;
-    setFavoriteIds([]);
+    setFavoriteState({ uid, ids: [] });
     getDocs(collection(getFirebaseDb(), 'users', uid, 'favorites'))
       .then((snapshot) => {
         if (!active) return;
@@ -36,7 +39,7 @@ export function FavoritesProvider({ children }: { readonly children: ReactNode }
           .map((item) => ({ id: item.id, createdAt: item.data().createdAt?.toMillis?.() ?? 0 }))
           .sort((a, b) => b.createdAt - a.createdAt)
           .map((item) => item.id);
-        setFavoriteIds(sorted);
+        setFavoriteState({ uid, ids: sorted });
       })
       .catch(() => {
         if (active) setNotice('No se pudieron cargar tus favoritos. Comprueba tu conexión e inténtalo otra vez.');
@@ -55,7 +58,7 @@ export function FavoritesProvider({ children }: { readonly children: ReactNode }
       if (wasFavorite) await deleteDoc(favoriteRef);
       else await setDoc(favoriteRef, { productId, createdAt: serverTimestamp() });
       if (activeUid.current === uid) {
-        setFavoriteIds((previous) => wasFavorite ? previous.filter((id) => id !== productId) : [productId, ...previous.filter((id) => id !== productId)]);
+        setFavoriteState((current) => current.uid !== uid ? current : { uid, ids: wasFavorite ? current.ids.filter((id) => id !== productId) : [productId, ...current.ids.filter((id) => id !== productId)] });
         setNotice(wasFavorite ? 'Producto eliminado de Favoritos.' : '¡Producto agregado a Favoritos!');
       }
     } catch {
