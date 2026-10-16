@@ -79,6 +79,16 @@ service cloud.firestore {
 
     // Per-user browsing history stores product IDs only; clients cannot write
     // arbitrary fields or another user's history.
+    // Favorites are isolated by Firebase UID for both customer and admin accounts.
+    match /users/{uid}/favorites/{productId} {
+      allow get, list: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['productId', 'createdAt'])
+        && request.resource.data.productId == productId
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isOwner(uid);
+    }
+
     match /users/{uid}/recentlyViewed/{productId} {
       allow get, list: if isOwner(uid);
       allow create, update: if isOwner(uid)
