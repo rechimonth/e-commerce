@@ -33,6 +33,13 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
   const currentStateRef = useRef(state);
   currentStateRef.current = state;
   const [cloudReady, setCloudReady] = useState(!userId);
+  const [cartNotice, setCartNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cartNotice) return;
+    const timeoutId = window.setTimeout(() => setCartNotice(null), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [cartNotice]);
 
   useEffect(() => {
     if (!userId) {
@@ -74,7 +81,13 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
   }, [state, storageKey, userId, cloudReady]);
 
   const addItem = useCallback((product: Product, quantity: number = 1) => {
+    if (!Number.isFinite(quantity) || quantity < 1 || product.stock < quantity) {
+      setCartNotice(product.stock < 1 ? 'Este producto no tiene stock disponible.' : 'No hay suficientes unidades disponibles.');
+      return;
+    }
+
     dispatch({ type: 'ADD_ITEM', product, quantity });
+    setCartNotice(`¡${product.name} se agregó correctamente al carrito!`);
   }, []);
 
   const removeItem = useCallback((productId: string) => {
@@ -102,7 +115,21 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
     };
   }, [state.items, state.totalItems, state.totalPrice, state.discount, addItem, removeItem, updateQuantity, clearCart]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      {cartNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed bottom-5 right-5 z-[100] max-w-[calc(100vw-2.5rem)] rounded-xl border border-emerald-300/30 bg-slate-950/95 px-4 py-3 text-sm font-semibold text-emerald-200 shadow-[0_12px_35px_rgba(0,0,0,0.4)] backdrop-blur"
+        >
+          <span aria-hidden="true" className="mr-2 text-emerald-300">✓</span>
+          {cartNotice}
+        </div>
+      )}
+    </CartContext.Provider>
+  );
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
