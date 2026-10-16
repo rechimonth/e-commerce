@@ -14,6 +14,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { reviewsService, type ProductReview } from '@/services/reviewsService';
 import { recentlyViewedService } from '@/services/recentlyViewedService';
+import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -117,7 +118,7 @@ export function ProductDetailPage() {
         {isLoading && <div className="cyber-panel flex items-center justify-center rounded-xl py-20"><Spinner size="lg" /></div>}
         {isError && error && <EmptyState config={{ title: 'No pudimos cargar el producto', description: error.message, actionLabel: 'Volver al catálogo', actionHref: '/catalog' }} />}
         {product && <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <div className="cyber-panel aspect-square overflow-hidden rounded-2xl p-2"><img src={resolveProductImage(product)} alt={product.image.alt} className="h-full w-full rounded-xl object-cover" onError={handleProductImageError} /></div>
+          <div className="cyber-panel relative aspect-square overflow-hidden rounded-2xl p-2"><img src={resolveProductImage(product)} alt={product.image.alt} className="h-full w-full rounded-xl object-cover" onError={handleProductImageError} /><FavoriteButton productId={product.id} productName={product.name} className="absolute right-4 top-4 z-10" /></div>
           <div className="cyber-panel flex flex-col rounded-2xl p-6 sm:p-8">
             <p className="cyber-kicker">PRODUCT // DETAIL</p>
             <h1 className="mt-3 font-display text-2xl font-black uppercase leading-tight text-white sm:text-4xl">{product.name}</h1>
