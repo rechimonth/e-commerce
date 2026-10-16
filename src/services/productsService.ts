@@ -21,7 +21,7 @@ export interface FetchProductsParams {
   readonly limit?: number;
   readonly cursor?: string | null;
   readonly page?: number;
-}
+  readonly sortBy?: 'price-asc' | 'price-desc';
 
 export interface ProductsResult extends PaginatedResult<Product> {
   readonly nextCursor: string | null;
@@ -77,7 +77,7 @@ function normalizePage(
 export const productsService = {
   async fetchProducts(params: FetchProductsParams = {}): Promise<ProductsResult> {
     return firebaseTryCatch(async () => {
-      const { search, category, limit = DEFAULT_LIMIT, cursor, page = cursor ? 2 : 1 } = params;
+      const { search, category, limit = DEFAULT_LIMIT, cursor, page = cursor ? 2 : 1, sortBy } = params;
       const normalizedSearch = search?.trim().toLocaleLowerCase();
 
       // Firestore has no case-insensitive substring query. Search the complete
@@ -88,7 +88,7 @@ export const productsService = {
         const matches = allProducts
           .map(toProduct)
           .filter((product) => product.name.toLocaleLowerCase().includes(normalizedSearch))
-          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+          .sort((a, b) => sortBy === 'price-asc' ? a.price.amount - b.price.amount : sortBy === 'price-desc' ? b.price.amount - a.price.amount : b.createdAt.getTime() - a.createdAt.getTime());
         let startIndex = 0;
         if (cursor) {
           const cursorIndex = matches.findIndex((product) => product.id === cursor);
@@ -101,7 +101,7 @@ export const productsService = {
         return normalizePage(items, limit, page, hasNext ? items[items.length - 1]?.id ?? null : null);
       }
 
-      const result = await getProductsPage({ category, isActive: true, limit, cursor });
+      const result = await getProductsPage({ category, isActive: true, limit, cursor, sortBy });
       return normalizePage(result.items.map(toProduct), limit, page, result.nextCursor);
     });
   },
