@@ -26,6 +26,7 @@ export function OrderDetailPage() {
   const [error, setError] = useState<ServiceError | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   const handleOpenAttachment = async (orderId: string, key: string) => {
@@ -48,11 +49,12 @@ export function OrderDetailPage() {
   const handleCancel = async () => {
     if (!order || !user) return;
     setIsCancelling(true);
+    setCancelError(null);
     try {
       await ordersService.cancelOrder(order.id, user.uid);
       setRefreshKey((k) => k + 1);
-    } catch {
-      // error will be reflected on next fetch
+    } catch (cancelFailure) {
+      setCancelError(cancelFailure instanceof Error ? cancelFailure.message : 'No se pudo cancelar el pedido.');
     } finally {
       setIsCancelling(false);
     }
@@ -131,6 +133,7 @@ export function OrderDetailPage() {
 
         {order && status === 'success' && (
           <div className="space-y-6">
+            {cancelError && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{cancelError}</p>}
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-neutral-500">
