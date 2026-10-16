@@ -87,6 +87,7 @@ export interface ProductFilters {
   readonly category?: ProductCategory;
   readonly isActive?: boolean;
   readonly limit?: number;
+  readonly sortBy?: 'price-asc' | 'price-desc';
 }
 
 export type CreateProductInput = Omit<ProductDTO, 'id' | 'createdAt' | 'updatedAt'>;
@@ -101,7 +102,10 @@ export async function getProducts(filters?: ProductFilters): Promise<ProductDTO[
     if (filters?.isActive !== undefined)
       constraints.push(where('isActive', '==', filters.isActive));
 
-    if (filters?.category) {
+    if (filters?.sortBy) {
+      constraints.push(orderBy('priceCents', filters.sortBy === 'price-asc' ? 'asc' : 'desc'));
+      q = query(q, ...constraints);
+    } else if (filters?.category) {
       q = query(q, ...constraints);
     } else {
       q = query(q, ...constraints, orderBy('createdAt', 'desc') as ReturnType<typeof orderBy>);
