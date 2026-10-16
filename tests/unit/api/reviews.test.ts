@@ -18,9 +18,9 @@ function makeRequest(method: string, headers: Record<string, string> = {}, body:
 describe('POST /api/reviews request validation', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('rejects methods other than POST', async () => {
+  it('rejects unsupported methods', async () => {
     const response = makeResponse();
-    await handler(makeRequest('GET') , response as unknown as VercelResponse);
+    await handler(makeRequest('PUT') , response as unknown as VercelResponse);
     expect(response.status).toHaveBeenCalledWith(405);
     expect(response.json).toHaveBeenCalledWith({ success: false, error: 'Método no permitido' });
   });
