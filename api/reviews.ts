@@ -14,34 +14,65 @@ function jsonError(res: VercelResponse, status: number, error: string) {
   return res.status(status).json({ success: false, error });
 }
 
-async function moderateReviewComment(comment: string): Promise<void> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new ReviewRequestError(503, 'La moderación automática de reseñas no está configurada en el servidor');
+function normalizeReviewText(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/[\\u0300-\\u036f]/g, '')
+    .toLocaleLowerCase('es')
+    .replace(/[^\\p{L}\\p{N}]+/gu, ' ')
+    .trim();
+}
+
+/**
+ * Firestore-only review moderation. The policy is stored in
+ * settings/reviewModeration and managed by an administrator. No third-party
+ * moderation API or additional API key is used.
+ */
+async function moderateReviewComment(
+  firestore: ReturnType<typeof getFirestore>,
+  comment: string,
+): Promise<void> {
+  const normalized = normalizeReviewText(comment);
+  if (!normalized) {
+    throw new ReviewRequestError(422, 'El comentario no contiene texto válido');
   }
 
-  let response: Response;
+  // Baseline anti-spam controls remain active even before an admin configures
+  // the Firestore blocklist.
+  const urlCount = (comment.match(/(?:https?:\\/\\/|www\\.)\\S+/giu) ?? []).length;
+  if (urlCount > 0) {
+    throw new ReviewRequestError(422, 'No se permiten enlaces en las reseñas');
+  }
+  if (/(.)\\1{9,}/u.test(comment.replace(/\\s/g, ''))) {
+    throw new ReviewRequestError(422, 'El comentario parece spam por repetición de caracteres');
+  }
+
+  let policySnapshot;
   try {
-    response = await fetch('https://api.openai.com/v1/moderations', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ model: 'omni-moderation-latest', input: comment }),
-    });
+    policySnapshot = await firestore.collection('settings').doc('reviewModeration').get();
   } catch {
-    throw new ReviewRequestError(503, 'No se pudo verificar el comentario. Inténtalo nuevamente');
+    throw new ReviewRequestError(503, 'No se pudo verificar el comentario en Firestore. Inténtalo nuevamente');
   }
 
-  const result = await response.json().catch(() => null) as {
-    results?: Array<{ flagged?: boolean }>;
-  } | null;
-  if (!response.ok || !result || !Array.isArray(result.results) || typeof result.results[0]?.flagged !== 'boolean') {
-    throw new ReviewRequestError(503, 'El servicio de moderación no está disponible');
+  const policy = policySnapshot.data() ?? {};
+  const blockedTerms = Array.isArray(policy.blockedTerms)
+    ? policy.blockedTerms.filter((term): term is string =>
+        typeof term === 'string' && term.trim().length > 0 && term.trim().length <= 80)
+    : [];
+
+  const matchedTerm = blockedTerms.some((term) => {
+    const normalizedTerm = normalizeReviewText(term);
+    return normalizedTerm.length > 0 && normalized.includes(normalizedTerm);
+  });
+  if (matchedTerm) {
+    throw new ReviewRequestError(422, 'El comentario contiene términos que no están permitidos por la política de reseñas');
   }
-  if (result.results[0].flagged) {
-    throw new ReviewRequestError(422, 'El comentario no cumple las normas de publicación');
+
+  const maxLength = typeof policy.maxLength === 'number' && Number.isSafeInteger(policy.maxLength)
+    ? Math.max(10, Math.min(policy.maxLength, 1500))
+    : 1500;
+  if (comment.trim().length > maxLength) {
+    throw new ReviewRequestError(422, `El comentario supera el límite de ${maxLength} caracteres`);
   }
 }
 
@@ -157,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return Array.isArray(items) && items.some((item: { productId?: unknown }) => item?.productId === productId);
     });
     if (!hasPurchased) return jsonError(res, 403, 'Solo puedes reseñar productos de órdenes completadas');
-    await moderateReviewComment(comment);
+    await moderateReviewComment(firestore, comment);
 
     const displayName = typeof profileSnapshot.data()?.displayName === 'string'
       ? profileSnapshot.data()!.displayName.trim().slice(0, 80)
