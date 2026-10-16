@@ -84,7 +84,7 @@ export const productsService = {
       // active/category-scoped set before paginating, so matches beyond page one
       // remain discoverable.
       if (normalizedSearch) {
-        const allProducts = await getProducts({ category, isActive: true });
+        const allProducts = await getProducts({ category, isActive: true, sortBy });
         const matches = allProducts
           .map(toProduct)
           .filter((product) => product.name.toLocaleLowerCase().includes(normalizedSearch))
