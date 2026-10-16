@@ -137,73 +137,101 @@ La función /api/upload no guarda por sí sola el documento del producto: la per
 
 ## 🏗️ Arquitectura
 
-- src/pages: pantallas de cliente y administración.
-- src/components: componentes reutilizables de UI y layout.
-- src/hooks: lógica reutilizable de autenticación, carrito, órdenes, productos y uploads.
-- src/contexts: contexto de autenticación.
-- src/store/cart: carrito con Context API + reducer.
-- src/services: casos de uso para productos, checkout, órdenes y uploads.
-- src/infrastructure/firebase: adaptadores y acceso a Firebase/Firestore.
-- src/types: tipos e interfaces del dominio y API.
-- src/utils: utilidades puras.
-- server: inicialización server-only de Firebase Admin.
-- api: Vercel Serverless Functions.
-- tests: pruebas unitarias, de integración y seguridad.
+La aplicación está organizada por capas para que cada parte tenga una responsabilidad clara:
 
-La lógica de negocio no debe depender directamente de la presentación. Las operaciones privilegiadas se mantienen en el backend o en reglas de Firestore, no solamente en los controles de la interfaz.
+- **src/app:** conecta providers globales y define las rutas mediante React Router.
+- **src/pages:** contiene las pantallas del cliente y las pantallas específicas de administración.
+- **src/components:** reúne piezas visuales reutilizables, desde botones y formularios hasta catálogo, favoritos y navegación.
+- **src/contexts y src/store/cart:** separan el estado de autenticación, favoritos y carrito; el carrito usa Context API + useReducer con persistencia local y sincronización cloud.
+- **src/hooks:** encapsula lógica reutilizable para sesión, productos, checkout, órdenes y uploads.
+- **src/services:** separa los casos de uso de las páginas y concentra la comunicación con las APIs y Firebase.
+- **src/infrastructure/firebase:** contiene el acceso de frontend a Auth y Firestore.
+- **src/types:** define las entidades, importes, estados y contratos de la aplicación.
+- **api:** aloja las Vercel Serverless Functions; las operaciones privilegiadas validan token, rol y reglas de negocio del lado del servidor.
+- **server:** inicializa Firebase Admin y concentra validación de identidad y autorización para endpoints.
+- **firestore.rules y firestore.indexes.json:** definen permisos sobre datos e índices requeridos por las consultas.
+- **tests y src/test:** separan tests unitarios, integración, seguridad, fixtures y mocks.
+- **docs:** documenta la configuración, el flujo de S3, auditorías, decisiones de IA y preparación de la defensa.
 
----
+## 📁 Estructura principal del proyecto
 
-## 📁 Estructura del proyecto
+El siguiente árbol resume las carpetas principales y los puntos de entrada más importantes. El inventario completo, con explicación individual de cada ruta, está en [docs/INVENTARIO_COMPLETO.md](docs/INVENTARIO_COMPLETO.md).
 
 ~~~
-src/
-├── app/                    # Enrutamiento y providers globales
-├── components/
-│   ├── admin/              # Layout y componentes administrativos
-│   ├── auth/               # Protección de rutas por autenticación/rol
-│   ├── cart/               # Componentes del carrito
-│   ├── catalog/            # Catálogo, búsqueda y filtros
-│   ├── common/             # Estados de carga, vacíos y errores
-│   ├── layout/             # Header y estructura general
-│   ├── ui/                 # Controles reutilizables
-│   └── upload/             # Selector y preview de imágenes
-├── config/                 # Configuración de Firebase
-├── constants/              # Rutas y constantes
-├── contexts/               # Contexto de autenticación
-├── hooks/                  # Hooks de aplicación
-├── infrastructure/firebase/# Adaptadores Auth y Firestore
-├── pages/                  # Páginas de cliente y admin
-├── services/               # Servicios de dominio
-├── store/cart/             # Reducer, caché local y sincronización cloud del carrito
-├── test/                   # Setup, fixtures, mocks y providers
-├── types/                  # Tipos del dominio
-└── utils/                  # Funciones auxiliares
-
-api/
-├── checkout.ts             # Creación validada de órdenes
-├── cancel-order.ts         # Cancelación y reposición de stock
-├── update-order-status.ts  # Actualización administrativa de órdenes
-├── upload.ts               # Presigned POST para S3
-├── order-attachment.ts     # Descarga autorizada de adjuntos
-├── reviews.ts              # Escritura validada de reseñas
-└── health.ts               # Health check
-
-server/
-└── firebaseAdmin.ts        # Inicializador de Firebase Admin para servidor
-
-tests/
-├── integration/            # Flujos de usuario
-└── unit/                   # Hooks, servicios, UI, API y seguridad
-
-firestore.rules             # Reglas de acceso a Firestore
-firestore.indexes.json      # Índices compuestos
-firebase.json               # Configuración del emulador
-vercel.json                 # Hosting, SPA y cabeceras HTTP
-.env.example                # Nombres de variables, sin secretos
+.
+├── .github/workflows/ci.yml       # Validación automática de cambios
+├── .env.example                   # Variables de entorno sin secretos
+├── api/
+│   ├── admin/
+│   │   ├── delete-orders.ts       # Eliminación administrativa validada
+│   │   └── users.ts               # Gestión administrativa de usuarios
+│   ├── cancel-order.ts            # Cancelación y reglas de stock
+│   ├── checkout.ts                # Creación validada de órdenes
+│   ├── favorites.ts                # Operaciones de favoritos
+│   ├── health.ts                  # Health check
+│   ├── order-attachment.ts        # Descarga autorizada de adjuntos
+│   ├── reviews.ts                 # Lectura/escritura validada de reseñas
+│   ├── update-order-status.ts     # Cambios de estado de órdenes
+│   └── upload.ts                  # Presigned POST para S3
+├── docs/
+│   ├── GUIA_DEFENSA_30_MINUTOS.md # Guion oral para la presentación
+│   ├── INVENTARIO_COMPLETO.md     # Directorios y archivos, en dos listados
+│   ├── LOCAL_SETUP.md             # Configuración local
+│   ├── S3_CONFIG.md               # Configuración de S3
+│   ├── UPLOAD_FLOW.md             # Flujo de carga de archivos
+│   ├── ai-notes.md                # Bitácora de uso de IA
+│   ├── audit-matrix.md            # Matriz de auditoría
+│   ├── defense-prep.md            # Preparación técnica
+│   ├── production-checklist.md    # Validación de producción
+│   ├── testing-audit.md           # Auditoría de pruebas
+│   └── ts-audit.md                # Auditoría de TypeScript
+├── public/                        # Recursos estáticos
+├── scripts/                       # Scripts de mantenimiento y seed
+├── server/
+│   ├── adminAuthorization.ts      # Autorización de administradores
+│   ├── firebaseAdmin.ts           # Inicialización Firebase Admin
+│   └── firebaseToken.ts           # Validación de tokens
+├── src/
+│   ├── app/App.tsx                # Providers, lazy loading y rutas
+│   ├── components/
+│   │   ├── admin/                 # Layout y componentes administrativos
+│   │   ├── auth/                  # Protección de rutas
+│   │   ├── cart/                  # Componentes del carrito
+│   │   ├── catalog/               # Búsqueda, filtros y listado
+│   │   ├── common/                # Indicadores compartidos
+│   │   ├── favorites/              # Botón de favoritos
+│   │   ├── layout/                # Header, footer y marco del sitio
+│   │   ├── navigation/            # Navegación auxiliar
+│   │   ├── ui/                    # Componentes visuales reutilizables
+│   │   └── upload/                # Selector y carga de imágenes
+│   ├── config/                    # Configuración de Firebase
+│   ├── constants/                 # Rutas y constantes
+│   ├── contexts/                  # Auth y favoritos
+│   ├── hooks/                     # Hooks de aplicación
+│   ├── infrastructure/firebase/   # Adaptadores Firebase Auth/Firestore
+│   ├── pages/
+│   │   ├── admin/                 # Pantallas de administración
+│   │   └── *.tsx                  # Inicio, catálogo, detalle, carrito, cuenta y órdenes
+│   ├── services/                  # Casos de uso y acceso a datos
+│   ├── store/cart/                # Reducer y persistencia local/cloud del carrito
+│   ├── styles/globals.css         # Estilos globales
+│   ├── test/                      # Setup, fixtures, mocks y providers de tests
+│   ├── types/                     # Tipos del dominio y API
+│   └── utils/                     # Funciones auxiliares
+├── tests/
+│   ├── integration/               # Pruebas de flujos completos
+│   └── unit/                      # Pruebas por módulo
+├── .gitignore                     # Exclusiones de Git
+├── eslint.config.js               # Reglas de lint
+├── firebase.json                  # Emuladores Firebase y rutas de reglas
+├── firestore.indexes.json         # Índices de Firestore
+├── firestore.rules                # Reglas de seguridad
+├── package.json                   # Scripts y dependencias
+├── package-lock.json              # Versiones fijadas
+├── tsconfig*.json                 # Configuraciones de TypeScript
+├── vercel.json                    # Hosting SPA y cabeceras de seguridad
+└── vite.config.ts                 # Configuración de Vite
 ~~~
-
----
 
 ## 🛠️ Tecnologías utilizadas
 
