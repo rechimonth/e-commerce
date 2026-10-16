@@ -46,6 +46,7 @@ async function moderateReviewComment(comment: string): Promise<void> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!['GET', 'POST', 'DELETE'].includes(req.method ?? '')) return jsonError(res, 405, 'Método no permitido');
   const authorization = req.headers.authorization ?? '';
   if (!authorization.startsWith('Bearer ')) return jsonError(res, 401, 'Debes iniciar sesión');
 
