@@ -11,6 +11,19 @@ import { ROUTES } from '@/constants/routes';
 import type { ServiceError } from '@/types/api';
 
 function getLoginErrorMessage(error: ServiceError): string {
+  const detail = error.message.toLowerCase();
+  if (detail.includes('auth/unauthorized-domain') || detail.includes('unauthorized domain')) {
+    return 'Este dominio no está autorizado para iniciar sesión. En Firebase Console → Authentication → Settings → Authorized domains, agrega e-commerce-mauve-one-98.vercel.app.';
+  }
+  if (detail.includes('auth/operation-not-allowed')) {
+    return 'El inicio de sesión con Google está deshabilitado en Firebase. Habilita Google en Authentication → Sign-in method.';
+  }
+  if (detail.includes('firestore/permission-denied') || detail.includes('missing or insufficient permissions')) {
+    return 'Google autenticó la cuenta, pero Firestore rechazó el acceso al perfil. Revisa las reglas de Firestore para users/{uid}.';
+  }
+  if (detail.includes('auth/popup-blocked') || detail.includes('auth/operation-not-supported-in-this-environment')) {
+    return 'El navegador bloqueó la ventana de Google. Vuelve a intentarlo; en móviles se usa inicio por redirección.';
+  }
   if (error.message.includes('Database is closing/hidden')) {
     return 'La conexión con la base de datos se cerró. Recarga la página e inténtalo de nuevo.';
   }
