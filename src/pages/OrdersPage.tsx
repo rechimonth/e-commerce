@@ -30,8 +30,10 @@ export function OrdersPage() {
     setCancellingId(order.id);
     try {
       await ordersService.cancelOrder(order.id, user.uid);
+      setActionMessage({ orderId: order.id, text: 'Orden cancelada. El stock fue restaurado.' });
       refetch();
-    } catch {
+    } catch (cancelError) {
+      setActionMessage({ orderId: order.id, text: cancelError instanceof Error ? cancelError.message : 'No se pudo cancelar la orden.', error: true });
       refetch();
     } finally {
       setCancellingId(null);
