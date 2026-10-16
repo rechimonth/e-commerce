@@ -16,7 +16,7 @@ export function Footer() {
         </div>
         <div>
           <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-white">Ayuda</h2>
-          <div className="mt-4 flex flex-col gap-3 text-sm"><span>Contacto</span><span>Envíos y entregas</span><span>Cambios y devoluciones</span><span>Términos y privacidad</span></div>
+          <div className="mt-4 flex flex-col gap-3 text-sm"><Link className="transition hover:text-cyan-300" to={ROUTES.CONTACT}>Contacto</Link><Link className="transition hover:text-cyan-300" to={ROUTES.SHIPPING}>Envíos y entregas</Link><Link className="transition hover:text-cyan-300" to={ROUTES.RETURNS}>Cambios y devoluciones</Link><Link className="transition hover:text-cyan-300" to={ROUTES.TERMS}>Términos y privacidad</Link></div>
         </div>
       </div>
       <div className="border-t border-cyan-400/10 px-4 py-5 text-center text-xs text-slate-500">© {new Date().getFullYear()} ECOMMERCE AI · Proyecto Integrador 5</div>
