@@ -34,7 +34,7 @@ describe('AdminOrdersPage', () => {
     render(<MemoryRouter initialEntries={['/admin/orders']}><AuthProvider><AdminOrdersPage /></AuthProvider></MemoryRouter>);
     await waitFor(() => expect(screen.getByText(/order-1/i)).toBeInTheDocument());
     await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'processing');
-    expect(ordersService.fetchAllOrders).toHaveBeenCalledWith({ status: 'processing', limit: 50 });
+    expect(ordersService.fetchAllOrders).toHaveBeenCalledWith({ status: 'processing' });
   });
   it('deletes selected orders only after the API confirms success', async () => {
     vi.mocked(ordersService.fetchAllOrders).mockResolvedValue([mockOrder]);
