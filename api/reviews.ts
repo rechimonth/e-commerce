@@ -17,9 +17,9 @@ function jsonError(res: VercelResponse, status: number, error: string) {
 function normalizeReviewText(value: string): string {
   return value
     .normalize('NFKD')
-    .replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('es')
-    .replace(/[^\\p{L}\\p{N}]+/gu, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 }
 
@@ -39,11 +39,11 @@ async function moderateReviewComment(
 
   // Baseline anti-spam controls remain active even before an admin configures
   // the Firestore blocklist.
-  const urlCount = (comment.match(/(?:https?:\\/\\/|www\\.)\\S+/giu) ?? []).length;
+  const urlCount = (comment.match(/(?:https?:\/\/|www\.)\S+/giu) ?? []).length;
   if (urlCount > 0) {
     throw new ReviewRequestError(422, 'No se permiten enlaces en las reseñas');
   }
-  if (/(.)\\1{9,}/u.test(comment.replace(/\\s/g, ''))) {
+  if (/(.)\1{9,}/u.test(comment.replace(/\s/g, ''))) {
     throw new ReviewRequestError(422, 'El comentario parece spam por repetición de caracteres');
   }
 
@@ -72,7 +72,7 @@ async function moderateReviewComment(
     ? Math.max(10, Math.min(policy.maxLength, 1500))
     : 1500;
   if (comment.trim().length > maxLength) {
-    throw new ReviewRequestError(422, `El comentario supera el límite de ${maxLength} caracteres`);
+    throw new ReviewRequestError(422, \`El comentario supera el límite de \${maxLength} caracteres\`);
   }
 }
 
