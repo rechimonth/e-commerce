@@ -8,7 +8,7 @@ import { AdminOrdersPage } from '@/pages/admin/OrdersPage';
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'admin-1', email: 'admin@test.com', displayName: 'Admin', photoURL: null, role: 'admin', createdAt: new Date(), lastLoginAt: new Date(), preferences: { currency: 'USD', locale: 'es-MX', notifications: true } }, roleState: 'admin', session: { uid: 'admin-1', role: 'admin', isAuthenticated: true }, isLoading: false, error: null, signIn: vi.fn(), signUp: vi.fn(), signInWithGoogle: vi.fn(), signOut: vi.fn(), refreshUserProfile: vi.fn(), clearError: vi.fn() }) }));
 vi.mock('@/services/ordersService', () => ({ ordersService: { fetchAllOrders: vi.fn(), updateOrderStatus: vi.fn(), deleteOrders: vi.fn() } }));
 vi.mock('@/infrastructure/firebase/config', () => ({ getFirebaseDb: vi.fn(() => ({ _type: 'Firestore' })), firebaseTryCatch: async (fn: () => Promise<unknown>) => fn(), _resetFirebaseForTesting: vi.fn(), initializeFirebase: vi.fn() }));
-vi.mock('@/infrastructure/firebase/auth', () => ({ observeAuthState: vi.fn(() => vi.fn()), signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signInWithGoogle: vi.fn(), signOutUser: vi.fn(), getUserProfile: vi.fn() }));
+vi.mock('@/infrastructure/firebase/auth', () => ({ observeAuthState: vi.fn(() => vi.fn()), signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signInWithGoogle: vi.fn(), completeGoogleRedirectSignIn: vi.fn().mockResolvedValue(null), signOutUser: vi.fn(), getUserProfile: vi.fn() }));
 
 import { ordersService } from '@/services/ordersService';
 

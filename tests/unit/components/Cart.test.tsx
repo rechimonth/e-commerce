@@ -46,6 +46,7 @@ vi.mock('@/infrastructure/firebase/auth', () => ({
   signInWithEmail: vi.fn(),
   signUpWithEmail: vi.fn(),
   signInWithGoogle: vi.fn(),
+  completeGoogleRedirectSignIn: vi.fn().mockResolvedValue(null),
   signOutUser: vi.fn(),
   getUserProfile: vi.fn(),
 }));

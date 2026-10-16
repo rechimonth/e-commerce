@@ -70,6 +70,9 @@ export function getAuthErrorMessage(
       ? 'Revisa el correo y la contraseña. La contraseña debe tener al menos 6 caracteres.'
       : 'Revisa los datos ingresados e inténtalo de nuevo.';
   }
+  if (detail.includes('database is closing/hidden')) {
+    return 'La conexión con la base de datos se cerró. Recarga la página e inténtalo de nuevo.';
+  }
   if (detail.includes('firestore/') || detail.includes('database')) {
     return 'No pudimos guardar o recuperar el perfil de cliente. Vuelve a intentarlo con la misma cuenta; si persiste, contacta al administrador.';
   }
