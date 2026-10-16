@@ -33,7 +33,7 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
   const currentStateRef = useRef(state);
   currentStateRef.current = state;
   const [cloudReady, setCloudReady] = useState(!userId);
-  const [cartNotice, setCartNotice] = useState<string | null>(null);
+  const [cartNotice, setCartNotice] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     if (!cartNotice) return;
@@ -82,12 +82,12 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
 
   const addItem = useCallback((product: Product, quantity: number = 1) => {
     if (!Number.isFinite(quantity) || quantity < 1 || product.stock < quantity) {
-      setCartNotice(product.stock < 1 ? 'Este producto no tiene stock disponible.' : 'No hay suficientes unidades disponibles.');
+      setCartNotice({ message: product.stock < 1 ? 'Este producto no tiene stock disponible.' : 'No hay suficientes unidades disponibles.', type: 'error' });
       return;
     }
 
     dispatch({ type: 'ADD_ITEM', product, quantity });
-    setCartNotice(`¡${product.name} se agregó correctamente al carrito!`);
+    setCartNotice({ message: `¡${product.name} se agregó correctamente al carrito!`, type: 'success' });
   }, []);
 
   const removeItem = useCallback((productId: string) => {
@@ -122,10 +122,10 @@ function CartStateProvider({ children, storageKey, userId }: { children: ReactNo
         <div
           role="status"
           aria-live="polite"
-          className="pointer-events-none fixed bottom-5 right-5 z-[100] max-w-[calc(100vw-2.5rem)] rounded-xl border border-emerald-300/30 bg-slate-950/95 px-4 py-3 text-sm font-semibold text-emerald-200 shadow-[0_12px_35px_rgba(0,0,0,0.4)] backdrop-blur"
+          className={`pointer-events-none fixed bottom-5 right-5 z-[100] max-w-[calc(100vw-2.5rem)] rounded-xl border bg-slate-950/95 px-4 py-3 text-sm font-semibold shadow-[0_12px_35px_rgba(0,0,0,0.4)] backdrop-blur ${cartNotice.type === 'success' ? 'border-emerald-300/30 text-emerald-200' : 'border-red-300/30 text-red-200'}`}
         >
-          <span aria-hidden="true" className="mr-2 text-emerald-300">✓</span>
-          {cartNotice}
+          <span aria-hidden="true" className={`mr-2 ${cartNotice.type === 'success' ? 'text-emerald-300' : 'text-red-300'}`}>{cartNotice.type === 'success' ? '✓' : '!'}</span>
+          {cartNotice.message}
         </div>
       )}
     </CartContext.Provider>
