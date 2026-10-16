@@ -1,0 +1,648 @@
+# Inventario completo de carpetas y archivos
+
+Este inventario se generó a partir del árbol versionado de `main` de [rechimonth/e-commerce](https://github.com/rechimonth/e-commerce), no de archivos imaginados ni de `node_modules`. La revisión corresponde al árbol consultado durante la documentación; si luego se agregan, renombran o eliminan archivos, el inventario debe actualizarse.
+
+**Alcance del inventario:** 58 carpetas y 253 archivos versionados (incluye configuración, documentación, scripts, aplicación y tests).
+
+Las descripciones son una oración por ruta: indican el objetivo y, cuando corresponde, cómo encaja esa pieza en el proyecto. En los tests se resume el comportamiento cubierto por el nombre y su ubicación; no significa que cada caso individual se describa línea por línea.
+
+## 1. Listado respetando la estructura del repositorio
+
+Se conserva el árbol por niveles; cada entrada incluye una explicación. El nombre de una carpeta termina en `/`.
+
+- **`.env.example`** — Plantilla con los nombres de las variables locales y server-only, sin valores secretos reales.
+- **`.firebaserc`** — Define el alias o proyecto Firebase que usa la CLI al ejecutar comandos de Firebase.
+- **`.github/`** — Agrupa la automatización propia de GitHub, incluyendo los workflows que se ejecutan ante cambios del repositorio.
+  - **`workflows/`** — Contiene las definiciones de GitHub Actions que validan la aplicación automáticamente.
+    - **`ci.yml`** — Define la validación automática de main: instalación, lint, tests, reglas Firestore, build y typecheck de API.
+- **`.gitignore`** — Evita subir dependencias, builds, credenciales locales, configuración privada y otros archivos generados.
+- **`.kilo/`** — Guarda configuración auxiliar usada por herramientas de desarrollo asistido.
+  - **`kilo.jsonc`** — Guarda configuración JSONC para la herramienta Kilo usada durante tareas de desarrollo.
+- **`.prettierignore`** — Indica qué rutas debe omitir Prettier al revisar o aplicar formato.
+- **`.prettierrc`** — Define las preferencias de formato para mantener el código consistente.
+- **`.tsupgrader/`** — Agrupa artefactos y parámetros de una evaluación de actualización de TypeScript.
+  - **`runtime-validation/`** — Guarda el plan y el resultado de referencia para validar cambios de runtime o tipado.
+    - **`.gitignore`** — Evita versionar determinados resultados temporales de la validación de runtime.
+    - **`baseline-result.json`** — Registra el resultado base de la evaluación de runtime para comparar futuras ejecuciones.
+    - **`eval-plan.json`** — Describe los casos y parámetros de la evaluación de actualización de TypeScript.
+- **`AGENTS.md`** — Documenta instrucciones de trabajo para asistentes y contribuyentes que modifican el repositorio.
+- **`README.md`** — Explica el objetivo del ecommerce, su arquitectura, configuración, seguridad, pruebas, despliegue y bitácora de IA.
+- **`api/`** — Contiene las funciones serverless de Vercel que exponen operaciones de negocio y validan las solicitudes del navegador.
+  - **`admin/`** — Agrupa endpoints de administración que requieren privilegios especiales.
+    - **`delete-orders.ts`** — Implementa el endpoint protegido que permite al administrador eliminar órdenes bajo las validaciones del servidor.
+    - **`users.ts`** — Expone operaciones administrativas de usuarios con verificación de sesión y permisos.
+  - **`cancel-order.ts`** — Valida una cancelación de orden y actualiza orden y stock desde el backend.
+  - **`checkout.ts`** — Valida el checkout en servidor y crea una orden coherente con precios y stock de Firestore.
+  - **`favorites.ts`** — Gestiona los cambios de favoritos a través de una API que identifica al usuario autenticado.
+  - **`health.ts`** — Expone un control básico de disponibilidad del backend para comprobar que la función responde.
+  - **`order-attachment.ts`** — Autoriza el acceso a adjuntos de una orden y genera enlaces firmados temporales para descargarlos.
+  - **`reviews.ts`** — Valida la creación y consulta de reseñas de productos respetando las reglas de usuario y compra.
+  - **`update-order-status.ts`** — Valida y aplica cambios permitidos en el estado y seguimiento de una orden.
+  - **`upload.ts`** — Valida el rol admin y los datos del archivo, y genera una presigned POST de corta duración para S3.
+- **`debug-images.cjs`** — Ejecuta comprobaciones de diagnóstico relacionadas con las direcciones de imágenes del catálogo.
+- **`docs/`** — Reúne documentación de configuración, arquitectura, auditorías, pruebas y preparación de la defensa.
+  - **`LOCAL_SETUP.md`** — Describe las dependencias locales, las variables necesarias y cómo iniciar frontend y funciones serverless.
+  - **`S3_CONFIG.md`** — Explica los ajustes necesarios del bucket y la integración de S3 para permitir cargas seguras.
+  - **`UPLOAD_FLOW.md`** — Detalla el flujo de carga hacia S3, validaciones, permisos, variables y CORS.
+  - **`ai-notes.md`** — Documenta prompts y reflexiones sobre decisiones técnicas tomadas con ayuda de herramientas de IA.
+  - **`audit-matrix.md`** — Enumera áreas y escenarios que conviene comprobar para auditar los principales flujos del ecommerce.
+  - **`defense-prep.md`** — Reúne recomendaciones, conceptos técnicos y preguntas para preparar la defensa del proyecto.
+  - **`production-checklist.md`** — Registra el checklist de preparación para producción y qué validaciones requieren servicios reales.
+  - **`testing-audit.md`** — Resume la estrategia, alcance y puntos de atención de las pruebas automatizadas.
+  - **`ts-audit.md`** — Reúne observaciones de auditoría sobre TypeScript, tipado y posibles áreas de mejora.
+- **`eslint.config.js`** — Configura ESLint para detectar errores de estilo y problemas comunes de JavaScript y TypeScript.
+- **`firebase.json`** — Configura los emuladores locales de Firebase y declara las rutas de reglas e índices de Firestore.
+- **`firestore.indexes.json`** — Define índices compuestos que necesitan las consultas de Firestore de la aplicación.
+- **`firestore.rules`** — Define permisos de lectura y escritura por usuario, rol, tipo de documento y transición permitida.
+- **`index.html`** — Es la plantilla HTML inicial que Vite usa para montar la SPA y cargar su punto de entrada.
+- **`package-lock.json`** — Fija las versiones exactas de dependencias para instalaciones reproducibles con npm ci.
+- **`package.json`** — Declara los scripts de desarrollo, build, tests y lint, además de dependencias y versión Node requerida.
+- **`postcss.config.cjs`** — Conecta PostCSS con los plugins de estilos configurados para el build.
+- **`public/`** — Contiene recursos estáticos que Vite sirve sin procesarlos como módulos de la aplicación.
+  - **`favicon.svg`** — Define el icono del sitio que aparece en la pestaña del navegador.
+  - **`placeholder.svg`** — Proporciona una imagen alternativa cuando un producto no tiene una imagen disponible.
+- **`scripts/`** — Agrupa utilidades de consola para preparar datos o corregir recursos del catálogo.
+  - **`fix-product-images.ts`** — Revisa y corrige datos de imágenes de productos usando un script de mantenimiento.
+  - **`replace-picsum-images.ts`** — Reemplaza direcciones de imágenes de prueba de Picsum por otras direcciones configuradas.
+  - **`seed.ts`** — Carga un conjunto inicial de productos de ejemplo en Firestore usando credenciales de servidor.
+- **`server/`** — Contiene módulos de servidor que inicializan Firebase Admin y centralizan la verificación de identidad y permisos.
+  - **`adminAuthorization.ts`** — Centraliza la verificación de que el usuario autenticado tenga permisos de administrador.
+  - **`firebaseAdmin.ts`** — Inicializa Firebase Admin en el servidor sin exponer las credenciales al navegador.
+  - **`firebaseToken.ts`** — Verifica tokens de Firebase ID y normaliza los errores de autenticación del backend.
+- **`src/`** — Contiene el código de la SPA React, separado por páginas, componentes, estado, servicios y tipos.
+  - **`app/`** — Compone la aplicación, sus proveedores globales y las rutas del lado cliente.
+    - **`App.tsx`** — Define los proveedores globales, la carga diferida de páginas y las rutas públicas, protegidas y administrativas.
+  - **`components/`** — Contiene componentes visuales reutilizables que las páginas combinan para construir cada pantalla.
+    - **`admin/`** — Reúne la navegación y los componentes propios del panel administrativo.
+      - **`AdminLayout.tsx`** — Implementa la estructura, navegación lateral o superior y marco visual del panel admin.
+      - **`AdminOrderMiniCart.tsx`** — Muestra un resumen compacto de los productos asociados a una orden en vistas administrativas.
+    - **`auth/`** — Contiene componentes que restringen el acceso según sesión y rol.
+      - **`AdminRoute.tsx`** — Restringe las rutas administrativas a una sesión con rol admin y resuelve los estados de carga.
+      - **`ProtectedRoute.tsx`** — Restringe páginas a usuarios autenticados y gestiona el acceso cuando falta sesión.
+    - **`cart/`** — Agrupa las piezas visuales que representan los productos dentro del carrito.
+      - **`CartItemRow.tsx`** — Representa una línea del carrito con producto, cantidad y acciones relacionadas.
+    - **`catalog/`** — Contiene los elementos de búsqueda, filtros y listado del catálogo.
+      - **`ProductFilters.tsx`** — Permite filtrar el catálogo mediante las categorías u otros criterios definidos por la interfaz.
+      - **`ProductList.tsx`** — Renderiza la colección de productos y el estado de listado vacío o con resultados.
+      - **`ProductSearch.tsx`** — Recoge el texto de búsqueda del usuario para filtrar productos.
+      - **`RecentlyViewedSection.tsx`** — Muestra productos consultados recientemente para facilitar volver a ellos.
+    - **`common/`** — Agrupa indicadores visuales compartidos, como la espera de una operación.
+      - **`LoadingSpinner.tsx`** — Muestra un indicador de carga reutilizable mientras una vista espera datos o código.
+    - **`favorites/`** — Contiene el control reutilizable que permite guardar y quitar favoritos.
+      - **`FavoriteButton.tsx`** — Añade o quita un producto de favoritos y refleja el estado guardado por el usuario.
+    - **`layout/`** — Agrupa la estructura común de las páginas públicas, como cabecera y pie.
+      - **`Footer.tsx`** — Presenta los enlaces secundarios y la información de pie compartida por las páginas.
+      - **`Header.tsx`** — Muestra la cabecera principal, navegación y accesos al catálogo, carrito y cuenta.
+      - **`SiteChrome.tsx`** — Combina los elementos globales de la estructura del sitio alrededor de las páginas.
+    - **`navigation/`** — Contiene controles de navegación auxiliares para moverse entre pantallas.
+      - **`BackButton.tsx`** — Ofrece una acción de navegación para volver a la pantalla anterior o a una ruta alternativa.
+    - **`ui/`** — Reúne controles genéricos reutilizables con props tipadas y estilos compartidos.
+      - **`Alert.tsx`** — Implementa el componente alert, que se reutiliza para construir la interfaz de ui.
+      - **`Badge.tsx`** — Implementa el componente badge, que se reutiliza para construir la interfaz de ui.
+      - **`Button.tsx`** — Implementa el componente button, que se reutiliza para construir la interfaz de ui.
+      - **`Card.tsx`** — Implementa el componente card, que se reutiliza para construir la interfaz de ui.
+      - **`CategoryFilter.tsx`** — Implementa el componente category filter, que se reutiliza para construir la interfaz de ui.
+      - **`Checkbox.tsx`** — Implementa el componente checkbox, que se reutiliza para construir la interfaz de ui.
+      - **`Container.tsx`** — Implementa el componente container, que se reutiliza para construir la interfaz de ui.
+      - **`EmptyState.tsx`** — Implementa el componente empty state, que se reutiliza para construir la interfaz de ui.
+      - **`ErrorState.tsx`** — Implementa el componente error state, que se reutiliza para construir la interfaz de ui.
+      - **`Footer.tsx`** — Implementa el componente footer, que se reutiliza para construir la interfaz de ui.
+      - **`Input.tsx`** — Implementa el componente input, que se reutiliza para construir la interfaz de ui.
+      - **`LoadingState.tsx`** — Implementa el componente loading state, que se reutiliza para construir la interfaz de ui.
+      - **`Modal.tsx`** — Implementa el componente modal, que se reutiliza para construir la interfaz de ui.
+      - **`Navbar.tsx`** — Implementa el componente navbar, que se reutiliza para construir la interfaz de ui.
+      - **`OrderStatusBadge.tsx`** — Implementa el componente order status badge, que se reutiliza para construir la interfaz de ui.
+      - **`Pagination.tsx`** — Implementa el componente pagination, que se reutiliza para construir la interfaz de ui.
+      - **`Price.tsx`** — Implementa el componente price, que se reutiliza para construir la interfaz de ui.
+      - **`ProductCard.tsx`** — Implementa el componente product card, que se reutiliza para construir la interfaz de ui.
+      - **`QuantitySelector.tsx`** — Implementa el componente quantity selector, que se reutiliza para construir la interfaz de ui.
+      - **`SearchInput.tsx`** — Implementa el componente search input, que se reutiliza para construir la interfaz de ui.
+      - **`Select.tsx`** — Implementa el componente select, que se reutiliza para construir la interfaz de ui.
+      - **`Skeleton.tsx`** — Implementa el componente skeleton, que se reutiliza para construir la interfaz de ui.
+      - **`Spinner.tsx`** — Implementa el componente spinner, que se reutiliza para construir la interfaz de ui.
+      - **`Textarea.tsx`** — Implementa el componente textarea, que se reutiliza para construir la interfaz de ui.
+      - **`index.ts`** — Implementa el componente index, que se reutiliza para construir la interfaz de ui.
+    - **`upload/`** — Contiene el control de selección y carga de imágenes.
+      - **`ImageUploader.tsx`** — Permite seleccionar una imagen, ver su estado y conectarla con el flujo de carga al backend.
+  - **`config/`** — Centraliza la configuración necesaria para conectar la aplicación con servicios externos.
+    - **`firebase.ts`** — Provee la configuración de Firebase Web tomada de variables de entorno del frontend.
+  - **`constants/`** — Centraliza rutas, catálogos de opciones y valores fijos que comparten varias pantallas.
+    - **`checkout.ts`** — Agrupa constantes reutilizadas por la experiencia de checkout.
+    - **`routes.ts`** — Centraliza las rutas de navegación del sitio y los constructores de rutas con identificadores.
+  - **`contexts/`** — Agrupa contextos de React para estado global de autenticación y favoritos.
+    - **`AuthContext.tsx`** — Define la forma del contexto de autenticación que consumen los componentes React.
+    - **`AuthProvider.tsx`** — Observa la sesión Firebase, carga el perfil y expone usuario, rol y acciones de autenticación.
+    - **`FavoritesContext.tsx`** — Mantiene el estado de favoritos del usuario y lo sincroniza mediante el servicio correspondiente.
+  - **`hooks/`** — Contiene hooks personalizados que encapsulan lógica reutilizable para páginas y componentes.
+    - **`useAuth.ts`** — Permite acceder al estado y las acciones de autenticación desde cualquier componente.
+    - **`useCart.ts`** — Permite consultar y modificar el carrito a través de su contexto compartido.
+    - **`useCheckout.ts`** — Encapsula el estado y la ejecución del flujo de checkout con sus errores.
+    - **`useDebounce.ts`** — Retrasa la actualización de un valor hasta que pasa un intervalo sin cambios.
+    - **`useOrders.ts`** — Encapsula la carga de órdenes y el estado asociado para las pantallas consumidoras.
+    - **`useProduct.ts`** — Carga y administra el estado de un producto individual.
+    - **`useProducts.ts`** — Carga listados de productos y coordina filtros, paginación y estado de resultados.
+    - **`useUpload.ts`** — Coordina la solicitud de una política firmada y la carga del archivo seleccionado.
+  - **`infrastructure/`** — Agrupa adaptadores que aíslan a la lógica de aplicación de los proveedores externos.
+    - **`firebase/`** — Contiene la integración de Firebase Authentication y Firestore para el frontend.
+      - **`adapters.ts`** — Adapta respuestas y objetos de Firebase a estructuras usadas por la aplicación.
+      - **`auth.ts`** — Implementa las operaciones de autenticación y observa cambios de sesión de Firebase.
+      - **`config.ts`** — Inicializa y exporta las instancias de Firebase Web utilizadas por Auth y Firestore.
+      - **`firestore.ts`** — Centraliza consultas y escrituras de Firestore para productos, perfiles, carritos y órdenes.
+      - **`index.ts`** — Reexporta la API de infraestructura Firebase desde un punto de entrada común.
+    - **`index.ts`** — Expone un punto de entrada común para los adaptadores de infraestructura.
+  - **`main.tsx`** — Arranca React, monta el componente App y carga los estilos globales.
+  - **`pages/`** — Contiene las pantallas orientadas al usuario final y los flujos públicos de compra.
+    - **`CartPage.tsx`** — Presenta el contenido del carrito, cantidades, subtotal y navegación hacia el catálogo o checkout.
+    - **`CatalogPage.tsx`** — Muestra el catálogo con búsqueda, filtros, paginación y tarjetas de producto.
+    - **`CheckoutPage.tsx`** — Permite crear una orden de cliente y también muestra el flujo administrativo de confirmación manual para una orden existente.
+    - **`FavoritesPage.tsx`** — Lista los productos favoritos de la sesión autenticada.
+    - **`HelpPage.tsx`** — Muestra el texto correspondiente a contacto, envíos, cambios/devoluciones o términos y privacidad según la ruta.
+    - **`HomePage.tsx`** — Presenta la página inicial, accesos al catálogo y secciones destacadas del comercio.
+    - **`LoginPage.tsx`** — Permite iniciar sesión con los métodos de autenticación que estén configurados.
+    - **`NotFoundPage.tsx`** — Muestra una vista de recurso o ruta inexistente.
+    - **`OrderConfirmationPage.tsx`** — Confirma al cliente que se creó una orden y muestra su información principal.
+    - **`OrderDetailPage.tsx`** — Muestra el detalle de una orden del cliente con estado y datos de seguimiento disponibles.
+    - **`OrdersPage.tsx`** — Lista el historial de órdenes del usuario autenticado.
+    - **`ProductDetailPage.tsx`** — Muestra la información completa del producto y las interacciones asociadas, como favoritos y reseñas.
+    - **`RegisterPage.tsx`** — Permite crear una cuenta de cliente y configurar su perfil inicial.
+    - **`UnauthorizedPage.tsx`** — Informa que la sesión actual no tiene permisos para acceder a una ruta.
+    - **`admin/`** — Contiene las pantallas de gestión exclusivas del rol administrador.
+      - **`AnalyticsPage.tsx`** — Presenta métricas administrativas y resúmenes de actividad del comercio.
+      - **`CategoriesPage.tsx`** — Lista y administra las categorías disponibles para clasificar productos.
+      - **`CategoryFormPage.tsx`** — Permite crear o editar los datos de una categoría.
+      - **`CreateOrderPage.tsx`** — Permite al administrador crear una orden desde el panel y muestra confirmación visual del resultado.
+      - **`DashboardPage.tsx`** — Presenta un resumen general del comercio y accesos a las áreas administrativas.
+      - **`OrderDetailPage.tsx`** — Muestra y administra los datos ampliados de una orden desde el rol admin.
+      - **`OrdersPage.tsx`** — Lista las órdenes y permite filtrarlas, seleccionar acciones, gestionar estados y derivar al flujo de pago simulado.
+      - **`ProductFormPage.tsx`** — Gestiona el formulario de alta o edición de productos, incluida su imagen y los datos guardados.
+      - **`ProductsPage.tsx`** — Lista productos del catálogo para que el administrador pueda buscarlos y gestionarlos.
+      - **`SettingsPage.tsx`** — Presenta las opciones de configuración disponibles para la sección administrativa.
+      - **`UploadsPage.tsx`** — Muestra o administra recursos cargados y facilita verificar imágenes/adjuntos gestionados.
+      - **`UserFormPage.tsx`** — Permite crear o editar los datos de un usuario desde el área administrativa.
+      - **`UsersPage.tsx`** — Lista usuarios y ofrece las acciones administrativas permitidas sobre ellos.
+  - **`services/`** — Agrupa operaciones de negocio para productos, checkout, órdenes, usuarios, reseñas y cargas.
+    - **`adminApi.ts`** — Centraliza llamadas del frontend a endpoints de administración.
+    - **`checkoutService.ts`** — Envía los datos del checkout al backend y adapta su respuesta al modelo de la aplicación.
+    - **`dashboardService.ts`** — Obtiene y transforma datos usados por el dashboard administrativo.
+    - **`favoritesService.ts`** — Lee y modifica los favoritos mediante el endpoint y la persistencia configurada.
+    - **`index.ts`** — Reexporta servicios para facilitar imports compartidos.
+    - **`orderAttachmentService.ts`** — Solicita enlaces o descargas autorizadas para adjuntos de órdenes.
+    - **`ordersService.ts`** — Implementa consultas y acciones de órdenes, incluido su seguimiento y cambio de estado.
+    - **`productsService.ts`** — Implementa operaciones de lectura, creación, edición y baja lógica o eliminación de productos.
+    - **`recentlyViewedService.ts`** — Registra y recupera productos vistos recientemente.
+    - **`reviewsService.ts`** — Consulta y envía reseñas de producto respetando el contrato de la API.
+    - **`uploadService.ts`** — Solicita una presigned POST y ejecuta la carga directa del archivo a S3.
+    - **`usersService.ts`** — Implementa las operaciones de lectura y modificación de usuarios disponibles en la capa de servicios.
+  - **`store/`** — Agrupa módulos que administran estado de aplicación y persistencia.
+    - **`cart/`** — Implementa el estado del carrito, sus acciones y las capas de persistencia local y remota.
+      - **`CartContext.ts`** — Define el contrato del contexto del carrito: estado, acciones y datos derivados.
+      - **`CartProvider.tsx`** — Implementa el proveedor global del carrito con reducer y coordina sus operaciones.
+      - **`cloudPersistence.ts`** — Sincroniza el carrito del usuario autenticado con Firestore y gestiona la recuperación remota.
+      - **`index.ts`** — Reexporta el módulo del carrito desde un punto de entrada común.
+      - **`persistence.ts`** — Guarda y restaura una copia local del carrito para mantener el estado entre recargas.
+  - **`styles/`** — Contiene los estilos globales y las reglas visuales base de la aplicación.
+    - **`globals.css`** — Define estilos globales, directivas y reglas base que comparten las pantallas.
+  - **`test/`** — Contiene infraestructura compartida para correr pruebas de React de forma consistente.
+    - **`fixtures.ts`** — Proporciona datos de prueba reutilizables, como productos, usuarios y órdenes.
+    - **`mocks/`** — Contiene simulaciones controladas de dependencias externas para que los tests no necesiten credenciales reales.
+      - **`aws.ts`** — Simula las dependencias de AWS para ejecutar pruebas sin subir archivos reales.
+      - **`firebase.ts`** — Simula Firebase Auth y Firestore para probar el comportamiento de la aplicación sin servicios reales.
+    - **`renderWithProviders.tsx`** — Ofrece helpers para renderizar componentes dentro de los contextos que necesitan.
+    - **`setup.ts`** — Configura el entorno de pruebas, expectativas adicionales y mocks compartidos.
+  - **`types/`** — Define los tipos e interfaces compartidos del dominio, las respuestas de API y los componentes.
+    - **`admin.ts`** — Define estructuras TypeScript específicas para los datos de administración.
+    - **`api.ts`** — Define tipos comunes para errores y respuestas de los endpoints.
+    - **`auth.ts`** — Define las entidades y estados TypeScript asociados con la identidad y los roles.
+    - **`cart.ts`** — Define productos y estructuras de datos que el carrito necesita.
+    - **`dates.ts`** — Define tipos auxiliares para representar fechas en el dominio.
+    - **`domain.ts`** — Define entidades principales del dominio y los tipos que las representan.
+    - **`index.ts`** — Reexporta tipos compartidos desde un único módulo.
+    - **`order.ts`** — Define la estructura de órdenes, métodos de pago y estados/transiciones permitidos.
+    - **`pricing.ts`** — Define importes y estructuras de precio, para reducir ambigüedades al calcular totales.
+    - **`ui.ts`** — Define tipos de estado visual y configuración compartida de estados vacíos y mensajes.
+  - **`utils/`** — Agrupa funciones auxiliares que pueden reutilizarse desde distintas áreas.
+    - **`cart/`** — Contiene utilidades puras para transformar y calcular el contenido del carrito.
+      - **`cartUtils.ts`** — Agrupa funciones puras para normalizar artículos, calcular cantidades y operar sobre datos del carrito.
+      - **`index.ts`** — Reexporta las utilidades del carrito desde un punto de entrada.
+    - **`export.ts`** — Convierte datos de la aplicación a un archivo descargable, como el CSV de órdenes.
+    - **`productImage.ts`** — Resuelve la imagen adecuada de un producto y maneja alternativas ante errores de carga.
+- **`stats.html`** — Es un reporte HTML de análisis del bundle que sirve para inspeccionar el tamaño de los módulos; no se necesita para iniciar la aplicación.
+- **`tailwind.config.ts`** — Configura las opciones de Tailwind utilizadas por los estilos del proyecto.
+- **`tests/`** — Contiene las pruebas automatizadas que comprueban lógica, interfaz, APIs y reglas de seguridad.
+  - **`integration/`** — Agrupa pruebas que recorren varios componentes o etapas de un flujo de usuario.
+    - **`app-routing.test.tsx`** — Verifica app routing y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`cart-checkout-flow.test.tsx`** — Verifica cart checkout flow y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`components.test.tsx`** — Verifica components y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`flow.test.tsx`** — Verifica flow y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+  - **`unit/`** — Agrupa pruebas enfocadas en una unidad concreta de código.
+    - **`admin/`** — Comprueba los flujos de administración y la protección de sus pantallas.
+      - **`AdminLayout.test.tsx`** — Verifica admin layout y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`AdminOrderDetailPage.test.tsx`** — Verifica admin order detail page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`AdminOrdersPage.test.tsx`** — Verifica admin orders page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`AdminProductFormPage.test.tsx`** — Verifica admin product form page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`AdminProductsPage.test.tsx`** — Verifica admin products page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`DashboardPage.test.tsx`** — Verifica dashboard page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`admin-access.test.tsx`** — Verifica admin access y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`admin-routing.test.tsx`** — Verifica admin routing y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`api/`** — Comprueba las funciones serverless, incluidos sus permisos, validaciones y respuestas.
+      - **`admin-delete-orders.test.ts`** — Verifica admin delete orders y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`admin-endpoints.test.ts`** — Verifica admin endpoints y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`cancel-order.test.ts`** — Verifica cancel order y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`checkout.test.ts`** — Verifica checkout y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`favorites.test.ts`** — Verifica favorites y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`order-attachment.test.ts`** — Verifica order attachment y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`reviews.test.ts`** — Verifica reviews y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`update-order-status.test.ts`** — Verifica update order status y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`upload.test.ts`** — Verifica upload y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`cart/`** — Prueba las acciones del carrito, su reducer y los mecanismos de persistencia.
+      - **`CartProvider.test.tsx`** — Verifica cart provider y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`cartUtils.test.ts`** — Verifica cart utils y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`cloudPersistence.test.ts`** — Verifica cloud persistence y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`catalog/`** — Prueba los filtros, la búsqueda y el listado del catálogo.
+      - **`CatalogPage.test.tsx`** — Verifica catalog page y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ProductFilters.test.tsx`** — Verifica product filters y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ProductList.test.tsx`** — Verifica product list y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ProductSearch.test.tsx`** — Verifica product search y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`components/`** — Comprueba el comportamiento de componentes React reutilizables.
+      - **`AdminProductsPage.test.tsx`** — Verifica admin products page y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`AdminRoute.test.tsx`** — Verifica admin route y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`Button.test.tsx`** — Verifica button y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`Cart.test.tsx`** — Verifica cart y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`Checkout.test.tsx`** — Verifica checkout y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ImageUploader.test.tsx`** — Verifica image uploader y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ProductCard.test.tsx`** — Verifica product card y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ProtectedRoute.test.tsx`** — Verifica protected route y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`UnauthorizedPage.test.tsx`** — Verifica unauthorized page y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ui/`** — Prueba controles básicos de interfaz, formularios y componentes estructurales.
+        - **`Button.test.tsx`** — Verifica button y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+        - **`DisplayComponents.test.tsx`** — Verifica display components y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+        - **`FormComponents.test.tsx`** — Verifica form components y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+        - **`StructuralComponents.test.tsx`** — Verifica structural components y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`constants.test.ts`** — Verifica constants y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`contexts/`** — Comprueba el comportamiento de los proveedores globales de React.
+      - **`AuthProvider.test.tsx`** — Verifica auth provider y sus casos principales dentro de el estado global, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`domain/`** — Comprueba tipos y reglas del modelo de negocio.
+      - **`model.test.ts`** — Verifica model y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`hooks/`** — Prueba hooks personalizados de forma aislada.
+      - **`useAuth.test.tsx`** — Verifica hook use auth y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`useCart.test.tsx`** — Verifica hook use cart y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`useCheckout.test.tsx`** — Verifica hook use checkout y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`useDebounce.test.ts`** — Verifica hook use debounce y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`useOrders.test.tsx`** — Verifica hook use orders y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`useProducts.test.ts`** — Verifica hook use products y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`infrastructure/`** — Comprueba adaptadores y configuración de Firebase mediante mocks.
+      - **`auth.test.ts`** — Verifica auth y sus casos principales dentro de la integración de infraestructura, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`config.test.ts`** — Verifica config y sus casos principales dentro de la integración de infraestructura, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`firestore.test.ts`** — Verifica firestore y sus casos principales dentro de la integración de infraestructura, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`pages/`** — Comprueba las páginas y sus interacciones principales.
+      - **`CartPage.test.tsx`** — Verifica cart page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`CatalogPage.test.tsx`** — Verifica catalog page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`CheckoutPage.test.tsx`** — Verifica checkout page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`LoginPage.test.tsx`** — Verifica login page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`OrderDetailPage.test.tsx`** — Verifica order detail page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`OrdersPage.test.tsx`** — Verifica orders page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`ProductDetailPage.test.tsx`** — Verifica product detail page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`reducers/`** — Prueba las transiciones puras del reducer del carrito.
+      - **`cartReducer.test.ts`** — Verifica cart reducer y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`security/`** — Comprueba las reglas de acceso de Firestore usando el entorno de pruebas configurado.
+      - **`firestore.rules.test.ts`** — Verifica firestore y sus casos principales dentro de las reglas de seguridad, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`services/`** — Comprueba la lógica de los servicios de negocio.
+      - **`ordersService.test.ts`** — Verifica orders service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`productsService.test.ts`** — Verifica products service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`uploadService.test.ts`** — Verifica upload service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+      - **`usersService.test.ts`** — Verifica hook users service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+    - **`types.test.ts`** — Verifica types y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tsconfig.api.json`** — Configura TypeScript específicamente para los archivos de las funciones serverless.
+- **`tsconfig.app.json`** — Configura el typecheck de la aplicación frontend antes del build.
+- **`tsconfig.json`** — Define la configuración base de TypeScript y referencias a las configuraciones especializadas.
+- **`tsconfig.node.json`** — Configura TypeScript para archivos de configuración y herramientas que se ejecutan en Node.js.
+- **`tsconfig.test.json`** — Configura las opciones de TypeScript usadas por los tests.
+- **`vercel.json`** — Configura el directorio de build, el fallback SPA y las cabeceras HTTP de seguridad en Vercel.
+- **`vite-env.d.ts`** — Declara tipos de entorno para Vite y sus variables disponibles en TypeScript.
+- **`vite.config.ts`** — Configura Vite para el desarrollo y build, junto con la integración de React y las pruebas habituales.
+- **`vitest.security.config.ts`** — Configura Vitest para ejecutar de forma separada las pruebas de reglas de seguridad.
+
+## 2. Listado completo en orden alfabético
+
+Aquí se ordenan todas las rutas por su nombre completo, sin agruparlas por su función, para que sea fácil encontrar un archivo específico.
+
+- **`.env.example`** — Plantilla con los nombres de las variables locales y server-only, sin valores secretos reales.
+- **`.firebaserc`** — Define el alias o proyecto Firebase que usa la CLI al ejecutar comandos de Firebase.
+- **`.github/`** — Agrupa la automatización propia de GitHub, incluyendo los workflows que se ejecutan ante cambios del repositorio.
+- **`.github/workflows/`** — Contiene las definiciones de GitHub Actions que validan la aplicación automáticamente.
+- **`.github/workflows/ci.yml`** — Define la validación automática de main: instalación, lint, tests, reglas Firestore, build y typecheck de API.
+- **`.gitignore`** — Evita subir dependencias, builds, credenciales locales, configuración privada y otros archivos generados.
+- **`.kilo/`** — Guarda configuración auxiliar usada por herramientas de desarrollo asistido.
+- **`.kilo/kilo.jsonc`** — Guarda configuración JSONC para la herramienta Kilo usada durante tareas de desarrollo.
+- **`.prettierignore`** — Indica qué rutas debe omitir Prettier al revisar o aplicar formato.
+- **`.prettierrc`** — Define las preferencias de formato para mantener el código consistente.
+- **`.tsupgrader/`** — Agrupa artefactos y parámetros de una evaluación de actualización de TypeScript.
+- **`.tsupgrader/runtime-validation/`** — Guarda el plan y el resultado de referencia para validar cambios de runtime o tipado.
+- **`.tsupgrader/runtime-validation/.gitignore`** — Evita versionar determinados resultados temporales de la validación de runtime.
+- **`.tsupgrader/runtime-validation/baseline-result.json`** — Registra el resultado base de la evaluación de runtime para comparar futuras ejecuciones.
+- **`.tsupgrader/runtime-validation/eval-plan.json`** — Describe los casos y parámetros de la evaluación de actualización de TypeScript.
+- **`AGENTS.md`** — Documenta instrucciones de trabajo para asistentes y contribuyentes que modifican el repositorio.
+- **`api/`** — Contiene las funciones serverless de Vercel que exponen operaciones de negocio y validan las solicitudes del navegador.
+- **`api/admin/`** — Agrupa endpoints de administración que requieren privilegios especiales.
+- **`api/admin/delete-orders.ts`** — Implementa el endpoint protegido que permite al administrador eliminar órdenes bajo las validaciones del servidor.
+- **`api/admin/users.ts`** — Expone operaciones administrativas de usuarios con verificación de sesión y permisos.
+- **`api/cancel-order.ts`** — Valida una cancelación de orden y actualiza orden y stock desde el backend.
+- **`api/checkout.ts`** — Valida el checkout en servidor y crea una orden coherente con precios y stock de Firestore.
+- **`api/favorites.ts`** — Gestiona los cambios de favoritos a través de una API que identifica al usuario autenticado.
+- **`api/health.ts`** — Expone un control básico de disponibilidad del backend para comprobar que la función responde.
+- **`api/order-attachment.ts`** — Autoriza el acceso a adjuntos de una orden y genera enlaces firmados temporales para descargarlos.
+- **`api/reviews.ts`** — Valida la creación y consulta de reseñas de productos respetando las reglas de usuario y compra.
+- **`api/update-order-status.ts`** — Valida y aplica cambios permitidos en el estado y seguimiento de una orden.
+- **`api/upload.ts`** — Valida el rol admin y los datos del archivo, y genera una presigned POST de corta duración para S3.
+- **`debug-images.cjs`** — Ejecuta comprobaciones de diagnóstico relacionadas con las direcciones de imágenes del catálogo.
+- **`docs/`** — Reúne documentación de configuración, arquitectura, auditorías, pruebas y preparación de la defensa.
+- **`docs/ai-notes.md`** — Documenta prompts y reflexiones sobre decisiones técnicas tomadas con ayuda de herramientas de IA.
+- **`docs/audit-matrix.md`** — Enumera áreas y escenarios que conviene comprobar para auditar los principales flujos del ecommerce.
+- **`docs/defense-prep.md`** — Reúne recomendaciones, conceptos técnicos y preguntas para preparar la defensa del proyecto.
+- **`docs/LOCAL_SETUP.md`** — Describe las dependencias locales, las variables necesarias y cómo iniciar frontend y funciones serverless.
+- **`docs/production-checklist.md`** — Registra el checklist de preparación para producción y qué validaciones requieren servicios reales.
+- **`docs/S3_CONFIG.md`** — Explica los ajustes necesarios del bucket y la integración de S3 para permitir cargas seguras.
+- **`docs/testing-audit.md`** — Resume la estrategia, alcance y puntos de atención de las pruebas automatizadas.
+- **`docs/ts-audit.md`** — Reúne observaciones de auditoría sobre TypeScript, tipado y posibles áreas de mejora.
+- **`docs/UPLOAD_FLOW.md`** — Detalla el flujo de carga hacia S3, validaciones, permisos, variables y CORS.
+- **`eslint.config.js`** — Configura ESLint para detectar errores de estilo y problemas comunes de JavaScript y TypeScript.
+- **`firebase.json`** — Configura los emuladores locales de Firebase y declara las rutas de reglas e índices de Firestore.
+- **`firestore.indexes.json`** — Define índices compuestos que necesitan las consultas de Firestore de la aplicación.
+- **`firestore.rules`** — Define permisos de lectura y escritura por usuario, rol, tipo de documento y transición permitida.
+- **`index.html`** — Es la plantilla HTML inicial que Vite usa para montar la SPA y cargar su punto de entrada.
+- **`package-lock.json`** — Fija las versiones exactas de dependencias para instalaciones reproducibles con npm ci.
+- **`package.json`** — Declara los scripts de desarrollo, build, tests y lint, además de dependencias y versión Node requerida.
+- **`postcss.config.cjs`** — Conecta PostCSS con los plugins de estilos configurados para el build.
+- **`public/`** — Contiene recursos estáticos que Vite sirve sin procesarlos como módulos de la aplicación.
+- **`public/favicon.svg`** — Define el icono del sitio que aparece en la pestaña del navegador.
+- **`public/placeholder.svg`** — Proporciona una imagen alternativa cuando un producto no tiene una imagen disponible.
+- **`README.md`** — Explica el objetivo del ecommerce, su arquitectura, configuración, seguridad, pruebas, despliegue y bitácora de IA.
+- **`scripts/`** — Agrupa utilidades de consola para preparar datos o corregir recursos del catálogo.
+- **`scripts/fix-product-images.ts`** — Revisa y corrige datos de imágenes de productos usando un script de mantenimiento.
+- **`scripts/replace-picsum-images.ts`** — Reemplaza direcciones de imágenes de prueba de Picsum por otras direcciones configuradas.
+- **`scripts/seed.ts`** — Carga un conjunto inicial de productos de ejemplo en Firestore usando credenciales de servidor.
+- **`server/`** — Contiene módulos de servidor que inicializan Firebase Admin y centralizan la verificación de identidad y permisos.
+- **`server/adminAuthorization.ts`** — Centraliza la verificación de que el usuario autenticado tenga permisos de administrador.
+- **`server/firebaseAdmin.ts`** — Inicializa Firebase Admin en el servidor sin exponer las credenciales al navegador.
+- **`server/firebaseToken.ts`** — Verifica tokens de Firebase ID y normaliza los errores de autenticación del backend.
+- **`src/`** — Contiene el código de la SPA React, separado por páginas, componentes, estado, servicios y tipos.
+- **`src/app/`** — Compone la aplicación, sus proveedores globales y las rutas del lado cliente.
+- **`src/app/App.tsx`** — Define los proveedores globales, la carga diferida de páginas y las rutas públicas, protegidas y administrativas.
+- **`src/components/`** — Contiene componentes visuales reutilizables que las páginas combinan para construir cada pantalla.
+- **`src/components/admin/`** — Reúne la navegación y los componentes propios del panel administrativo.
+- **`src/components/admin/AdminLayout.tsx`** — Implementa la estructura, navegación lateral o superior y marco visual del panel admin.
+- **`src/components/admin/AdminOrderMiniCart.tsx`** — Muestra un resumen compacto de los productos asociados a una orden en vistas administrativas.
+- **`src/components/auth/`** — Contiene componentes que restringen el acceso según sesión y rol.
+- **`src/components/auth/AdminRoute.tsx`** — Restringe las rutas administrativas a una sesión con rol admin y resuelve los estados de carga.
+- **`src/components/auth/ProtectedRoute.tsx`** — Restringe páginas a usuarios autenticados y gestiona el acceso cuando falta sesión.
+- **`src/components/cart/`** — Agrupa las piezas visuales que representan los productos dentro del carrito.
+- **`src/components/cart/CartItemRow.tsx`** — Representa una línea del carrito con producto, cantidad y acciones relacionadas.
+- **`src/components/catalog/`** — Contiene los elementos de búsqueda, filtros y listado del catálogo.
+- **`src/components/catalog/ProductFilters.tsx`** — Permite filtrar el catálogo mediante las categorías u otros criterios definidos por la interfaz.
+- **`src/components/catalog/ProductList.tsx`** — Renderiza la colección de productos y el estado de listado vacío o con resultados.
+- **`src/components/catalog/ProductSearch.tsx`** — Recoge el texto de búsqueda del usuario para filtrar productos.
+- **`src/components/catalog/RecentlyViewedSection.tsx`** — Muestra productos consultados recientemente para facilitar volver a ellos.
+- **`src/components/common/`** — Agrupa indicadores visuales compartidos, como la espera de una operación.
+- **`src/components/common/LoadingSpinner.tsx`** — Muestra un indicador de carga reutilizable mientras una vista espera datos o código.
+- **`src/components/favorites/`** — Contiene el control reutilizable que permite guardar y quitar favoritos.
+- **`src/components/favorites/FavoriteButton.tsx`** — Añade o quita un producto de favoritos y refleja el estado guardado por el usuario.
+- **`src/components/layout/`** — Agrupa la estructura común de las páginas públicas, como cabecera y pie.
+- **`src/components/layout/Footer.tsx`** — Presenta los enlaces secundarios y la información de pie compartida por las páginas.
+- **`src/components/layout/Header.tsx`** — Muestra la cabecera principal, navegación y accesos al catálogo, carrito y cuenta.
+- **`src/components/layout/SiteChrome.tsx`** — Combina los elementos globales de la estructura del sitio alrededor de las páginas.
+- **`src/components/navigation/`** — Contiene controles de navegación auxiliares para moverse entre pantallas.
+- **`src/components/navigation/BackButton.tsx`** — Ofrece una acción de navegación para volver a la pantalla anterior o a una ruta alternativa.
+- **`src/components/ui/`** — Reúne controles genéricos reutilizables con props tipadas y estilos compartidos.
+- **`src/components/ui/Alert.tsx`** — Implementa el componente alert, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Badge.tsx`** — Implementa el componente badge, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Button.tsx`** — Implementa el componente button, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Card.tsx`** — Implementa el componente card, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/CategoryFilter.tsx`** — Implementa el componente category filter, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Checkbox.tsx`** — Implementa el componente checkbox, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Container.tsx`** — Implementa el componente container, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/EmptyState.tsx`** — Implementa el componente empty state, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/ErrorState.tsx`** — Implementa el componente error state, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Footer.tsx`** — Implementa el componente footer, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/index.ts`** — Implementa el componente index, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Input.tsx`** — Implementa el componente input, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/LoadingState.tsx`** — Implementa el componente loading state, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Modal.tsx`** — Implementa el componente modal, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Navbar.tsx`** — Implementa el componente navbar, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/OrderStatusBadge.tsx`** — Implementa el componente order status badge, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Pagination.tsx`** — Implementa el componente pagination, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Price.tsx`** — Implementa el componente price, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/ProductCard.tsx`** — Implementa el componente product card, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/QuantitySelector.tsx`** — Implementa el componente quantity selector, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/SearchInput.tsx`** — Implementa el componente search input, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Select.tsx`** — Implementa el componente select, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Skeleton.tsx`** — Implementa el componente skeleton, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Spinner.tsx`** — Implementa el componente spinner, que se reutiliza para construir la interfaz de ui.
+- **`src/components/ui/Textarea.tsx`** — Implementa el componente textarea, que se reutiliza para construir la interfaz de ui.
+- **`src/components/upload/`** — Contiene el control de selección y carga de imágenes.
+- **`src/components/upload/ImageUploader.tsx`** — Permite seleccionar una imagen, ver su estado y conectarla con el flujo de carga al backend.
+- **`src/config/`** — Centraliza la configuración necesaria para conectar la aplicación con servicios externos.
+- **`src/config/firebase.ts`** — Provee la configuración de Firebase Web tomada de variables de entorno del frontend.
+- **`src/constants/`** — Centraliza rutas, catálogos de opciones y valores fijos que comparten varias pantallas.
+- **`src/constants/checkout.ts`** — Agrupa constantes reutilizadas por la experiencia de checkout.
+- **`src/constants/routes.ts`** — Centraliza las rutas de navegación del sitio y los constructores de rutas con identificadores.
+- **`src/contexts/`** — Agrupa contextos de React para estado global de autenticación y favoritos.
+- **`src/contexts/AuthContext.tsx`** — Define la forma del contexto de autenticación que consumen los componentes React.
+- **`src/contexts/AuthProvider.tsx`** — Observa la sesión Firebase, carga el perfil y expone usuario, rol y acciones de autenticación.
+- **`src/contexts/FavoritesContext.tsx`** — Mantiene el estado de favoritos del usuario y lo sincroniza mediante el servicio correspondiente.
+- **`src/hooks/`** — Contiene hooks personalizados que encapsulan lógica reutilizable para páginas y componentes.
+- **`src/hooks/useAuth.ts`** — Permite acceder al estado y las acciones de autenticación desde cualquier componente.
+- **`src/hooks/useCart.ts`** — Permite consultar y modificar el carrito a través de su contexto compartido.
+- **`src/hooks/useCheckout.ts`** — Encapsula el estado y la ejecución del flujo de checkout con sus errores.
+- **`src/hooks/useDebounce.ts`** — Retrasa la actualización de un valor hasta que pasa un intervalo sin cambios.
+- **`src/hooks/useOrders.ts`** — Encapsula la carga de órdenes y el estado asociado para las pantallas consumidoras.
+- **`src/hooks/useProduct.ts`** — Carga y administra el estado de un producto individual.
+- **`src/hooks/useProducts.ts`** — Carga listados de productos y coordina filtros, paginación y estado de resultados.
+- **`src/hooks/useUpload.ts`** — Coordina la solicitud de una política firmada y la carga del archivo seleccionado.
+- **`src/infrastructure/`** — Agrupa adaptadores que aíslan a la lógica de aplicación de los proveedores externos.
+- **`src/infrastructure/firebase/`** — Contiene la integración de Firebase Authentication y Firestore para el frontend.
+- **`src/infrastructure/firebase/adapters.ts`** — Adapta respuestas y objetos de Firebase a estructuras usadas por la aplicación.
+- **`src/infrastructure/firebase/auth.ts`** — Implementa las operaciones de autenticación y observa cambios de sesión de Firebase.
+- **`src/infrastructure/firebase/config.ts`** — Inicializa y exporta las instancias de Firebase Web utilizadas por Auth y Firestore.
+- **`src/infrastructure/firebase/firestore.ts`** — Centraliza consultas y escrituras de Firestore para productos, perfiles, carritos y órdenes.
+- **`src/infrastructure/firebase/index.ts`** — Reexporta la API de infraestructura Firebase desde un punto de entrada común.
+- **`src/infrastructure/index.ts`** — Expone un punto de entrada común para los adaptadores de infraestructura.
+- **`src/main.tsx`** — Arranca React, monta el componente App y carga los estilos globales.
+- **`src/pages/`** — Contiene las pantallas orientadas al usuario final y los flujos públicos de compra.
+- **`src/pages/admin/`** — Contiene las pantallas de gestión exclusivas del rol administrador.
+- **`src/pages/admin/AnalyticsPage.tsx`** — Presenta métricas administrativas y resúmenes de actividad del comercio.
+- **`src/pages/admin/CategoriesPage.tsx`** — Lista y administra las categorías disponibles para clasificar productos.
+- **`src/pages/admin/CategoryFormPage.tsx`** — Permite crear o editar los datos de una categoría.
+- **`src/pages/admin/CreateOrderPage.tsx`** — Permite al administrador crear una orden desde el panel y muestra confirmación visual del resultado.
+- **`src/pages/admin/DashboardPage.tsx`** — Presenta un resumen general del comercio y accesos a las áreas administrativas.
+- **`src/pages/admin/OrderDetailPage.tsx`** — Muestra y administra los datos ampliados de una orden desde el rol admin.
+- **`src/pages/admin/OrdersPage.tsx`** — Lista las órdenes y permite filtrarlas, seleccionar acciones, gestionar estados y derivar al flujo de pago simulado.
+- **`src/pages/admin/ProductFormPage.tsx`** — Gestiona el formulario de alta o edición de productos, incluida su imagen y los datos guardados.
+- **`src/pages/admin/ProductsPage.tsx`** — Lista productos del catálogo para que el administrador pueda buscarlos y gestionarlos.
+- **`src/pages/admin/SettingsPage.tsx`** — Presenta las opciones de configuración disponibles para la sección administrativa.
+- **`src/pages/admin/UploadsPage.tsx`** — Muestra o administra recursos cargados y facilita verificar imágenes/adjuntos gestionados.
+- **`src/pages/admin/UserFormPage.tsx`** — Permite crear o editar los datos de un usuario desde el área administrativa.
+- **`src/pages/admin/UsersPage.tsx`** — Lista usuarios y ofrece las acciones administrativas permitidas sobre ellos.
+- **`src/pages/CartPage.tsx`** — Presenta el contenido del carrito, cantidades, subtotal y navegación hacia el catálogo o checkout.
+- **`src/pages/CatalogPage.tsx`** — Muestra el catálogo con búsqueda, filtros, paginación y tarjetas de producto.
+- **`src/pages/CheckoutPage.tsx`** — Permite crear una orden de cliente y también muestra el flujo administrativo de confirmación manual para una orden existente.
+- **`src/pages/FavoritesPage.tsx`** — Lista los productos favoritos de la sesión autenticada.
+- **`src/pages/HelpPage.tsx`** — Muestra el texto correspondiente a contacto, envíos, cambios/devoluciones o términos y privacidad según la ruta.
+- **`src/pages/HomePage.tsx`** — Presenta la página inicial, accesos al catálogo y secciones destacadas del comercio.
+- **`src/pages/LoginPage.tsx`** — Permite iniciar sesión con los métodos de autenticación que estén configurados.
+- **`src/pages/NotFoundPage.tsx`** — Muestra una vista de recurso o ruta inexistente.
+- **`src/pages/OrderConfirmationPage.tsx`** — Confirma al cliente que se creó una orden y muestra su información principal.
+- **`src/pages/OrderDetailPage.tsx`** — Muestra el detalle de una orden del cliente con estado y datos de seguimiento disponibles.
+- **`src/pages/OrdersPage.tsx`** — Lista el historial de órdenes del usuario autenticado.
+- **`src/pages/ProductDetailPage.tsx`** — Muestra la información completa del producto y las interacciones asociadas, como favoritos y reseñas.
+- **`src/pages/RegisterPage.tsx`** — Permite crear una cuenta de cliente y configurar su perfil inicial.
+- **`src/pages/UnauthorizedPage.tsx`** — Informa que la sesión actual no tiene permisos para acceder a una ruta.
+- **`src/services/`** — Agrupa operaciones de negocio para productos, checkout, órdenes, usuarios, reseñas y cargas.
+- **`src/services/adminApi.ts`** — Centraliza llamadas del frontend a endpoints de administración.
+- **`src/services/checkoutService.ts`** — Envía los datos del checkout al backend y adapta su respuesta al modelo de la aplicación.
+- **`src/services/dashboardService.ts`** — Obtiene y transforma datos usados por el dashboard administrativo.
+- **`src/services/favoritesService.ts`** — Lee y modifica los favoritos mediante el endpoint y la persistencia configurada.
+- **`src/services/index.ts`** — Reexporta servicios para facilitar imports compartidos.
+- **`src/services/orderAttachmentService.ts`** — Solicita enlaces o descargas autorizadas para adjuntos de órdenes.
+- **`src/services/ordersService.ts`** — Implementa consultas y acciones de órdenes, incluido su seguimiento y cambio de estado.
+- **`src/services/productsService.ts`** — Implementa operaciones de lectura, creación, edición y baja lógica o eliminación de productos.
+- **`src/services/recentlyViewedService.ts`** — Registra y recupera productos vistos recientemente.
+- **`src/services/reviewsService.ts`** — Consulta y envía reseñas de producto respetando el contrato de la API.
+- **`src/services/uploadService.ts`** — Solicita una presigned POST y ejecuta la carga directa del archivo a S3.
+- **`src/services/usersService.ts`** — Implementa las operaciones de lectura y modificación de usuarios disponibles en la capa de servicios.
+- **`src/store/`** — Agrupa módulos que administran estado de aplicación y persistencia.
+- **`src/store/cart/`** — Implementa el estado del carrito, sus acciones y las capas de persistencia local y remota.
+- **`src/store/cart/CartContext.ts`** — Define el contrato del contexto del carrito: estado, acciones y datos derivados.
+- **`src/store/cart/CartProvider.tsx`** — Implementa el proveedor global del carrito con reducer y coordina sus operaciones.
+- **`src/store/cart/cloudPersistence.ts`** — Sincroniza el carrito del usuario autenticado con Firestore y gestiona la recuperación remota.
+- **`src/store/cart/index.ts`** — Reexporta el módulo del carrito desde un punto de entrada común.
+- **`src/store/cart/persistence.ts`** — Guarda y restaura una copia local del carrito para mantener el estado entre recargas.
+- **`src/styles/`** — Contiene los estilos globales y las reglas visuales base de la aplicación.
+- **`src/styles/globals.css`** — Define estilos globales, directivas y reglas base que comparten las pantallas.
+- **`src/test/`** — Contiene infraestructura compartida para correr pruebas de React de forma consistente.
+- **`src/test/fixtures.ts`** — Proporciona datos de prueba reutilizables, como productos, usuarios y órdenes.
+- **`src/test/mocks/`** — Contiene simulaciones controladas de dependencias externas para que los tests no necesiten credenciales reales.
+- **`src/test/mocks/aws.ts`** — Simula las dependencias de AWS para ejecutar pruebas sin subir archivos reales.
+- **`src/test/mocks/firebase.ts`** — Simula Firebase Auth y Firestore para probar el comportamiento de la aplicación sin servicios reales.
+- **`src/test/renderWithProviders.tsx`** — Ofrece helpers para renderizar componentes dentro de los contextos que necesitan.
+- **`src/test/setup.ts`** — Configura el entorno de pruebas, expectativas adicionales y mocks compartidos.
+- **`src/types/`** — Define los tipos e interfaces compartidos del dominio, las respuestas de API y los componentes.
+- **`src/types/admin.ts`** — Define estructuras TypeScript específicas para los datos de administración.
+- **`src/types/api.ts`** — Define tipos comunes para errores y respuestas de los endpoints.
+- **`src/types/auth.ts`** — Define las entidades y estados TypeScript asociados con la identidad y los roles.
+- **`src/types/cart.ts`** — Define productos y estructuras de datos que el carrito necesita.
+- **`src/types/dates.ts`** — Define tipos auxiliares para representar fechas en el dominio.
+- **`src/types/domain.ts`** — Define entidades principales del dominio y los tipos que las representan.
+- **`src/types/index.ts`** — Reexporta tipos compartidos desde un único módulo.
+- **`src/types/order.ts`** — Define la estructura de órdenes, métodos de pago y estados/transiciones permitidos.
+- **`src/types/pricing.ts`** — Define importes y estructuras de precio, para reducir ambigüedades al calcular totales.
+- **`src/types/ui.ts`** — Define tipos de estado visual y configuración compartida de estados vacíos y mensajes.
+- **`src/utils/`** — Agrupa funciones auxiliares que pueden reutilizarse desde distintas áreas.
+- **`src/utils/cart/`** — Contiene utilidades puras para transformar y calcular el contenido del carrito.
+- **`src/utils/cart/cartUtils.ts`** — Agrupa funciones puras para normalizar artículos, calcular cantidades y operar sobre datos del carrito.
+- **`src/utils/cart/index.ts`** — Reexporta las utilidades del carrito desde un punto de entrada.
+- **`src/utils/export.ts`** — Convierte datos de la aplicación a un archivo descargable, como el CSV de órdenes.
+- **`src/utils/productImage.ts`** — Resuelve la imagen adecuada de un producto y maneja alternativas ante errores de carga.
+- **`stats.html`** — Es un reporte HTML de análisis del bundle que sirve para inspeccionar el tamaño de los módulos; no se necesita para iniciar la aplicación.
+- **`tailwind.config.ts`** — Configura las opciones de Tailwind utilizadas por los estilos del proyecto.
+- **`tests/`** — Contiene las pruebas automatizadas que comprueban lógica, interfaz, APIs y reglas de seguridad.
+- **`tests/integration/`** — Agrupa pruebas que recorren varios componentes o etapas de un flujo de usuario.
+- **`tests/integration/app-routing.test.tsx`** — Verifica app routing y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/integration/cart-checkout-flow.test.tsx`** — Verifica cart checkout flow y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/integration/components.test.tsx`** — Verifica components y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/integration/flow.test.tsx`** — Verifica flow y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/`** — Agrupa pruebas enfocadas en una unidad concreta de código.
+- **`tests/unit/admin/`** — Comprueba los flujos de administración y la protección de sus pantallas.
+- **`tests/unit/admin/admin-access.test.tsx`** — Verifica admin access y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/admin-routing.test.tsx`** — Verifica admin routing y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/AdminLayout.test.tsx`** — Verifica admin layout y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/AdminOrderDetailPage.test.tsx`** — Verifica admin order detail page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/AdminOrdersPage.test.tsx`** — Verifica admin orders page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/AdminProductFormPage.test.tsx`** — Verifica admin product form page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/AdminProductsPage.test.tsx`** — Verifica admin products page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/admin/DashboardPage.test.tsx`** — Verifica dashboard page y sus casos principales dentro de el panel administrativo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/`** — Comprueba las funciones serverless, incluidos sus permisos, validaciones y respuestas.
+- **`tests/unit/api/admin-delete-orders.test.ts`** — Verifica admin delete orders y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/admin-endpoints.test.ts`** — Verifica admin endpoints y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/cancel-order.test.ts`** — Verifica cancel order y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/checkout.test.ts`** — Verifica checkout y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/favorites.test.ts`** — Verifica favorites y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/order-attachment.test.ts`** — Verifica order attachment y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/reviews.test.ts`** — Verifica reviews y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/update-order-status.test.ts`** — Verifica update order status y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/api/upload.test.ts`** — Verifica upload y sus casos principales dentro de la API serverless, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/cart/`** — Prueba las acciones del carrito, su reducer y los mecanismos de persistencia.
+- **`tests/unit/cart/CartProvider.test.tsx`** — Verifica cart provider y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/cart/cartUtils.test.ts`** — Verifica cart utils y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/cart/cloudPersistence.test.ts`** — Verifica cloud persistence y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/catalog/`** — Prueba los filtros, la búsqueda y el listado del catálogo.
+- **`tests/unit/catalog/CatalogPage.test.tsx`** — Verifica catalog page y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/catalog/ProductFilters.test.tsx`** — Verifica product filters y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/catalog/ProductList.test.tsx`** — Verifica product list y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/catalog/ProductSearch.test.tsx`** — Verifica product search y sus casos principales dentro de el catálogo, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/`** — Comprueba el comportamiento de componentes React reutilizables.
+- **`tests/unit/components/AdminProductsPage.test.tsx`** — Verifica admin products page y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/AdminRoute.test.tsx`** — Verifica admin route y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/Button.test.tsx`** — Verifica button y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/Cart.test.tsx`** — Verifica cart y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/Checkout.test.tsx`** — Verifica checkout y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ImageUploader.test.tsx`** — Verifica image uploader y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ProductCard.test.tsx`** — Verifica product card y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ProtectedRoute.test.tsx`** — Verifica protected route y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ui/`** — Prueba controles básicos de interfaz, formularios y componentes estructurales.
+- **`tests/unit/components/ui/Button.test.tsx`** — Verifica button y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ui/DisplayComponents.test.tsx`** — Verifica display components y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ui/FormComponents.test.tsx`** — Verifica form components y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/ui/StructuralComponents.test.tsx`** — Verifica structural components y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/components/UnauthorizedPage.test.tsx`** — Verifica unauthorized page y sus casos principales dentro de los componentes visuales, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/constants.test.ts`** — Verifica constants y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/contexts/`** — Comprueba el comportamiento de los proveedores globales de React.
+- **`tests/unit/contexts/AuthProvider.test.tsx`** — Verifica auth provider y sus casos principales dentro de el estado global, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/domain/`** — Comprueba tipos y reglas del modelo de negocio.
+- **`tests/unit/domain/model.test.ts`** — Verifica model y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/hooks/`** — Prueba hooks personalizados de forma aislada.
+- **`tests/unit/hooks/useAuth.test.tsx`** — Verifica hook use auth y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/hooks/useCart.test.tsx`** — Verifica hook use cart y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/hooks/useCheckout.test.tsx`** — Verifica hook use checkout y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/hooks/useDebounce.test.ts`** — Verifica hook use debounce y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/hooks/useOrders.test.tsx`** — Verifica hook use orders y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/hooks/useProducts.test.ts`** — Verifica hook use products y sus casos principales dentro de los hooks reutilizables, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/infrastructure/`** — Comprueba adaptadores y configuración de Firebase mediante mocks.
+- **`tests/unit/infrastructure/auth.test.ts`** — Verifica auth y sus casos principales dentro de la integración de infraestructura, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/infrastructure/config.test.ts`** — Verifica config y sus casos principales dentro de la integración de infraestructura, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/infrastructure/firestore.test.ts`** — Verifica firestore y sus casos principales dentro de la integración de infraestructura, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/`** — Comprueba las páginas y sus interacciones principales.
+- **`tests/unit/pages/CartPage.test.tsx`** — Verifica cart page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/CatalogPage.test.tsx`** — Verifica catalog page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/CheckoutPage.test.tsx`** — Verifica checkout page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/LoginPage.test.tsx`** — Verifica login page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/OrderDetailPage.test.tsx`** — Verifica order detail page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/OrdersPage.test.tsx`** — Verifica orders page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/pages/ProductDetailPage.test.tsx`** — Verifica product detail page y sus casos principales dentro de las pantallas del sitio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/reducers/`** — Prueba las transiciones puras del reducer del carrito.
+- **`tests/unit/reducers/cartReducer.test.ts`** — Verifica cart reducer y sus casos principales dentro de el carrito y sus transiciones, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/security/`** — Comprueba las reglas de acceso de Firestore usando el entorno de pruebas configurado.
+- **`tests/unit/security/firestore.rules.test.ts`** — Verifica firestore y sus casos principales dentro de las reglas de seguridad, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/services/`** — Comprueba la lógica de los servicios de negocio.
+- **`tests/unit/services/ordersService.test.ts`** — Verifica orders service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/services/productsService.test.ts`** — Verifica products service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/services/uploadService.test.ts`** — Verifica upload service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/services/usersService.test.ts`** — Verifica hook users service y sus casos principales dentro de los servicios de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tests/unit/types.test.ts`** — Verifica types y sus casos principales dentro de la lógica de negocio, usando los mocks necesarios para que la prueba sea reproducible.
+- **`tsconfig.api.json`** — Configura TypeScript específicamente para los archivos de las funciones serverless.
+- **`tsconfig.app.json`** — Configura el typecheck de la aplicación frontend antes del build.
+- **`tsconfig.json`** — Define la configuración base de TypeScript y referencias a las configuraciones especializadas.
+- **`tsconfig.node.json`** — Configura TypeScript para archivos de configuración y herramientas que se ejecutan en Node.js.
+- **`tsconfig.test.json`** — Configura las opciones de TypeScript usadas por los tests.
+- **`vercel.json`** — Configura el directorio de build, el fallback SPA y las cabeceras HTTP de seguridad en Vercel.
+- **`vite-env.d.ts`** — Declara tipos de entorno para Vite y sus variables disponibles en TypeScript.
+- **`vite.config.ts`** — Configura Vite para el desarrollo y build, junto con la integración de React y las pruebas habituales.
+- **`vitest.security.config.ts`** — Configura Vitest para ejecutar de forma separada las pruebas de reglas de seguridad.
+
+## Cómo usar este inventario
+
+- Para arrancar la aplicación, consultá primero el README y `docs/LOCAL_SETUP.md`.
+- Para entender las rutas y los proveedores globales, empezá por `src/app/App.tsx`.
+- Para revisar datos y reglas del negocio, seguí `src/types`, `src/services`, `api` y `firestore.rules`.
+- Para comprender el carrito, leé `src/store/cart`, `src/utils/cart` y sus tests.
+- Para entender la carga de imágenes, leé `api/upload.ts`, `src/services/uploadService.ts` y `docs/UPLOAD_FLOW.md`.
+- Para verificar cambios antes de entregar, usá los scripts de `package.json` y el workflow `.github/workflows/ci.yml`.

@@ -11,6 +11,8 @@ Aplicación SPA de e-commerce para retail. Los clientes consultan el catálogo, 
 - **Repositorio:** https://github.com/rechimonth/e-commerce
 - **Rama:** main
 - **Stack:** React 18, TypeScript, Vite, Firebase Authentication, Firestore, AWS S3 y Vercel Functions.
+- **Guía de defensa oral (30 minutos):** [docs/GUIA_DEFENSA_30_MINUTOS.md](docs/GUIA_DEFENSA_30_MINUTOS.md)
+- **Inventario explicativo de todas las rutas versionadas, en árbol y alfabéticamente:** [docs/INVENTARIO_COMPLETO.md](docs/INVENTARIO_COMPLETO.md)
 
 ---
 
@@ -59,6 +61,7 @@ El checkout simula el pago; no procesa cargos reales con una pasarela.
 6. Actualizar estados y datos de seguimiento.
 7. Crear órdenes para un cliente desde el flujo administrativo.
 8. Gestionar usuarios/categorías y consultar las páginas de analytics y configuración disponibles.
+9. En órdenes pendientes o en procesamiento, abrir un flujo de confirmación manual de pago simulado; no se conecta a una pasarela ni genera un cargo real.
 
 ---
 
@@ -302,6 +305,42 @@ No publiques claves AWS en el repositorio ni en variables VITE_*. Usa una creden
 Más detalle técnico: [docs/UPLOAD_FLOW.md](docs/UPLOAD_FLOW.md).
 
 ---
+
+## Arranque local desde cero (Windows PowerShell)
+
+Para ejecutar la experiencia completa, incluida la API serverless, seguí estos pasos desde una terminal PowerShell. El proyecto requiere Node.js 24.x, tal como declara `package.json`.
+
+~~~powershell
+git clone https://github.com/rechimonth/e-commerce.git
+Set-Location e-commerce
+git switch main
+git pull --ff-only origin main
+node --version
+npm ci
+Copy-Item .env.example .env
+notepad .env
+~~~
+
+Completá las variables locales con credenciales de desarrollo; no guardes los secretos en Git. Para probar endpoints `/api/*`, iniciá sesión en Vercel y vinculá esta carpeta con el proyecto existente **`rechimonths-projects / e-commerce`** (no crees ni selecciones otro proyecto parecido):
+
+~~~powershell
+npx vercel@latest login
+npx vercel@latest link
+npx vercel@latest pull --yes --environment=development
+npx vercel@latest dev --listen 3000
+~~~
+
+Abrí http://localhost:3000. Si solamente necesitás la interfaz React, podés usar `npm run dev` y abrir la URL que muestre Vite, normalmente http://localhost:5173; en ese modo no se ejecutan las funciones serverless de Vercel. Si las variables de Development no están configuradas en el proyecto vinculado, el checkout, los endpoints administrativos y las cargas S3 pueden fallar aunque el frontend abra.
+
+Para comprobar antes de entregar:
+
+~~~powershell
+npm run lint
+npm test
+npm run test:rules
+npm run build
+npm run typecheck:api
+~~~
 
 ## 🚀 Instalación
 
@@ -564,6 +603,8 @@ La tabla distingue entre implementación observada en el repositorio y pruebas r
 ---
 
 ## ⚠️ Problemas conocidos y verificaciones pendientes
+
+**Alcance del pago:** el checkout no está conectado a una pasarela real; la acción administrativa de confirmar pago es manual y simulada. No debe presentarse como una integración de pago real.
 
 1. **S3 no se puede declarar validado end-to-end solo por el código.** Falta comprobar con una sesión admin real que el bucket acepte el POST firmado, que su CORS permita el dominio y que las imágenes de products/* sean legibles mediante la URL guardada. La API genera una presigned POST, el frontend la usa correctamente y el producto persiste URL/clave al guardar.
 2. **Credenciales:** si alguna clave AWS se compartió fuera del gestor de secretos, revócala y crea otra. No reutilices claves publicadas en conversaciones o logs.
