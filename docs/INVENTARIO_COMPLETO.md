@@ -2,7 +2,7 @@
 
 Este inventario se generó a partir del árbol versionado de `main` de [rechimonth/e-commerce](https://github.com/rechimonth/e-commerce), no de archivos imaginados ni de `node_modules`. La revisión corresponde al árbol consultado durante la documentación; si luego se agregan, renombran o eliminan archivos, el inventario debe actualizarse.
 
-**Alcance del inventario:** 58 carpetas y 253 archivos versionados (incluye configuración, documentación, scripts, aplicación y tests).
+**Alcance del inventario:** 58 carpetas y 255 archivos versionados (incluye configuración, documentación, scripts, aplicación y tests).
 
 Las descripciones son una oración por ruta: indican el objetivo y, cuando corresponde, cómo encaja esa pieza en el proyecto. En los tests se resume el comportamiento cubierto por el nombre y su ubicación; no significa que cada caso individual se describa línea por línea.
 
@@ -41,6 +41,8 @@ Se conserva el árbol por niveles; cada entrada incluye una explicación. El nom
   - **`upload.ts`** — Valida el rol admin y los datos del archivo, y genera una presigned POST de corta duración para S3.
 - **`debug-images.cjs`** — Ejecuta comprobaciones de diagnóstico relacionadas con las direcciones de imágenes del catálogo.
 - **`docs/`** — Reúne documentación de configuración, arquitectura, auditorías, pruebas y preparación de la defensa.
+  - **`GUIA_DEFENSA_30_MINUTOS.md`** — Desarrolla un guion oral, cronometrado, para una demo de 15 minutos y una explicación técnica de otros 15 minutos.
+  - **`INVENTARIO_COMPLETO.md`** — Describe cada carpeta y archivo versionado mediante dos listados: jerárquico y alfabético.
   - **`LOCAL_SETUP.md`** — Describe las dependencias locales, las variables necesarias y cómo iniciar frontend y funciones serverless.
   - **`S3_CONFIG.md`** — Explica los ajustes necesarios del bucket y la integración de S3 para permitir cargas seguras.
   - **`UPLOAD_FLOW.md`** — Detalla el flujo de carga hacia S3, validaciones, permisos, variables y CORS.
@@ -359,6 +361,8 @@ Aquí se ordenan todas las rutas por su nombre completo, sin agruparlas por su f
 - **`docs/ai-notes.md`** — Documenta prompts y reflexiones sobre decisiones técnicas tomadas con ayuda de herramientas de IA.
 - **`docs/audit-matrix.md`** — Enumera áreas y escenarios que conviene comprobar para auditar los principales flujos del ecommerce.
 - **`docs/defense-prep.md`** — Reúne recomendaciones, conceptos técnicos y preguntas para preparar la defensa del proyecto.
+- **`docs/GUIA_DEFENSA_30_MINUTOS.md`** — Desarrolla un guion oral, cronometrado, para una demo de 15 minutos y una explicación técnica de otros 15 minutos.
+- **`docs/INVENTARIO_COMPLETO.md`** — Describe cada carpeta y archivo versionado mediante dos listados: jerárquico y alfabético.
 - **`docs/LOCAL_SETUP.md`** — Describe las dependencias locales, las variables necesarias y cómo iniciar frontend y funciones serverless.
 - **`docs/production-checklist.md`** — Registra el checklist de preparación para producción y qué validaciones requieren servicios reales.
 - **`docs/S3_CONFIG.md`** — Explica los ajustes necesarios del bucket y la integración de S3 para permitir cargas seguras.
