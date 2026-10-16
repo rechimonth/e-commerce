@@ -47,18 +47,39 @@ async function moderateReviewComment(
     throw new ReviewRequestError(422, 'El comentario parece spam por repetición de caracteres');
   }
 
-  let policySnapshot;
+  const policyRef = firestore.collection('settings').doc('reviewModeration');
+  const defaultPolicy = {
+    blockedTerms: [
+      'puta', 'puto', 'mierda', 'imbecil', 'estupido', 'estupida', 'pendejo',
+      'pelotudo', 'boludo', 'forro', 'hdp', 'hijo de puta', 'malparido',
+      'fuck', 'fucking', 'shit', 'bitch', 'asshole', 'motherfucker',
+      'nigger', 'faggot', 'retard',
+    ],
+    maxLength: 1500,
+  };
+
+  let policy: Record<string, unknown>;
   try {
-    policySnapshot = await firestore.collection('settings').doc('reviewModeration').get();
+    const policySnapshot = await policyRef.get();
+    if (policySnapshot.exists) {
+      policy = policySnapshot.data() ?? {};
+    } else {
+      // Bootstrap the policy in Firestore using the existing Firebase Admin
+      // credentials. This avoids requiring another API key or a manual seed.
+      await policyRef.set({
+        ...defaultPolicy,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      policy = defaultPolicy;
+    }
   } catch {
     throw new ReviewRequestError(503, 'No se pudo verificar el comentario en Firestore. Inténtalo nuevamente');
   }
 
-  const policy = policySnapshot.data() ?? {};
   const blockedTerms = Array.isArray(policy.blockedTerms)
     ? policy.blockedTerms.filter((term): term is string =>
         typeof term === 'string' && term.trim().length > 0 && term.trim().length <= 80)
-    : [];
+    : defaultPolicy.blockedTerms;
 
   const matchedTerm = blockedTerms.some((term) => {
     const normalizedTerm = normalizeReviewText(term);
