@@ -105,7 +105,7 @@ describe('/api/favorites', () => {
     expect(mocks.setFavorite).not.toHaveBeenCalled();
   });
 
-  it('creates and removes a favorite using the authenticated user's path', async () => {
+  it("creates and removes a favorite using the authenticated user path", async () => {
     const handler = (await import('../../api/favorites')).default;
     const addResponse = createResponse();
     await handler(createRequest('POST', { productId: 'product-1' }), addResponse);
