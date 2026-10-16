@@ -75,6 +75,57 @@ function normalizePage(
   };
 }
 
+function sortProducts(items: Product[], sortBy?: 'price-asc' | 'price-desc'): Product[] {
+  return [...items].sort((a, b) => {
+    if (sortBy === 'price-asc') {
+      return a.price.amount - b.price.amount
+        || b.createdAt.getTime() - a.createdAt.getTime()
+        || a.id.localeCompare(b.id);
+    }
+    if (sortBy === 'price-desc') {
+      return b.price.amount - a.price.amount
+        || b.createdAt.getTime() - a.createdAt.getTime()
+        || a.id.localeCompare(b.id);
+    }
+    return b.createdAt.getTime() - a.createdAt.getTime() || a.id.localeCompare(b.id);
+  });
+}
+
+function paginateProducts(
+  items: Product[],
+  limit: number,
+  page: number,
+  cursor?: string | null,
+): ProductsResult {
+  const cursorIndex = cursor ? items.findIndex((product) => product.id === cursor) : -1;
+  const startIndex = cursorIndex >= 0
+    ? cursorIndex + 1
+    : Math.max(0, page - 1) * limit;
+  const pageItems = items.slice(startIndex, startIndex + limit);
+  const nextCursor = startIndex + limit < items.length
+    ? pageItems[pageItems.length - 1]?.id ?? null
+    : null;
+  return normalizePage(pageItems, limit, page, nextCursor);
+}
+
+function isMissingPriceIndexError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as {
+    message?: unknown;
+    code?: unknown;
+    details?: unknown;
+  };
+  const message = typeof candidate.message === 'string' ? candidate.message : '';
+  const details = candidate.details && typeof candidate.details === 'object'
+    ? candidate.details as Record<string, unknown>
+    : {};
+  const originalCode = String(details.originalCode ?? candidate.code ?? '');
+  return (
+    (/failed-precondition/i.test(originalCode) && /index/i.test(message))
+    || /the query requires an index|query requires an index/i.test(message)
+  );
+}
+
 export const productsService = {
   async fetchProducts(params: FetchProductsParams = {}): Promise<ProductsResult> {
     return firebaseTryCatch(async () => {
@@ -85,25 +136,29 @@ export const productsService = {
       // active/category-scoped set before paginating, so matches beyond page one
       // remain discoverable.
       if (normalizedSearch) {
-        const allProducts = await getProducts({ category, isActive: true, sortBy });
-        const matches = allProducts
-          .map(toProduct)
-          .filter((product) => product.name.toLocaleLowerCase().includes(normalizedSearch))
-          .sort((a, b) => sortBy === 'price-asc' ? a.price.amount - b.price.amount : sortBy === 'price-desc' ? b.price.amount - a.price.amount : b.createdAt.getTime() - a.createdAt.getTime());
-        let startIndex = 0;
-        if (cursor) {
-          const cursorIndex = matches.findIndex((product) => product.id === cursor);
-          startIndex = cursorIndex >= 0 ? cursorIndex + 1 : 0;
-        } else if (page > 1) {
-          startIndex = (page - 1) * limit;
-        }
-        const items = matches.slice(startIndex, startIndex + limit);
-        const hasNext = startIndex + limit < matches.length;
-        return normalizePage(items, limit, page, hasNext ? items[items.length - 1]?.id ?? null : null);
+        // Search is performed client-side, so fetch an unordered set and sort locally.
+        // This also keeps search usable if production has not yet received composite indexes.
+        const allProducts = await getProducts({ category, isActive: true, sortBy: 'none' });
+        const matches = sortProducts(
+          allProducts
+            .map(toProduct)
+            .filter((product) => product.name.toLocaleLowerCase().includes(normalizedSearch)),
+          sortBy,
+        );
+        return paginateProducts(matches, limit, page, cursor);
       }
 
-      const result = await getProductsPage({ category, isActive: true, limit, cursor, sortBy });
-      return normalizePage(result.items.map(toProduct), limit, page, result.nextCursor);
+      try {
+        const result = await getProductsPage({ category, isActive: true, limit, cursor, sortBy });
+        return normalizePage(result.items.map(toProduct), limit, page, result.nextCursor);
+      } catch (error) {
+        // Firestore composite indexes declared in firestore.indexes.json must also be
+        // deployed to the live project. Keep price sorting functional when an index is missing;
+        // use an unordered query and paginate locally as a compatibility fallback.
+        if (!sortBy || !isMissingPriceIndexError(error)) throw error;
+        const allProducts = await getProducts({ category, isActive: true, sortBy: 'none' });
+        return paginateProducts(sortProducts(allProducts.map(toProduct), sortBy), limit, page, cursor);
+      }
     });
   },
 

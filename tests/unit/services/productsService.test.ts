@@ -91,6 +91,34 @@ describe('productsService', () => {
     });
   });
 
+  it('falls back to local price sorting when a Firestore composite index is missing', async () => {
+    const { getProducts, getProductsPage } = await import('@/infrastructure/firebase/firestore');
+    const missingIndexError = Object.assign(
+      new Error('The query requires an index. You can create it here.'),
+      { code: 'VALIDATION_ERROR', details: { originalCode: 'failed-precondition' } },
+    );
+    (getProductsPage as ReturnType<typeof vi.fn>).mockRejectedValue(missingIndexError);
+    (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);
+
+    const ascending = await productsService.fetchProducts({ sortBy: 'price-asc', limit: 1 });
+    expect(ascending.items.map((product) => product.id)).toEqual(['2']);
+    expect(ascending.nextCursor).toBe('2');
+
+    const descending = await productsService.fetchProducts({ sortBy: 'price-desc', limit: 1 });
+    expect(descending.items.map((product) => product.id)).toEqual(['1']);
+    expect(descending.nextCursor).toBe('1');
+    expect(getProducts).toHaveBeenNthCalledWith(1, {
+      category: undefined,
+      isActive: true,
+      sortBy: 'none',
+    });
+    expect(getProducts).toHaveBeenNthCalledWith(2, {
+      category: undefined,
+      isActive: true,
+      sortBy: 'none',
+    });
+  });
+
   it('fetchProducts searches the full active catalogue, not only one page', async () => {
     const { getProducts } = await import('@/infrastructure/firebase/firestore');
     (getProducts as ReturnType<typeof vi.fn>).mockResolvedValue(mockProducts);

@@ -87,7 +87,7 @@ export interface ProductFilters {
   readonly category?: ProductCategory;
   readonly isActive?: boolean;
   readonly limit?: number;
-  readonly sortBy?: 'price-asc' | 'price-desc';
+  readonly sortBy?: 'price-asc' | 'price-desc' | 'none';
 }
 
 export type CreateProductInput = Omit<ProductDTO, 'id' | 'createdAt' | 'updatedAt'>;
@@ -102,10 +102,11 @@ export async function getProducts(filters?: ProductFilters): Promise<ProductDTO[
     if (filters?.isActive !== undefined)
       constraints.push(where('isActive', '==', filters.isActive));
 
-    if (filters?.sortBy) {
+    if (filters?.sortBy === 'price-asc' || filters?.sortBy === 'price-desc') {
       constraints.push(orderBy('priceCents', filters.sortBy === 'price-asc' ? 'asc' : 'desc'));
       q = query(q, ...constraints);
-    } else if (filters?.category) {
+    } else if (filters?.sortBy === 'none' || filters?.category) {
+      // "none" is used by the catalog fallback to avoid requiring composite sort indexes.
       q = query(q, ...constraints);
     } else {
       q = query(q, ...constraints, orderBy('createdAt', 'desc') as ReturnType<typeof orderBy>);
