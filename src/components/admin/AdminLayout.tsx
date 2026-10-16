@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
+import { Modal } from '@/components/ui/Modal';
 
 interface AdminNavItem {
   readonly label: string;
