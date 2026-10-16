@@ -50,3 +50,5 @@ export function FavoritesPage() {
     </Container>
   </>;
 }
+
+export default FavoritesPage;
