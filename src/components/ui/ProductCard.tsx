@@ -2,6 +2,7 @@
 import Button from './Button';
 import type { ProductCardVariant } from '@/types/ui';
 import { handleProductImageError } from '@/utils/productImage';
+import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 
 export interface ProductCardProps {
   readonly id: string;
@@ -50,7 +51,8 @@ export function ProductCard({
       <div className={`relative ${imageWrapperClasses} overflow-hidden bg-slate-900`}>
         <img src={src} alt={imageAlt ?? name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" onError={handleProductImageError} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent opacity-80" />
-        {badge && <div className="absolute right-3 top-3 z-10">{badge}</div>}
+        <FavoriteButton productId={id} productName={name} className="absolute right-3 top-3 z-20" />
+        {badge && <div className="absolute right-14 top-3 z-10">{badge}</div>}
         {stock === 0 && <span className="absolute left-3 top-3 z-10 rounded border border-red-300/30 bg-red-500/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-red-200">Agotado</span>}
         {stock > 0 && stock <= 3 && <span className="absolute left-3 top-3 z-10 rounded border border-fuchsia-300/30 bg-fuchsia-500/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-fuchsia-200">Últimas unidades</span>}
       </div>
