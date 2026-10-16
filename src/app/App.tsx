@@ -18,6 +18,7 @@ const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'));
 const OrderConfirmationPage = lazy(() => import('@/pages/OrderConfirmationPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const HelpPage = lazy(() => import('@/pages/HelpPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
@@ -49,6 +50,10 @@ function App() {
               <Route path={ROUTES.CART} element={<CartPage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+              <Route path={ROUTES.CONTACT} element={<HelpPage />} />
+              <Route path={ROUTES.SHIPPING} element={<HelpPage />} />
+              <Route path={ROUTES.RETURNS} element={<HelpPage />} />
+              <Route path={ROUTES.TERMS} element={<HelpPage />} />
               <Route path={ROUTES.CHECKOUT} element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path={ROUTES.ORDERS} element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
