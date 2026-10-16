@@ -14,7 +14,7 @@ export interface UseProductsParams {
   readonly limit?: number;
   readonly cursor?: string | null;
   readonly page?: number;
-}
+  readonly sortBy?: 'price-asc' | 'price-desc';
 
 export interface UseProductsResult {
   readonly products: readonly Product[];
@@ -34,6 +34,7 @@ export function useProducts(params: UseProductsParams = {}): UseProductsResult {
     limit = DEFAULT_LIMIT,
     cursor = null,
     page = 1,
+    sortBy,
   } = params;
   const debouncedSearch = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
   const [products, setProducts] = useState<readonly Product[] | null>(null);
@@ -60,6 +61,7 @@ export function useProducts(params: UseProductsParams = {}): UseProductsResult {
           limit,
           cursor,
           page,
+          sortBy,
         });
         if (controller.signal.aborted) return;
         setProducts(Array.from(result.items));
@@ -79,7 +81,7 @@ export function useProducts(params: UseProductsParams = {}): UseProductsResult {
 
     void fetchProducts();
     return () => controller.abort();
-  }, [debouncedSearch, category, limit, cursor, page, refreshKey]);
+  }, [debouncedSearch, category, limit, cursor, page, sortBy, refreshKey]);
 
   return {
     products: products ?? [],
