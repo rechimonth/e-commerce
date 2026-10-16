@@ -10,6 +10,7 @@ import { ROUTES } from '@/constants/routes';
 import { USER_ROLES } from '@/types/auth';
 import type { UserProfile } from '@/types/auth';
 import type { ServiceError } from '@/types/api';
+import { adminPatch } from '@/services/adminApi';
 
 export function UserFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -57,14 +58,28 @@ export function UserFormPage() {
     setSuccess(false);
     setError(null);
     try {
-      const { getFirebaseDb } = await import('@/infrastructure/firebase/config');
-      const { doc, setDoc } = await import('firebase/firestore');
-      const db = getFirebaseDb();
       if (isEdit && id) {
-        await setDoc(doc(db, 'users', id), { ...form, uid: id }, { merge: true });
+        await adminPatch<{ uid: string }>('/api/admin/users', {
+          uid: id,
+          displayName: form.displayName,
+          email: form.email,
+          role: form.role,
+        });
       } else {
+        // Creation is intentionally left on the existing flow; this change only
+        // moves profile updates behind the authenticated server-side boundary.
+        const { getFirebaseDb } = await import('@/infrastructure/firebase/config');
+        const { doc, setDoc } = await import('firebase/firestore');
+        const db = getFirebaseDb();
         const newId = crypto.randomUUID();
-        await setDoc(doc(db, 'users', newId), { ...form, uid: newId, role: form.role, createdAt: new Date(), lastLoginAt: new Date(), preferences: { currency: 'USD', locale: 'es', notifications: true } });
+        await setDoc(doc(db, 'users', newId), {
+          ...form,
+          uid: newId,
+          role: form.role,
+          createdAt: new Date(),
+          lastLoginAt: new Date(),
+          preferences: { currency: 'USD', locale: 'es', notifications: true },
+        });
       }
       setSuccess(true);
       setTimeout(() => navigate(ROUTES.ADMIN_USERS), 1000);

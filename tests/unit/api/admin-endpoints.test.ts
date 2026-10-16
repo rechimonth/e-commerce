@@ -29,10 +29,12 @@ function makeRequest(
   method = 'GET',
   query: Record<string, string> = {},
   authorization = 'Bearer valid-token',
+  body?: unknown,
 ) {
   return {
     method,
     query,
+    body,
     headers: authorization ? { authorization } : {},
   } as unknown as VercelRequest;
 }
@@ -167,4 +169,64 @@ describe('admin data APIs', () => {
     expect(response.statusCode).toBe(403);
   });
 
+  it('updates an administrator own profile through the trusted server boundary', async () => {
+    const profile = {
+      uid: 'admin-1',
+      email: 'old-admin@ecommerce.com',
+      displayName: 'Admin anterior',
+      role: 'admin',
+    };
+    const userRef = {
+      get: vi.fn().mockResolvedValue({ exists: true, data: () => profile }),
+      update: vi.fn().mockResolvedValue(undefined),
+    };
+    const collection = { doc: vi.fn(() => userRef) };
+    const firestore = { collection: vi.fn(() => collection) };
+    requireAdminMock.mockResolvedValue({ uid: 'admin-1', firestore } as never);
+
+    const response = makeResponse();
+    await usersHandler(makeRequest('PATCH', {}, 'Bearer valid-token', {
+      uid: 'admin-1',
+      displayName: 'Admin actualizado',
+      email: 'NEW-ADMIN@ECOMMERCE.COM',
+      role: 'admin',
+    }), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(userRef.update).toHaveBeenCalledWith({
+      displayName: 'Admin actualizado',
+      email: 'new-admin@ecommerce.com',
+    });
+    expect(response.body).toMatchObject({
+      success: true,
+      data: {
+        uid: 'admin-1',
+        displayName: 'Admin actualizado',
+        email: 'new-admin@ecommerce.com',
+        role: 'admin',
+      },
+    });
+  });
+
+  it('prevents an administrator from changing their own role', async () => {
+    const profile = { uid: 'admin-1', email: 'admin@ecommerce.com', displayName: 'Admin', role: 'admin' };
+    const userRef = {
+      get: vi.fn().mockResolvedValue({ exists: true, data: () => profile }),
+      update: vi.fn().mockResolvedValue(undefined),
+    };
+    const collection = { doc: vi.fn(() => userRef) };
+    const firestore = { collection: vi.fn(() => collection) };
+    requireAdminMock.mockResolvedValue({ uid: 'admin-1', firestore } as never);
+
+    const response = makeResponse();
+    await usersHandler(makeRequest('PATCH', {}, 'Bearer valid-token', {
+      uid: 'admin-1',
+      displayName: 'Admin',
+      email: 'admin@ecommerce.com',
+      role: 'customer',
+    }), response);
+
+    expect(response.statusCode).toBe(403);
+    expect(userRef.update).not.toHaveBeenCalled();
+  });
 });
