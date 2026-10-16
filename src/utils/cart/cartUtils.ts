@@ -88,7 +88,9 @@ export function addItem(
     }
 
     return items.map((item, i) =>
-      i === existingIndex ? { ...item, quantity: newQuantity } : item,
+      i === existingIndex
+        ? { ...toCartItem(product, newQuantity), quantity: newQuantity }
+        : item,
     );
   }
 
