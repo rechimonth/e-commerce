@@ -20,7 +20,7 @@ export function FavoriteButton({ productId, productName, className = '' }: Favor
   const handleClick = async () => {
     if (isLoading || busy) return;
     if (!authenticated) {
-      navigate('/login', { state: { from: location } });
+      navigate('/login', { state: { from: location.pathname + location.search + location.hash } });
       return;
     }
     setBusy(true);
