@@ -101,7 +101,7 @@ export async function signUpWithEmail(
  * Inicia sesión con Google mediante popup.
  * @throws FirebaseInfraError si el usuario cierra el popup o hay errores de red.
  */
-export async function signInWithGoogle(): Promise<FirebaseUser | null> {
+export async function signInWithGoogle(): Promise<FirebaseUser> {
   return firebaseTryCatch(async () => {
     const auth = getFirebaseAuth();
     const isMobile = typeof navigator !== 'undefined'
@@ -110,7 +110,6 @@ export async function signInWithGoogle(): Promise<FirebaseUser | null> {
     // Redirect-based OAuth is more reliable on mobile browsers where popups are blocked.
     if (isMobile) {
       await signInWithRedirect(auth, provider);
-      return null;
     }
 
     try {
@@ -121,7 +120,6 @@ export async function signInWithGoogle(): Promise<FirebaseUser | null> {
       const code = (error as { code?: string })?.code;
       if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
         await signInWithRedirect(auth, provider);
-        return null;
       }
       throw error;
     }
