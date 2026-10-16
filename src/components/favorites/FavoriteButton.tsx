@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { UNSAFE_LocationContext, UNSAFE_NavigationContext } from 'react-router';
 import { AuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { useFavorites } from '@/contexts/FavoritesContext';
@@ -15,8 +15,8 @@ export function FavoriteButton({ productId, productName, className = '' }: Favor
   const roleState = auth?.roleState ?? 'unauthenticated';
   const isLoading = auth?.isLoading ?? false;
   const { isFavorite, toggleFavorite } = useFavorites();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigation = useContext(UNSAFE_NavigationContext);
+  const location = useContext(UNSAFE_LocationContext)?.location;
   const [busy, setBusy] = useState(false);
   const [popped, setPopped] = useState(false);
   const active = isFavorite(productId);
@@ -24,7 +24,9 @@ export function FavoriteButton({ productId, productName, className = '' }: Favor
   const handleClick = async () => {
     if (isLoading || busy) return;
     if (!authenticated) {
-      navigate('/login', { state: { from: location.pathname + location.search + location.hash } });
+      if (navigation && location) {
+        navigation.navigator.push('/login', { from: location.pathname + location.search + location.hash });
+      }
       return;
     }
     setBusy(true);
