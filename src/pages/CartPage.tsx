@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Container } from '@/components/ui/Container';
@@ -13,6 +14,7 @@ import { EMPTY_STATES } from '@/types/ui';
 const FREE_SHIPPING_THRESHOLD_CENTS = 10000;
 
 export function CartPage() {
+  const { user } = useAuth();
   const { items, totalItems, totalPrice, removeItem, updateQuantity, clearCart } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
   const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD_CENTS - totalPrice.amount);
@@ -23,7 +25,7 @@ export function CartPage() {
       <Header />
       <Container as="main" className="py-8 sm:py-12">
         <div className="mb-8 flex items-center gap-2 text-sm"><Link to={ROUTES.HOME} className="text-slate-500 hover:text-cyan-300">Inicio</Link><span className="text-slate-700">/</span><span className="text-cyan-200">Carrito</span></div>
-        {items.length === 0 ? <EmptyState config={EMPTY_STATES.cart} /> : (
+        {items.length === 0 ? <EmptyState config={{ ...EMPTY_STATES.cart, actionHref: user ? EMPTY_STATES.cart.actionHref : ROUTES.CATALOG }} /> : (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <div className="mb-6"><p className="cyber-kicker">CART // READY</p><h1 className="mt-2 font-display text-3xl font-black uppercase text-white">Tu carrito</h1><p className="mt-2 text-slate-400">{totalItems} {totalItems === 1 ? 'producto' : 'productos'} listos para continuar.</p></div>

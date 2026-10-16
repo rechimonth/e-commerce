@@ -91,7 +91,7 @@ export const EMPTY_STATES = {
     title: 'Tu carrito está vacío',
     description: 'Explora nuestro catálogo y agrega productos.',
     actionLabel: 'Ver productos',
-    actionHref: '/catalog',
+    actionHref: '/',
   },
   orders: {
     title: 'No tienes órdenes',
