@@ -77,6 +77,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Per-user browsing history stores product IDs only; clients cannot write
+    // arbitrary fields or another user's history.
+    match /users/{uid}/recentlyViewed/{productId} {
+      allow get, list: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['productId', 'viewedAt'])
+        && request.resource.data.productId == productId
+        && request.resource.data.viewedAt == request.time;
+      allow delete: if isOwner(uid);
+    }
+
     match /products/{productId} {
       allow list, get: if resource.data.isActive == true || isAdmin();
       allow create: if isAdmin() && validProduct(request.resource.data);
