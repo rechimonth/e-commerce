@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { AuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { useFavorites } from '@/contexts/FavoritesContext';
 
@@ -10,7 +10,10 @@ interface FavoriteButtonProps {
   readonly className?: string;
 }
 export function FavoriteButton({ productId, productName, className = '' }: FavoriteButtonProps) {
-  const { user, roleState, isLoading } = useAuth();
+  const auth = useContext(AuthContext);
+  const user = auth?.user ?? null;
+  const roleState = auth?.roleState ?? 'unauthenticated';
+  const isLoading = auth?.isLoading ?? false;
   const { isFavorite, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
   const location = useLocation();
