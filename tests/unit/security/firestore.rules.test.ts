@@ -233,6 +233,46 @@ MaybeDescribe('Firestore Security Rules', () => {
     });
   });
 
+  // ─── Per-user favorites ───────────────────────────────────────────────
+  describe('users/{uid}/favorites/{productId}', () => {
+    it('customer can create and read their own favorite with a server timestamp', async () => {
+      const db = customer1Env().firestore();
+      const favorite = db.doc('users/customer-1/favorites/prod-1');
+      await assertSucceeds(favorite.set({ productId: 'prod-1', createdAt: serverTimestamp() }));
+      await assertSucceeds(favorite.get());
+      await assertSucceeds(db.collection('users/customer-1/favorites').get());
+    });
+
+    it('customer cannot read or create favorites under another user', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('users/admin-1/favorites/prod-1').get());
+      await assertFails(db.doc('users/admin-1/favorites/prod-1').set({
+        productId: 'prod-1',
+        createdAt: serverTimestamp(),
+      }));
+    });
+
+    it('rejects favorite payloads with mismatched product ids or unknown fields', async () => {
+      const db = customer1Env().firestore();
+      await assertFails(db.doc('users/customer-1/favorites/prod-1').set({
+        productId: 'prod-2',
+        createdAt: serverTimestamp(),
+      }));
+      await assertFails(db.doc('users/customer-1/favorites/prod-1').set({
+        productId: 'prod-1',
+        createdAt: serverTimestamp(),
+        ownerUid: 'customer-1',
+      }));
+    });
+
+    it('customer can delete their own favorite', async () => {
+      const db = customer1Env().firestore();
+      const favorite = db.doc('users/customer-1/favorites/prod-1');
+      await assertSucceeds(favorite.set({ productId: 'prod-1', createdAt: serverTimestamp() }));
+      await assertSucceeds(favorite.delete());
+    });
+  });
+
   // ─── Products ─────────────────────────────────────────────────────────
 
   describe('products/{productId}', () => {

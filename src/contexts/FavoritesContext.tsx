@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getFirebaseDb } from '@/infrastructure/firebase/config';
+import { favoritesService } from '@/services/favoritesService';
 import { useAuth } from '@/hooks/useAuth';
 
 interface FavoritesContextValue {
@@ -38,17 +37,16 @@ export function FavoritesProvider({ children }: { readonly children: ReactNode }
     }
     let active = true;
     setFavoriteState({ uid, ids: [] });
-    getDocs(collection(getFirebaseDb(), 'users', uid, 'favorites'))
-      .then((snapshot) => {
+    favoritesService.list()
+      .then((favoriteIds) => {
         if (!active) return;
-        const sorted = snapshot.docs
-          .map((item) => ({ id: item.id, createdAt: item.data().createdAt?.toMillis?.() ?? 0 }))
-          .sort((a, b) => b.createdAt - a.createdAt)
-          .map((item) => item.id);
-        setFavoriteState({ uid, ids: sorted });
+        setFavoriteState({ uid, ids: favoriteIds });
       })
-      .catch(() => {
-        if (active) setNotice('No se pudieron cargar tus favoritos. Comprueba tu conexión e inténtalo otra vez.');
+      .catch((error: unknown) => {
+        if (active) {
+          console.error('[favorites] Could not load favorites:', error);
+          setNotice('No se pudieron cargar tus favoritos. Comprueba tu conexión e inténtalo otra vez.');
+        }
       });
     return () => { active = false; };
   }, [uid]);
@@ -60,16 +58,16 @@ export function FavoritesProvider({ children }: { readonly children: ReactNode }
     pending.current.add(productId);
     const wasFavorite = favoriteIds.includes(productId);
     try {
-      const favoriteRef = doc(getFirebaseDb(), 'users', uid, 'favorites', productId);
-      if (wasFavorite) await deleteDoc(favoriteRef);
-      else await setDoc(favoriteRef, { productId, createdAt: serverTimestamp() });
+      if (wasFavorite) await favoritesService.remove(productId);
+      else await favoritesService.add(productId);
       if (activeUid.current === uid) {
         setFavoriteState((current) => current.uid !== uid ? current : { uid, ids: wasFavorite ? current.ids.filter((id) => id !== productId) : [productId, ...current.ids.filter((id) => id !== productId)] });
         setNotice(wasFavorite ? 'Producto eliminado de Favoritos.' : '¡Producto agregado a Favoritos!');
       }
-    } catch {
+    } catch (error: unknown) {
+      console.error('[favorites] Could not persist favorite change:', error);
       if (activeUid.current === uid) setNotice('No se pudo guardar el cambio en Favoritos. Inténtalo nuevamente.');
-      throw new Error('No se pudo actualizar Favoritos en Firestore.');
+      throw new Error('No se pudo actualizar Favoritos en el servidor.');
     } finally {
       pending.current.delete(productId);
     }
