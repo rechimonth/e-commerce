@@ -83,7 +83,7 @@ async function moderateReviewComment(
 
   const matchedTerm = blockedTerms.some((term) => {
     const normalizedTerm = normalizeReviewText(term);
-    return normalizedTerm.length > 0 && normalized.includes(normalizedTerm);
+    return normalizedTerm.length > 0 && ` ${normalized} `.includes(` ${normalizedTerm} `);
   });
   if (matchedTerm) {
     throw new ReviewRequestError(422, 'El comentario contiene términos que no están permitidos por la política de reseñas');
