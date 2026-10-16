@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { createMemoryRouter, MemoryRouter, Route, Routes, RouterProvider, useLocation } from 'react-router-dom';
 import { CheckoutPage } from '@/pages/CheckoutPage';
 
 vi.mock('@/hooks/useCart', () => ({ useCart: vi.fn() }));
