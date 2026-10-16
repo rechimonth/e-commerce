@@ -22,6 +22,7 @@ export interface FetchProductsParams {
   readonly cursor?: string | null;
   readonly page?: number;
   readonly sortBy?: 'price-asc' | 'price-desc';
+}
 
 export interface ProductsResult extends PaginatedResult<Product> {
   readonly nextCursor: string | null;
