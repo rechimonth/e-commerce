@@ -93,7 +93,7 @@ async function moderateReviewComment(
     ? Math.max(10, Math.min(policy.maxLength, 1500))
     : 1500;
   if (comment.trim().length > maxLength) {
-    throw new ReviewRequestError(422, \`El comentario supera el límite de \${maxLength} caracteres\`);
+    throw new ReviewRequestError(422, 'El comentario supera el límite de ' + maxLength + ' caracteres');
   }
 }
 
