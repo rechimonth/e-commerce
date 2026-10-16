@@ -27,7 +27,7 @@ Usa `npx vercel dev` para probar los endpoints `/api/*`: `npm run dev` ejecuta V
 ```bash
 npm run lint
 npm test
-npm run test:rules
+npx --yes firebase-tools emulators:exec --only firestore --project e-commerce-ai-test "npm run test:rules"
 npm run typecheck:api
 npm run build
 ```

@@ -365,7 +365,7 @@ Para comprobar antes de entregar:
 ~~~powershell
 npm run lint
 npm test
-npm run test:rules
+npx --yes firebase-tools emulators:exec --only firestore --project e-commerce-ai-test "npm run test:rules"
 npm run build
 npm run typecheck:api
 ~~~
@@ -532,7 +532,7 @@ Para probar las reglas de Firestore:
 2. Ejecuta las reglas con Firebase Emulator:
 
 ~~~
-npx firebase-tools emulators:exec --only firestore "npm run test:rules"
+npx firebase-tools emulators:exec --only firestore "npx --yes firebase-tools emulators:exec --only firestore --project e-commerce-ai-test "npm run test:rules""
 ~~~
 
 Los tests de seguridad cubren accesos de usuarios autenticados/no autenticados, separación de roles, datos de productos y órdenes. El CI también ejecuta el emulador, el build y el typecheck de API.
