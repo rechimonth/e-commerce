@@ -9,14 +9,14 @@ const mocks = vi.hoisted(() => ({
   deleteFavorite: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../server/firebaseToken.js', () => ({
+vi.mock('../../../server/firebaseToken.js', () => ({
   verifyFirebaseIdToken: vi.fn(async () => ({ uid: mocks.uid })),
   FirebaseTokenError: class FirebaseTokenError extends Error {
     constructor(readonly status: 401 | 503, message: string) { super(message); }
   },
 }));
 
-vi.mock('../../server/firebaseAdmin.js', () => ({
+vi.mock('../../../server/firebaseAdmin.js', () => ({
   getFirebaseAdminApp: vi.fn(() => ({ name: 'test-app' })),
   FirebaseConfigurationError: class FirebaseConfigurationError extends Error {},
 }));
@@ -86,7 +86,7 @@ describe('/api/favorites', () => {
       { id: 'newer', data: () => ({ productId: 'newer', createdAt: { toMillis: () => 20 } }) },
       { id: 'invalid', data: () => ({ productId: 'someone-else', createdAt: { toMillis: () => 30 } }) },
     ];
-    const handler = (await import('../../api/favorites')).default;
+    const handler = (await import('../../../api/favorites')).default;
     const response = createResponse();
 
     await handler(createRequest('GET'), response);
@@ -96,7 +96,7 @@ describe('/api/favorites', () => {
   });
 
   it('rejects a caller-supplied UID instead of allowing a cross-user write', async () => {
-    const handler = (await import('../../api/favorites')).default;
+    const handler = (await import('../../../api/favorites')).default;
     const response = createResponse();
 
     await handler(createRequest('POST', { productId: 'product-1', uid: 'admin-1' }), response);
@@ -106,7 +106,7 @@ describe('/api/favorites', () => {
   });
 
   it("creates and removes a favorite using the authenticated user path", async () => {
-    const handler = (await import('../../api/favorites')).default;
+    const handler = (await import('../../../api/favorites')).default;
     const addResponse = createResponse();
     await handler(createRequest('POST', { productId: 'product-1' }), addResponse);
 
@@ -123,7 +123,7 @@ describe('/api/favorites', () => {
   });
 
   it('rejects missing tokens, unsupported methods and malformed product ids', async () => {
-    const handler = (await import('../../api/favorites')).default;
+    const handler = (await import('../../../api/favorites')).default;
     const missingToken = createResponse();
     await handler(createRequest('GET', undefined, ''), missingToken);
     expect(missingToken.statusCode).toBe(401);
