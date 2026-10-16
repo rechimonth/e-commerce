@@ -4,6 +4,7 @@ import { ROUTES } from '@/constants/routes';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { AuthProvider } from '@/contexts/AuthProvider';
 import { CartProvider } from '@/store/cart/CartProvider';
+import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import { AdminRoute } from '@/components/auth/AdminRoute';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -13,6 +14,7 @@ const HomePage = lazy(() => import('@/pages/HomePage'));
 const CatalogPage = lazy(() => import('@/pages/CatalogPage'));
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
+const FavoritesPage = lazy(() => import('@/pages/FavoritesPage'));
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'));
 const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'));
@@ -40,6 +42,7 @@ const AdminSettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 function App() {
   return (
     <AuthProvider>
+      <FavoritesProvider>
       <CartProvider>
         <SiteChrome>
           <Suspense fallback={<LoadingSpinner />}>
@@ -48,6 +51,7 @@ function App() {
               <Route path={ROUTES.CATALOG} element={<CatalogPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
               <Route path={ROUTES.CART} element={<CartPage />} />
+              <Route path={ROUTES.FAVORITES} element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
               <Route path={ROUTES.CONTACT} element={<HelpPage />} />
@@ -85,6 +89,7 @@ function App() {
           </Suspense>
         </SiteChrome>
       </CartProvider>
+      </FavoritesProvider>
     </AuthProvider>
   );
 }
