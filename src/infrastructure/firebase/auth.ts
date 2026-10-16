@@ -9,6 +9,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -99,13 +101,39 @@ export async function signUpWithEmail(
  * Inicia sesión con Google mediante popup.
  * @throws FirebaseInfraError si el usuario cierra el popup o hay errores de red.
  */
-export async function signInWithGoogle(): Promise<FirebaseUser> {
+export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   return firebaseTryCatch(async () => {
     const auth = getFirebaseAuth();
-    const result = await signInWithPopup(auth, provider);
+    const isMobile = typeof navigator !== 'undefined'
+      && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
+    // Redirect-based OAuth is more reliable on mobile browsers where popups are blocked.
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await ensureUserProfile(result.user);
+      return result.user;
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        await signInWithRedirect(auth, provider);
+        return null;
+      }
+      throw error;
+    }
+  });
+}
+
+/** Completes a pending Google redirect and surfaces redirect-specific errors. */
+export async function completeGoogleRedirectSignIn(): Promise<FirebaseUser | null> {
+  return firebaseTryCatch(async () => {
+    const result = await getRedirectResult(getFirebaseAuth());
+    if (!result) return null;
     await ensureUserProfile(result.user);
-
     return result.user;
   });
 }
