@@ -14,6 +14,37 @@ function jsonError(res: VercelResponse, status: number, error: string) {
   return res.status(status).json({ success: false, error });
 }
 
+async function moderateReviewComment(comment: string): Promise<void> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new ReviewRequestError(503, 'La moderación automática de reseñas no está configurada en el servidor');
+  }
+
+  let response: Response;
+  try {
+    response = await fetch('https://api.openai.com/v1/moderations', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: 'omni-moderation-latest', input: comment }),
+    });
+  } catch {
+    throw new ReviewRequestError(503, 'No se pudo verificar el comentario. Inténtalo nuevamente');
+  }
+
+  const result = await response.json().catch(() => null) as {
+    results?: Array<{ flagged?: boolean }>;
+  } | null;
+  if (!response.ok || !result || !Array.isArray(result.results) || typeof result.results[0]?.flagged !== 'boolean') {
+    throw new ReviewRequestError(503, 'El servicio de moderación no está disponible');
+  }
+  if (result.results[0].flagged) {
+    throw new ReviewRequestError(422, 'El comentario no cumple las normas de publicación');
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return jsonError(res, 405, 'Método no permitido');
   const authorization = req.headers.authorization ?? '';
@@ -42,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const decoded = await verifyFirebaseIdToken(authorization.slice(7).trim());
+    await moderateReviewComment(comment);
     const app = getFirebaseAdminApp();
     const firestore = getFirestore(app);
     const productRef = firestore.collection('products').doc(productId);
