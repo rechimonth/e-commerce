@@ -29,6 +29,8 @@ const mocks = vi.hoisted(() => {
     signInWithEmailAndPassword: vi.fn(),
     createUserWithEmailAndPassword: vi.fn(),
     signInWithPopup: vi.fn(),
+    signInWithRedirect: vi.fn(),
+    getRedirectResult: vi.fn(),
     GoogleAuthProvider: vi.fn().mockImplementation(function GoogleAuthProvider() {
       return { _type: 'GoogleProvider' };
     }),
@@ -206,6 +208,47 @@ describe('Firebase auth', () => {
     });
     expect(mocks.firestoreStubs.setDoc).toHaveBeenCalled();
     expect(result.uid).toBe('test-uid');
+  });
+
+  it('uses redirect on mobile and does not fall through to popup sign-in', async () => {
+    const { signInWithGoogle } = await setupAuth();
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile' });
+    mocks.authStubs.signInWithRedirect.mockResolvedValue(undefined);
+
+    try {
+      const result = await signInWithGoogle();
+
+      expect(result).toBeNull();
+      expect(mocks.authStubs.signInWithRedirect).toHaveBeenCalledWith(
+        mocks.mockAuth,
+        expect.anything(),
+      );
+      expect(mocks.authStubs.signInWithPopup).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('falls back to redirect when the browser blocks Google popup', async () => {
+    const { signInWithGoogle } = await setupAuth();
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/155.0' });
+    mocks.authStubs.signInWithPopup.mockRejectedValue({
+      code: 'auth/popup-blocked',
+      message: 'Popup was blocked',
+    });
+    mocks.authStubs.signInWithRedirect.mockResolvedValue(undefined);
+
+    try {
+      const result = await signInWithGoogle();
+
+      expect(result).toBeNull();
+      expect(mocks.authStubs.signInWithRedirect).toHaveBeenCalledWith(
+        mocks.mockAuth,
+        expect.anything(),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('signOutUser calls signOut', async () => {

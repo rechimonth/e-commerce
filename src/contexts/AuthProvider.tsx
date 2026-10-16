@@ -6,6 +6,7 @@ import {
   signInWithEmail,
   signUpWithEmail,
   signInWithGoogle,
+  completeGoogleRedirectSignIn,
   signOutUser,
   getUserProfile,
   observeAuthState,
@@ -65,6 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const domainUser = toUserProfile(profile);
         setUser(domainUser);
         setRoleState(profile.role === 'admin' ? 'admin' : 'customer');
+      } else {
+        setError({
+          code: 'NOT_FOUND',
+          message: 'La cuenta se creó, pero no pudimos recuperar su perfil de cliente. Vuelve a iniciar sesión con el mismo método.',
+        });
+        setUser(null);
+        setRoleState('unauthenticated');
       }
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
@@ -81,11 +89,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const firebaseUser = await signInWithGoogle();
+      // Redirect sign-in navigates away; the auth observer restores the session on return.
+      if (!firebaseUser) return;
       const profile = await getUserProfile(firebaseUser.uid);
       if (profile) {
         const domainUser = toUserProfile(profile);
         setUser(domainUser);
         setRoleState(profile.role === 'admin' ? 'admin' : 'customer');
+      } else {
+        setError({
+          code: 'NOT_FOUND',
+          message: 'Google autenticó la cuenta, pero no pudimos recuperar su perfil de cliente. Vuelve a intentarlo con la misma cuenta.',
+        });
+        setUser(null);
+        setRoleState('unauthenticated');
       }
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string };
@@ -147,6 +164,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setRoleState('unauthenticated');
         }
+      });
+
+      // Consume redirect results too, so OAuth errors are not silently lost.
+      void completeGoogleRedirectSignIn().catch((e: unknown) => {
+        const err = e as { code?: string; message?: string };
+        setError({
+          code: (err.code as ServiceError['code']) ?? 'INTERNAL_ERROR',
+          message: err.message ?? 'No se pudo completar el acceso con Google.',
+        });
       });
 
       return unsubscribe;

@@ -8,39 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
-import type { ServiceError } from '@/types/api';
-
-function getLoginErrorMessage(error: ServiceError): string {
-  const detail = error.message.toLowerCase();
-  if (detail.includes('auth/unauthorized-domain') || detail.includes('unauthorized domain')) {
-    return 'Este dominio no está autorizado para iniciar sesión. En Firebase Console → Authentication → Settings → Authorized domains, agrega e-commerce-mauve-one-98.vercel.app.';
-  }
-  if (detail.includes('auth/operation-not-allowed')) {
-    return 'El inicio de sesión con Google está deshabilitado en Firebase. Habilita Google en Authentication → Sign-in method.';
-  }
-  if (detail.includes('firestore/permission-denied') || detail.includes('missing or insufficient permissions')) {
-    return 'Google autenticó la cuenta, pero Firestore rechazó el acceso al perfil. Revisa las reglas de Firestore para users/{uid}.';
-  }
-  if (detail.includes('auth/popup-blocked') || detail.includes('auth/operation-not-supported-in-this-environment')) {
-    return 'El navegador bloqueó la ventana de Google. Vuelve a intentarlo; en móviles se usa inicio por redirección.';
-  }
-  if (error.message.includes('Database is closing/hidden')) {
-    return 'La conexión con la base de datos se cerró. Recarga la página e inténtalo de nuevo.';
-  }
-
-  switch (error.code) {
-    case 'UNAUTHORIZED':
-      return 'El correo o la contraseña no son correctos.';
-    case 'NOT_FOUND':
-      return 'No encontramos el perfil de esta cuenta. Contacta al administrador.';
-    case 'NETWORK_ERROR':
-      return 'No se pudo conectar con el servicio. Comprueba tu conexión e inténtalo de nuevo.';
-    case 'VALIDATION_ERROR':
-      return 'Revisa el formato del correo electrónico e inténtalo de nuevo.';
-    default:
-      return 'No se pudo completar el inicio de sesión. Inténtalo de nuevo en unos momentos.';
-  }
-}
+import { getAuthErrorMessage } from '@/utils/authErrorMessage';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -86,7 +54,7 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-neutral-900">Iniciar sesión</h1>
             <p className="mt-2 text-sm text-neutral-600">Accede a tu cuenta para continuar.</p>
           </div>
-          {error && <Alert variant="error" title="No se pudo iniciar sesión" message={getLoginErrorMessage(error)} />}
+          {error && <Alert variant="error" title="No se pudo iniciar sesión" message={getAuthErrorMessage(error, 'login')} />}
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" aria-busy={submitting}>
             <Input label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <Input label="Contraseña" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />

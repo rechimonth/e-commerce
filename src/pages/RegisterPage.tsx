@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
+import { getAuthErrorMessage } from '@/utils/authErrorMessage';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ export default function RegisterPage() {
             <p className="mt-2 text-sm text-neutral-600">Regístrate para comenzar a comprar.</p>
           </div>
           {(validationError || error) && (
-            <Alert variant="error" title="No se pudo crear la cuenta" message={validationError ?? error?.message ?? 'Error de autenticación'} />
+            <Alert variant="error" title="No se pudo crear la cuenta" message={validationError ?? (error ? getAuthErrorMessage(error, 'register') : 'Error de autenticación')} />
           )}
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <Input label="Nombre" autoComplete="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />

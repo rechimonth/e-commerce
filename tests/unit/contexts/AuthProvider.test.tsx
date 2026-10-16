@@ -22,6 +22,7 @@ vi.mock('@/infrastructure/firebase/auth', () => ({
   signInWithEmail: vi.fn(),
   signUpWithEmail: vi.fn(),
   signInWithGoogle: vi.fn(),
+  completeGoogleRedirectSignIn: vi.fn().mockResolvedValue(null),
   signOutUser: vi.fn(),
   getUserProfile: vi.fn(),
   observeAuthState: vi.fn(),
@@ -42,6 +43,8 @@ vi.mock('@/infrastructure/firebase/adapters', () => ({
 
 import {
   signInWithEmail,
+  signUpWithEmail,
+  signInWithGoogle,
   signOutUser,
   getUserProfile,
   observeAuthState,
@@ -154,6 +157,46 @@ describe('AuthProvider', () => {
       expect(screen.getByTestId('role-state').textContent).toBe('customer');
     });
     expect(screen.getByTestId('user-uid').textContent).toBe('test-uid');
+  });
+
+  it('registers a new email account and resolves its role to customer', async () => {
+    vi.mocked(signUpWithEmail).mockResolvedValue({ uid: 'test-uid' } as never);
+    vi.mocked(getUserProfile).mockResolvedValue(mockProfileDTO);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    const callback = vi.mocked(observeAuthState).mock.calls[0]![0]!;
+    callback(null);
+    await screen.findByText('sign-up').then((btn) => btn.click());
+
+    await waitFor(() => {
+      expect(screen.getByTestId('role-state').textContent).toBe('customer');
+      expect(screen.getByTestId('user-uid').textContent).toBe('test-uid');
+    });
+  });
+
+  it('signs in a new Google account and resolves its role to customer', async () => {
+    vi.mocked(signInWithGoogle).mockResolvedValue({ uid: 'test-uid' } as never);
+    vi.mocked(getUserProfile).mockResolvedValue(mockProfileDTO);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    const callback = vi.mocked(observeAuthState).mock.calls[0]![0]!;
+    callback(null);
+    await screen.findByText('google-sign-in').then((btn) => btn.click());
+
+    await waitFor(() => {
+      expect(screen.getByTestId('role-state').textContent).toBe('customer');
+      expect(screen.getByTestId('user-uid').textContent).toBe('test-uid');
+    });
   });
 
   it('signIn sets error on failure', async () => {
