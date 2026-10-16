@@ -4,6 +4,7 @@ import { Container, Button } from '@/components/ui';
 import { ProductList } from '@/components/catalog/ProductList';
 import { ProductSearch } from '@/components/catalog/ProductSearch';
 import { ProductFilters } from '@/components/catalog/ProductFilters';
+import { RecentlyViewedSection } from '@/components/catalog/RecentlyViewedSection';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { Header } from '@/components/layout/Header';
@@ -64,6 +65,7 @@ export function CatalogPage() {
         <span className="text-sm text-slate-400">Página {pageIndex + 1}</span>
         <Button variant="outline" disabled={!nextCursor || isLoading} onClick={() => { if (nextCursor) setPageCursors((previous) => [...previous, nextCursor]); }}>Siguiente</Button>
       </nav>}
+      <RecentlyViewedSection />
       {quickViewProduct && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Vista rápida de ${quickViewProduct.name}`}><button className="absolute inset-0 cursor-default" aria-label="Cerrar vista rápida" onClick={() => setQuickViewProduct(null)} /><div className="cyber-panel relative z-10 grid w-full max-w-3xl overflow-hidden rounded-2xl sm:grid-cols-2"><div className="aspect-square bg-slate-950"><img src={resolveProductImage(quickViewProduct)} alt={quickViewProduct.image.alt ?? quickViewProduct.name} className="h-full w-full object-cover" /></div><div className="flex flex-col p-6 sm:p-8"><p className="cyber-kicker">QUICK VIEW</p><h2 className="mt-3 font-display text-xl font-bold uppercase text-white">{quickViewProduct.name}</h2><p className="mt-2 text-sm text-slate-400">{CATEGORY_LABELS[quickViewProduct.category]}</p><p className="mt-6 font-display text-2xl font-bold text-cyan-300">{(quickViewProduct.price.amount / 100).toLocaleString('en-US', { style: 'currency', currency: quickViewProduct.price.currency })}</p><p className="mt-3 text-sm text-slate-400">{quickViewProduct.stock > 0 ? `${quickViewProduct.stock} unidades disponibles` : 'Sin stock'}</p><div className="mt-auto flex flex-col gap-3 pt-8"><Button disabled={quickViewProduct.stock === 0} onClick={() => handleAddToCart(quickViewProduct)} size="lg" className="bg-cyan-400 font-display uppercase text-slate-950 hover:bg-cyan-300">{quickViewProduct.stock === 0 ? 'Agotado' : 'Agregar al carrito'}</Button><Link to={`/products/${quickViewProduct.id}`} onClick={() => setQuickViewProduct(null)} className="flex h-11 items-center justify-center rounded-md border border-fuchsia-400/30 text-sm font-bold uppercase tracking-wider text-fuchsia-200 transition hover:bg-fuchsia-400/10">Ver ficha completa</Link><Button variant="ghost" onClick={() => setQuickViewProduct(null)} className="text-slate-400 hover:bg-white/5 hover:text-white">Cerrar</Button></div></div></div></div>}
     </Container>
   </>;
