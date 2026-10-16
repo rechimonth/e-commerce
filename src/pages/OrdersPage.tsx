@@ -9,6 +9,8 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { useOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/hooks/useAuth';
 import { ordersService } from '@/services/ordersService';
+import { productsService } from '@/services/productsService';
+import { useCart } from '@/hooks/useCart';
 import { resolveProductImage, handleProductImageError } from '@/utils/productImage';
 import { ROUTES } from '@/constants/routes';
 import type { Order } from '@/types/order';
@@ -18,7 +20,10 @@ export function OrdersPage() {
   const { user } = useAuth();
   const userId = user?.uid ?? '';
   const { orders, status, error, isLoading, isEmpty, refetch } = useOrders(userId);
+  const { addItem, items: cartItems } = useCart();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [buyingAgainId, setBuyingAgainId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ orderId: string; text: string; error?: boolean } | null>(null);
 
   const handleCancel = async (order: Order) => {
     if (!user) return;
@@ -30,6 +35,49 @@ export function OrdersPage() {
       refetch();
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handleBuyAgain = async (order: Order) => {
+    setBuyingAgainId(order.id);
+    setActionMessage(null);
+    let added = 0;
+    const skipped: string[] = [];
+    const limited: string[] = [];
+
+    try {
+      for (const orderedItem of order.items) {
+        try {
+          const product = await productsService.fetchProduct(orderedItem.productId);
+          if (!product || !product.isActive || product.stock < 1) {
+            skipped.push(orderedItem.name);
+            continue;
+          }
+
+          const existingQuantity = cartItems.find((item) => item.productId === product.id)?.quantity ?? 0;
+          const available = Math.max(0, product.stock - existingQuantity);
+          const quantityToAdd = Math.min(orderedItem.quantity, available);
+          if (quantityToAdd < 1) {
+            skipped.push(orderedItem.name);
+            continue;
+          }
+
+          addItem(product, quantityToAdd);
+          added += 1;
+          if (quantityToAdd < orderedItem.quantity) limited.push(orderedItem.name);
+        } catch {
+          skipped.push(orderedItem.name);
+        }
+      }
+
+      const details = [
+        added ? `${added} producto(s) agregado(s) con precios y stock actuales.` : 'No se pudo agregar ningún producto.',
+        limited.length ? `Cantidad limitada por stock: ${limited.join(', ')}.` : '',
+        skipped.length ? `No disponibles: ${skipped.join(', ')}.` : '',
+      ].filter(Boolean).join(' ');
+      setActionMessage({ orderId: order.id, text: details, error: added === 0 });
+    } finally {
+      setBuyingAgainId(null);
     }
   };
 
@@ -105,6 +153,14 @@ export function OrdersPage() {
                   </span>
                   <div className="flex items-center gap-4">
                     <Price amount={order.pricing.total.amount} currency={order.pricing.total.currency} />
+                    <button
+                      type="button"
+                      onClick={() => void handleBuyAgain(order)}
+                      disabled={buyingAgainId === order.id}
+                      className="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50"
+                    >
+                      {buyingAgainId === order.id ? 'Agregando...' : 'Comprar nuevamente'}
+                    </button>
                     <Link
                       to={ROUTES.ORDER_DETAIL(order.id)}
                       className="text-sm font-medium text-primary-600 hover:text-primary-700"
@@ -123,6 +179,11 @@ export function OrdersPage() {
                     )}
                   </div>
                 </div>
+                {actionMessage?.orderId === order.id && (
+                  <p role={actionMessage.error ? 'alert' : 'status'} className={`mt-3 rounded-md px-3 py-2 text-sm ${actionMessage.error ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                    {actionMessage.text}
+                  </p>
+                )}
               </div>
             ))}
           </div>
